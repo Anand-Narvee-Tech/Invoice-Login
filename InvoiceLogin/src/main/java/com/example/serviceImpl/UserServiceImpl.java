@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 
 
 import com.example.DTO.LoginRequest;
-import com.example.config.CorsConfig;
+
 import com.example.entity.OTP;
 import com.example.entity.User;
 
@@ -24,7 +24,7 @@ import jakarta.transaction.Transactional;
 @Service
 public class UserServiceImpl implements UserService {
 
-    private final CorsConfig corsConfig;
+
     
 
     @Autowired
@@ -41,10 +41,7 @@ public class UserServiceImpl implements UserService {
     
 
 
-    UserServiceImpl(CorsConfig corsConfig) {
-        this.corsConfig = corsConfig;
-    }
-
+  
     /**
      * Register new user (no password required)
      */
