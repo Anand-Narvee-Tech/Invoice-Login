@@ -16,4 +16,6 @@ public interface UserService {
     public Optional<User> getUserById(Long id);
     public User updateUserProfile(Long id, User updatedProfile);
     
+    Optional<User> getUserByEmail(String email);
+    
 }

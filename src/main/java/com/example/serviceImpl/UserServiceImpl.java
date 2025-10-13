@@ -6,11 +6,14 @@ import java.util.Optional;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.HtmlUtils;
 
 import com.example.DTO.LoginRequest;
+import com.example.config.MailConfig;
 import com.example.entity.OTP;
 import com.example.entity.User;
 import com.example.repository.TokenRepository;
@@ -19,9 +22,13 @@ import com.example.service.UserService;
 
 import jakarta.mail.internet.MimeMessage;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 public class UserServiceImpl implements UserService {
+
+    private final MailConfig mailConfig;
 
     @Autowired
     private UserRepository userRepository;
@@ -35,27 +42,15 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private JavaMailSender javaMailSender;
 
+    @Value("${spring.mail.username}")
+    private String fromEmail;
+
+    UserServiceImpl(MailConfig mailConfig) {
+        this.mailConfig = mailConfig;
+    } 
+
     /** Register new user */
-//    @Override
-//    public String register(User user) {
-//        if (userRepository.findByEmailIgnoreCase(user.getEmail()).isPresent()) {
-//            throw new RuntimeException("Email is already registered!");
-//        }
-//        
-//        if(user.getPrimaryEmail() == null || user.getPrimaryEmail().isBlank()) {
-//        	user.setPrimaryEmail(user.getEmail());
-//        }
-//        
-//        String fullName = String.join(" ",
-//                user.getFirstName() != null ? user.getFirstName() : "",
-//                user.getMiddleName() != null ? user.getMiddleName() : "",
-//                user.getLastName() != null ? user.getLastName() : ""
-//        ).trim();
-//        	user.setFullName(fullName);
-//        
-//        userRepository.save(user);
-//        return "User registered successfully!";
-//    }
+    @Override
     public String register(User user) {
         if (userRepository.findByEmailIgnoreCase(user.getEmail()).isPresent()) {
             throw new RuntimeException("Email is already registered!");
@@ -64,51 +59,122 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
         return "User registered successfully!";
     }
-    
+
     /** Send OTP to email */
     @Transactional
     @Override
     public void sendOtp(String email) {
         email = email.trim();
+
+        // 1. Check if user exists
         Optional<User> optionalUser = userRepository.findByEmailIgnoreCase(email);
         if (optionalUser.isEmpty()) {
             throw new RuntimeException("Invalid credentials: email not registered");
         }
+        User user = optionalUser.get();
+         String fullName;
+         
+         if(user.getFullName() != null && !user.getFullName().isBlank()) {
+        	 fullName = user.getFullName();
+         } else {
+        	 StringBuilder sb = new StringBuilder();
+        	 if(user.getFirstName() != null && !user.getFullName().isBlank()) {
+        		 sb.append(user.getFirstName().trim());
+        	 }
+        	 if(user.getMiddleName() != null && !user.getMiddleName().isBlank()) {
+        		 if(sb.length() > 0 ) sb.append(" ");
+        		 sb.append(user.getMiddleName().trim());
+        	 }
+        	 if(user.getLastName() != null && !user.getLastName().isBlank()) {
+        		 if(sb.length() > 0) sb.append( " '");
+        		 sb.append(user.getLastName().trim());
+        	 }
+        	 fullName = sb.length() > 0 ? sb.toString() : email.contains("@") ? email.substring(0, email.indexOf("@")) : email;
+         }
+         String safeFullname = HtmlUtils.htmlEscape(fullName);
 
-        // remove old OTP
+        // 2. Remove old OTPs
         tokenRepository.deleteByEmail(email);
 
-        // generate new OTP
-        String otp = String.valueOf(new Random().nextInt(900000) + 100000);
-        long expiryTime = System.currentTimeMillis() + 120000; // 2 min
-        tokenRepository.save(new OTP(null, email, otp, expiryTime));
+        // 3. Generate new OTP
+        String otp = String.valueOf(new Random().nextInt(900000) + 100000); // 6-digit
+        long expiryTime = System.currentTimeMillis() + 120000; // 2 minutes
+              
+        // 4. Save OTP in DB first
+        OTP otpEntity = new OTP(null, email, otp, expiryTime);
+        tokenRepository.save(otpEntity);
 
+        // 5. Send email (don’t rollback DB if fails)
         try {
             MimeMessage mimeMessage = javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
 
-            helper.setFrom("no-reply@yourdomain.com");
+            helper.setFrom(fromEmail);
             helper.setTo(email);
-            helper.setSubject("Login Verification Code");
-            helper.setText("Your OTP is: " + otp + " (valid for 2 mins)", false);
+            helper.setSubject("Login Verification Code - Invoicing Team");
+
+            // ===== HTML Email Design =====
+            String htmlContent = "<!DOCTYPE html>"
+                    + "<html><head><meta charset='UTF-8'></head>"
+                    + "<body style='margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f9f9f9;'>"
+                    + "<table align='center' width='600' cellpadding='0' cellspacing='0' style='background:#ffffff; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.1);'>"
+                    + "  <tr>"
+                    + "    <td align='center' bgcolor='#004b6e' style='padding:20px; border-top-left-radius:8px; border-top-right-radius:8px;'>"
+                    + "      <h2 style='color:#ffffff; margin:0;'>Verify Your Login</h2>"
+                    + "    </td>"
+                    + "  </tr>"
+                    + "  <tr>"
+                    + "    <td style='padding:30px;'>"
+                    + "      <h3 style='color:#004b6e; margin-top:0;'>Invoicing Team</h3>"
+                    + "      <p style='font-size:15px; color:#333;'>"
+                    + "        Hello " + safeFullname + ",<br> <br>"
+                    + "        Thank you for choosing <b>Invoicing Team</b>. Use the following OTP to complete your Sign-In:"
+                    + "      </p>"
+                    + "      <div style='text-align:center; margin:25px 0;'>"
+                    + "        <span style='display:inline-block; background:#f4f4f4; padding:20px 40px; border-radius:6px; font-size:28px; font-weight:bold; color:#6c2bd9;'>"
+                    +              otp
+                    + "        </span>"
+                    + "      </div>"
+                    + "      <p style='font-size:14px; color:#555;'>"
+                    + "        This OTP is valid for <b>2 minutes</b>. Please do not share this code with anyone."
+                    + "      </p>"
+                    + "      <p style='font-size:14px; color:#333; margin-top:30px;'>"
+                    + "        Best Regards,<br><b>Invoicing Team</b>"
+                    + "      </p>"
+                    + "    </td>"
+                    + "  </tr>"
+                    + "  <tr>"
+                    + "    <td align='center' bgcolor='#f1f1f1' style='padding:10px; border-bottom-left-radius:8px; border-bottom-right-radius:8px; font-size:12px; color:#888;'>"
+                    + "      © 2025 Invoicing Team. All rights reserved."
+                    + "    </td>"
+                    + "  </tr>"
+                    + "</table>"
+                    + "</body></html>";
+
+            helper.setText(htmlContent, true); // true = HTML
 
             javaMailSender.send(mimeMessage);
+            log.info("OTP sent successfully to {}", email);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to send OTP email");
+            log.error("Failed to send OTP email to {}: {}", email, e.getMessage());
+            // Do not throw exception here; OTP is already saved in DB
         }
     }
+
 
     /** Login with OTP and return JWT */
     @Override
     public Map<String, Object> loginWithOtp(LoginRequest request) {
-        Optional<User> optionalUser = userRepository.findByEmailIgnoreCase(request.getEmail());
+        String email = request.getEmail().trim();
+
+        Optional<User> optionalUser = userRepository.findByEmailIgnoreCase(email);
         if (optionalUser.isEmpty()) {
             throw new RuntimeException("Invalid credentials: email not registered");
         }
         User user = optionalUser.get();
 
-        // 1. Fetch OTP from DB (with email + otp)
-        Optional<OTP> optionalOtp = tokenRepository.findByEmailAndOtp(request.getEmail(), request.getOtp());
+        // 1. Fetch OTP from DB
+        Optional<OTP> optionalOtp = tokenRepository.findByEmailAndOtp(email, request.getOtp());
         if (optionalOtp.isEmpty()) {
             throw new RuntimeException("Invalid OTP or email. Please try again.");
         }
@@ -117,17 +183,17 @@ public class UserServiceImpl implements UserService {
 
         // 2. Check OTP expiry
         if (System.currentTimeMillis() > otpEntity.getExpiryTime()) {
-            tokenRepository.deleteByEmail(request.getEmail()); // remove expired
+            tokenRepository.deleteByEmail(email);
             throw new RuntimeException("OTP has expired, please request a new one.");
         }
 
         // 3. OTP is valid → delete it
-        tokenRepository.deleteByEmail(request.getEmail());
+        tokenRepository.deleteByEmail(email);
 
         // 4. Generate JWT token
         String jwtToken = jwtServiceImpl.generateToken(user);
 
-        // build response
+        // 5. Build response
         String fullname = String.join(" ",
                 user.getFirstName() != null ? user.getFirstName() : "",
                 user.getMiddleName() != null ? user.getMiddleName() : "",
@@ -142,16 +208,17 @@ public class UserServiceImpl implements UserService {
         return response;
     }
 
-	@Override
-	public Optional<User> getUserById(Long id) {
-		return userRepository.findById(id);
-	}
+    /** Get user by ID */
+    @Override
+    public Optional<User> getUserById(Long id) {
+        return userRepository.findById(id);
+    }
 
-	@Override
+    /** Update user profile */
+    @Override
     public User updateUserProfile(Long id, User updatedProfile) {
         return userRepository.findById(id).map(existingUser -> {
 
-            //  Only update non-null values (avoid overwriting with nulls)
             if (updatedProfile.getFullName() != null) existingUser.setFullName(updatedProfile.getFullName());
             if (updatedProfile.getPrimaryEmail() != null) existingUser.setPrimaryEmail(updatedProfile.getPrimaryEmail());
             if (updatedProfile.getAlternativeEmail() != null) existingUser.setAlternativeEmail(updatedProfile.getAlternativeEmail());
@@ -167,5 +234,10 @@ public class UserServiceImpl implements UserService {
 
         }).orElseThrow(() -> new RuntimeException("User not found with id " + id));
     }
+
+	@Override
+	public Optional<User> getUserByEmail(String email) {
+		return userRepository.findByEmailIgnoreCase(email);
+	}
 
 }

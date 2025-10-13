@@ -44,7 +44,7 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<RestAPIResponse> register(@RequestBody RegisterRequest request) {
         try {
-            // ✅ Validate required email
+            //  Validate required email
             if (request.getEmail() == null || request.getEmail().isBlank()) {
                 return ResponseEntity.badRequest()
                         .body(new RestAPIResponse("error", "Email is required", null));
@@ -127,14 +127,43 @@ public class UserController {
     	}
     }
     
-    @PutMapping("/updated/{id}")
-    public ResponseEntity<RestAPIResponse> updateProfile(@PathVariable Long id, @RequestBody User user){
+//    @PutMapping("/updated/{id}")
+//    public ResponseEntity<RestAPIResponse> updateProfile(@PathVariable Long id, @RequestBody User user){
+//    	try {
+//    		return new ResponseEntity<>(new RestAPIResponse("Success" ,"Profile is  Updated Sucessfully" , userServiceImpl.updateUserProfile(id, user)) , HttpStatus.OK);
+//    	}catch (Exception e) {
+//    		return new ResponseEntity<>(new RestAPIResponse("Success" ,"Profile is  Not Updated please check Id and User" +id +" " +user) , HttpStatus.OK);
+//		}	
+//    }
+    @GetMapping("/me")
+    public ResponseEntity<RestAPIResponse> getMyProfile(@RequestHeader("Authorization") String token){
     	try {
-    		return new ResponseEntity<>(new RestAPIResponse("Success" ,"Profile is  Updated Sucessfully" , userServiceImpl.updateUserProfile(id, user)) , HttpStatus.OK);
+    	                     String jwtToken = token.replace("Bearer", "");
+    	                     String email = jwtService.extractUsername(jwtToken);
+    	                     
+    	                     User user = userServiceImpl.getUserByEmail(email)
+    	                    		 .orElseThrow(() -> new RuntimeException("user not found"));
+    	                     
+    	                     return ResponseEntity.ok(new RestAPIResponse("Success", "Profile Fetched Successfully", user));
     	}catch (Exception e) {
-    		return new ResponseEntity<>(new RestAPIResponse("Success" ,"Profile is  Not Updated please check Id and User" +id +" " +user) , HttpStatus.OK);
+			     return ResponseEntity.ok(new RestAPIResponse("Error", e.getMessage(),null));
 		}
-    	
-    	
+    }
+    
+    @PutMapping("/me")
+    public ResponseEntity<RestAPIResponse> updateMyProfile(@RequestHeader ("Authorization") String token,
+    		                                                                                                        @RequestBody User updatedProfile){
+    	try {
+    		String jwtToken = token.replace("Bearer", "");
+    		String email = jwtService.extractUsername(jwtToken);
+    		
+    		User existingUser = userServiceImpl.getUserByEmail(email)
+    				                            .orElseThrow(() -> new RuntimeException("user not found"));
+    		
+    		User updated = userServiceImpl.updateUserProfile(existingUser.getId(), updatedProfile);
+    		return ResponseEntity.ok( new RestAPIResponse("Success", "Profile Updated Successfully",updated));
+    	} catch (Exception e) {
+			return ResponseEntity.ok(new RestAPIResponse("Error",e.getMessage(),null));
+		}
     }
 }
