@@ -1,12 +1,6 @@
 package com.example.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,7 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "user_info") // removed trailing space
+@Table(name = "user_info")
 public class User {
 
     @Id
@@ -33,6 +27,18 @@ public class User {
     private String companyName;
 
     private String fullName;
+    
+    private Boolean active;
+    private Boolean approved;
+
+    // This is the string representation (e.g. ADMIN, ACCOUNTANT, USER)
+    @Column(name = "user_role")
+    private String userRole;
+
+    //  This is the link to the Role table (foreign key)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "role_id")
+    private Role role;
 
     @Column(nullable = false)
     private String primaryEmail;
@@ -44,7 +50,6 @@ public class User {
     private String prefferedCurrency;
     private String invoicePrefix;
 
-    //  Auto-fill before insert
     @PrePersist
     public void prePersist() {
         if (this.primaryEmail == null && this.email != null) {

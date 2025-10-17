@@ -1,9 +1,11 @@
 package com.example.serviceImpl;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,11 +17,16 @@ import org.springframework.web.util.HtmlUtils;
 import com.example.DTO.LoginRequest;
 import com.example.config.MailConfig;
 import com.example.entity.OTP;
+import com.example.entity.Privilege;
+import com.example.entity.Role;
 import com.example.entity.User;
+import com.example.repository.PrivilegeRepository;
+import com.example.repository.RoleRepository;
 import com.example.repository.TokenRepository;
 import com.example.repository.UserRepository;
 import com.example.service.UserService;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +45,12 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private TokenRepository tokenRepository;
+    
+    @Autowired
+    private RoleRepository roleRepository;
+    
+    @Autowired
+    private PrivilegeRepository privilegeRepository;
 
     @Autowired
     private JavaMailSender javaMailSender;
@@ -48,12 +61,31 @@ public class UserServiceImpl implements UserService {
     UserServiceImpl(MailConfig mailConfig) {
         this.mailConfig = mailConfig;
     } 
-
+    
+    private static final Set<String> DEFAULT_SUPERUSERS = Set.of( "japhanya@narveetech.com","wasim@narveetech.com");
+       
     /** Register new user */
     @Override
     public String register(User user) {
         if (userRepository.findByEmailIgnoreCase(user.getEmail()).isPresent()) {
             throw new RuntimeException("Email is already registered!");
+        }
+
+        boolean isFirstUser = userRepository.count() == 0;
+
+        if (isFirstUser) {
+            Role superAdminRole = roleRepository.findByRoleName("SUPERADMIN");
+            if (superAdminRole == null) throw new RuntimeException("SUPERADMIN role not found in DB!");
+            user.setRole(superAdminRole);
+            user.setUserRole("SUPERADMIN");
+            user.setApproved(true);
+            user.setActive(true);
+        } else {
+            // Role will be assigned later by admin
+            user.setUserRole(null);
+            user.setRole(null);
+            user.setApproved(false);
+            user.setActive(false);
         }
 
         userRepository.save(user);
@@ -162,51 +194,115 @@ public class UserServiceImpl implements UserService {
     }
 
 
-    /** Login with OTP and return JWT */
+//    /** Login with OTP and return JWT */
+//    @Override
+//    public Map<String, Object> loginWithOtp(LoginRequest request) {
+//        String email = request.getEmail().trim();
+//
+//        Optional<User> optionalUser = userRepository.findByEmailIgnoreCase(email);
+//        if (optionalUser.isEmpty()) {
+//            throw new RuntimeException("Invalid credentials: email not registered");
+//        }
+//        User user = optionalUser.get();
+//
+//        // 1. Fetch OTP from DB
+//        Optional<OTP> optionalOtp = tokenRepository.findByEmailAndOtp(email, request.getOtp());
+//        if (optionalOtp.isEmpty()) {
+//            throw new RuntimeException("Invalid OTP or email. Please try again.");
+//        }
+//
+//        OTP otpEntity = optionalOtp.get();
+//
+//        // 2. Check OTP expiry
+//        if (System.currentTimeMillis() > otpEntity.getExpiryTime()) {
+//            tokenRepository.deleteByEmail(email);
+//            throw new RuntimeException("OTP has expired, please request a new one.");
+//        }
+//
+//        // 3. OTP is valid → delete it
+//        tokenRepository.deleteByEmail(email);
+//
+//        // 4. Generate JWT token
+//        String jwtToken = jwtServiceImpl.generateToken(user);
+//
+//        // 5. Build response
+//        String fullname = String.join(" ",
+//                user.getFirstName() != null ? user.getFirstName() : "",
+//                user.getMiddleName() != null ? user.getMiddleName() : "",
+//                user.getLastName() != null ? user.getLastName() : ""
+//        ).trim();
+//
+//        Map<String, Object> response = new HashMap<>();
+//        response.put("fullname", fullname);
+//        response.put("userid", user.getId());
+//        response.put("token", jwtToken);
+//
+//        return response;
+//    }
+    
     @Override
+    @Transactional
     public Map<String, Object> loginWithOtp(LoginRequest request) {
         String email = request.getEmail().trim();
+        String enteredOtp = request.getOtp();
 
-        Optional<User> optionalUser = userRepository.findByEmailIgnoreCase(email);
-        if (optionalUser.isEmpty()) {
-            throw new RuntimeException("Invalid credentials: email not registered");
+        // 1. Check if user exists
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new RuntimeException("Invalid credentials: email not registered"));
+
+        // 2. Check if user is DEFAULT_SUPERUSER
+        boolean isDefaultSuperuser = DEFAULT_SUPERUSERS.contains(email.toLowerCase());
+
+        // 3. For normal users, check approval and role
+        if (!isDefaultSuperuser && (!Boolean.TRUE.equals(user.getApproved()) || user.getRole() == null)) {
+            throw new RuntimeException("Account not approved yet or role not assigned");
         }
-        User user = optionalUser.get();
 
-        // 1. Fetch OTP from DB
-        Optional<OTP> optionalOtp = tokenRepository.findByEmailAndOtp(email, request.getOtp());
-        if (optionalOtp.isEmpty()) {
-            throw new RuntimeException("Invalid OTP or email. Please try again.");
-        }
+        // 4. Fetch OTP from DB
+        OTP otpEntity = tokenRepository.findByEmailAndOtp(email, enteredOtp)
+                .orElseThrow(() -> new RuntimeException("Invalid OTP or email. Please try again."));
 
-        OTP otpEntity = optionalOtp.get();
-
-        // 2. Check OTP expiry
+        // 5. Check OTP expiry
         if (System.currentTimeMillis() > otpEntity.getExpiryTime()) {
             tokenRepository.deleteByEmail(email);
-            throw new RuntimeException("OTP has expired, please request a new one.");
+            throw new RuntimeException("OTP has expired. Please request a new one.");
         }
 
-        // 3. OTP is valid → delete it
+        // 6. OTP is valid → delete it
         tokenRepository.deleteByEmail(email);
 
-        // 4. Generate JWT token
+        // 7. Generate JWT token
         String jwtToken = jwtServiceImpl.generateToken(user);
 
-        // 5. Build response
-        String fullname = String.join(" ",
-                user.getFirstName() != null ? user.getFirstName() : "",
-                user.getMiddleName() != null ? user.getMiddleName() : "",
-                user.getLastName() != null ? user.getLastName() : ""
-        ).trim();
-
+        // 8. Prepare response
         Map<String, Object> response = new HashMap<>();
-        response.put("fullname", fullname);
+        response.put("fullname", getSafeFullName(user));
         response.put("userid", user.getId());
         response.put("token", jwtToken);
 
+        // 9. Set privileges
+        Set<Privilege> privileges;
+        if (isDefaultSuperuser || "SUPERADMIN".equalsIgnoreCase(user.getUserRole()) || "ADMIN".equalsIgnoreCase(user.getUserRole())) {
+            privileges = new HashSet<>(privilegeRepository.findAll());
+        } else if (user.getRole() != null) {
+            privileges = user.getRole().getPrivileges();
+        } else {
+            privileges = new HashSet<>(); // no role assigned
+        }
+
+        response.put("role", user.getRole() != null ? user.getRole().getRoleName() : "DEFAULT_USER");
+        response.put("privileges", privileges.stream()
+            .map(p -> Map.of(
+                "id", p.getId(),
+                "name", p.getName(),
+                "cardType", p.getCardType(),
+                "selected", true
+            ))
+            .toList());
+
         return response;
     }
+
 
     /** Get user by ID */
     @Override
@@ -239,5 +335,44 @@ public class UserServiceImpl implements UserService {
 	public Optional<User> getUserByEmail(String email) {
 		return userRepository.findByEmailIgnoreCase(email);
 	}
+	/** ===================== ROLE & PRIVILEGES ===================== **/
+    @Override
+    public Map<String, Object> getPrivilegesForUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
+        Role role = user.getRole();
+        if (role == null) throw new RuntimeException("User has no role assigned");
+
+        Set<Privilege> privileges;
+        if ("ADMIN".equalsIgnoreCase(role.getRoleName())) {
+            privileges = new HashSet<>(privilegeRepository.findAll());
+        } else {
+            privileges = role.getPrivileges();
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("role", role.getRoleName());
+        result.put("privileges", privileges.stream()
+                                           .map(p -> Map.of(
+                                               "id", p.getId(),
+                                               "name", p.getName(),
+                                               "cardType", p.getCardType(),
+                                               "selected", true // frontend can override
+                                           ))
+                                           .toList());
+        return result;
+    }
+
+
+    /** ===================== HELPERS ===================== **/
+    private String getSafeFullName(User user) {
+        String name = String.join(" ",
+                Optional.ofNullable(user.getFirstName()).orElse(""),
+                Optional.ofNullable(user.getMiddleName()).orElse(""),
+                Optional.ofNullable(user.getLastName()).orElse("")
+        ).trim();
+        return name.isEmpty() ? user.getEmail().split("@")[0] : name;
+    }
 }
+

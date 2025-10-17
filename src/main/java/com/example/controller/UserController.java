@@ -150,6 +150,22 @@ public class UserController {
 		}
     }
     
+    @GetMapping("/getall/privileges")
+    public ResponseEntity<RestAPIResponse> getMyPrivileges(@RequestHeader("Authorization") String token) {
+        try {
+            String jwtToken = token.replace("Bearer ", "").trim();
+            String email = jwtService.extractUsername(jwtToken);
+            User user = userServiceImpl.getUserByEmail(email)
+                            .orElseThrow(() -> new RuntimeException("User not found"));
+
+            Map<String, Object> privileges = userServiceImpl.getPrivilegesForUser(user.getId());
+            return ResponseEntity.ok(new RestAPIResponse("success", "Privileges fetched successfully", privileges));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new RestAPIResponse("error", e.getMessage(), null));
+        }
+    }
+    
     @PutMapping("/me")
     public ResponseEntity<RestAPIResponse> updateMyProfile(@RequestHeader ("Authorization") String token,
     		                                                                                                        @RequestBody User updatedProfile){

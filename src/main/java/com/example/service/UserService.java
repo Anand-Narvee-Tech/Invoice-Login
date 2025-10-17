@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import com.example.DTO.LoginRequest;
+import com.example.entity.Role;
 import com.example.entity.User;
 
 public interface UserService {
@@ -18,4 +19,7 @@ public interface UserService {
     
     Optional<User> getUserByEmail(String email);
     
+    Map<String, Object> getPrivilegesForUser(Long userId);
+    
+   
 }
