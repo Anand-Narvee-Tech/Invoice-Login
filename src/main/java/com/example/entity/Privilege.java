@@ -1,65 +1,56 @@
 package com.example.entity;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import jakarta.persistence.*;
+import lombok.*;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
-import jakarta.persistence.*;
-import lombok.*;
 
-@Entity
-@Table(name = "privileges")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString(exclude = {"roles"})
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
+@Entity
+@Table(name = "privileges")
 public class Privilege {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     @Column(name = "privilegeid")
     private Long id;
 
-    @Column(name = "name", nullable = false, unique = true)
-    private String name; // e.g. CREATE_TASK, DELETE_PROJECT
-
-    @Column(name = "cardType")
-    private String cardType; // e.g. one, two
-
-    @Column(name = "selected")
-    private boolean selected = false;
-
-    @Column(name = "status")
-    private String status; // Active / Inactive
-
-    @Column(name = "category") 
-    private String category; // e.g. tasks, teamMember, projects
-
-    @Column(name = "admin_id")
+    private String name;
+    private String cardType;
+    
+    @Transient
+    private Boolean selected = false;
+    
+    private String status;
+    private String category;
     private Long adminId;
-
-    @Column(name = "addedby")
     private Long addedBy;
-
-    @Column(name = "updatedby")
     private Long updatedBy;
-
     private String addedByName;
     private String updatedByName;
-
-    @Column(name = "createddate")
     private LocalDateTime createdDate;
-
-    @Column(name = "updateddate")
     private LocalDateTime updatedDate;
-
-    // reverse mapping for roles
+ 
+    @JsonIgnore
     @ManyToMany(mappedBy = "privileges", fetch = FetchType.LAZY)
-    private Set<Role> roles ;
+    private Set<Role> roles = new HashSet<>();
 
     @PrePersist
     public void onCreate() {
         this.createdDate = LocalDateTime.now();
-        this.status = "Active";
+        if (this.status == null) this.status = "Active";
     }
 
     @PreUpdate

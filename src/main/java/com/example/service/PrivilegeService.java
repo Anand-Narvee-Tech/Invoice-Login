@@ -1,25 +1,31 @@
 package com.example.service;
 
+
+import com.example.DTO.PrivilegeDTO;
+
+
 import java.util.List;
 import java.util.Map;
 
-import com.example.entity.Privilege;
-
 public interface PrivilegeService {
-    
-	 Privilege createPrivilege(Privilege privilege);
 
-	    Privilege updatePrivilege(Long id, Privilege privilege);
+    // Basic CRUD
+    PrivilegeDTO createPrivilege(PrivilegeDTO privilegeDTO);
 
-	    void deletePrivilege(Long id);
+    PrivilegeDTO updatePrivilege(Long id, PrivilegeDTO privilegeDTO);
 
-	    List<Privilege> getAllPrivileges();
+    public void deletePrivilege(Long id);
 
-	    Privilege getPrivilegeById(Long id);
+    // Fetch operations
+    List<PrivilegeDTO> getAllPrivileges();
 
-	    List<Privilege> getPrivilegesByCategory(String category);
+    PrivilegeDTO getPrivilegeById(Long id);
 
-	    Map<String, List<Privilege>> getAllPrivilegesGrouped();
+    List<PrivilegeDTO> getPrivilegesByCategory(String category);
 
-	    Map<String, List<Privilege>> getPrivilegesByRole(Long roleId);
+    Map<String, List<PrivilegeDTO>> getAllPrivilegesGrouped();
+
+    Map<String, List<PrivilegeDTO>> getPrivilegesByRole(Long roleId);
+
+    Map<String, String> getEndpointPrivilegesMap();
 }

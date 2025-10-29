@@ -1,61 +1,60 @@
 package com.example.entity;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
-@Entity
-@Table(name = "roles")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString(exclude = {"privileges"})
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "roleId")
+@Entity
+@Table(name = "roles")
 public class Role {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     @Column(name = "roleid")
     private Long roleId;
 
-    @Column(name = "rolename", nullable = false, unique = true)
+    @Column(name = "rolename", nullable = false)
     private String roleName;
 
     private String description;
-
-    @Column(name = "status")
-    private String status; // Active / Inactive
-
-    @Column(name = "admin_id")
+    private String status;
     private Long adminId;
-
-    @Column(name = "addedby")
     private Long addedBy;
-
-    @Column(name = "updatedby")
     private Long updatedBy;
-
     private String addedByName;
     private String updatedByName;
-
-    @Column(name = "createddate")
     private LocalDateTime createdDate;
-
-    @Column(name = "updateddate")
     private LocalDateTime updatedDate;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "role_privileges",
         joinColumns = @JoinColumn(name = "roleid"),
         inverseJoinColumns = @JoinColumn(name = "privilegeid")
     )
-    private Set<Privilege> privileges;
+    private Set<Privilege> privileges = new HashSet<>();
 
     @PrePersist
     public void onCreate() {
         this.createdDate = LocalDateTime.now();
-        this.status = "Active";
+        if (this.status == null) this.status = "Active";
+
+        if (this.roleName == null || this.roleName.isBlank()) {
+            throw new IllegalStateException("roleName cannot be null or blank!");
+        }
     }
 
     @PreUpdate

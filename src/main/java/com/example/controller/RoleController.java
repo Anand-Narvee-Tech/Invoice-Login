@@ -6,9 +6,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,116 +22,169 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.DTO.PrivilegeDTO;
+import com.example.DTO.RoleDTO;
 import com.example.commons.RestAPIResponse;
-import com.example.entity.Privilege;
-import com.example.entity.Role;
+import com.example.serviceImpl.PrivilegeServiceImpl;
 import com.example.serviceImpl.RoleServiceImpl;
 
 @RestController
 @RequestMapping("/auth/roles")
 public class RoleController {
-	
-	@Autowired
+
+    @Autowired
     private RoleServiceImpl roleServiceImpl;
 
-    @PostMapping("/save")
-    public ResponseEntity<RestAPIResponse> createRole(@RequestBody Role role) {
+    @Autowired
+    private PrivilegeServiceImpl privilegeServiceImpl;
+
+    private static final Logger log = LoggerFactory.getLogger(RoleController.class);
+
+    // ✅ Create Role (already correct)
+    @PostMapping(value = "/save", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<RestAPIResponse> createRole(@RequestBody RoleDTO roleDTO) {
         try {
-            Role saved = roleServiceImpl.createRole(role);
-            return ResponseEntity.ok(new RestAPIResponse("Success", "Role saved successfully", saved));
+            RoleDTO saved = roleServiceImpl.createRole(roleDTO);
+            return ResponseEntity.ok(new RestAPIResponse("success", "Role saved successfully", saved));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new RestAPIResponse("Error", "Failed to save Role: " + e.getMessage(), null));
+                    .body(new RestAPIResponse("error", "Failed to save role: " + e.getMessage(), null));
         }
     }
 
+    // ✅ Assign privileges category-wise to a role
     @PostMapping("/privilege/save")
     public ResponseEntity<RestAPIResponse> assignPrivilegesToRole(@RequestBody Map<String, Object> payload) {
         try {
-            Long roleId = Long.parseLong(payload.get("roleId").toString());
+            log.info("🔹 Received payload: {}", payload);
+
+            Object roleIdObj = payload.get("roleId");
+            Object categoryObj = payload.get("category");
+            Object privilegeIdsObj = payload.get("privilegeIds");
+
+            if (roleIdObj == null) throw new RuntimeException("Missing field: roleId");
+            if (categoryObj == null) throw new RuntimeException("Missing field: category");
+            if (privilegeIdsObj == null) throw new RuntimeException("Missing field: privilegeIds");
+
+            Long roleId = Long.parseLong(roleIdObj.toString());
+            String category = categoryObj.toString();
+            List<Integer> privilegeIds = (List<Integer>) privilegeIdsObj;
+
+            Set<Long> privilegeIdSet = privilegeIds.stream()
+                    .map(Integer::longValue)
+                    .collect(Collectors.toSet());
+
+            // ✅ Update privileges category-wise
+            roleServiceImpl.updateRolePrivileges(roleId, privilegeIdSet, category);
+
+            // ✅ Return refreshed privilege grouping
+            Map<String, List<PrivilegeDTO>> groupedPrivileges = privilegeServiceImpl.getPrivilegesByRole(roleId);
+
+            return ResponseEntity.ok(
+                    new RestAPIResponse("success", "Privileges assigned successfully", groupedPrivileges)
+            );
+
+        } catch (Exception e) {
+            log.error("❌ Error assigning privileges: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new RestAPIResponse("error", "Failed to assign privileges: " + e.getMessage(), null));
+        }
+    }
+
+
+
+    // ✅ Get all roles
+    @GetMapping("/getall")
+    public ResponseEntity<RestAPIResponse> getAllRoles() {
+        try {
+            List<RoleDTO> roles = roleServiceImpl.getAllRoles();
+            return ResponseEntity.ok(new RestAPIResponse("success", "All roles retrieved successfully", roles));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new RestAPIResponse("error", "Failed to retrieve roles: " + e.getMessage(), null));
+        }
+    }
+
+    // ✅ Get single role by ID
+    @GetMapping("/{roleId}")
+    public ResponseEntity<RestAPIResponse> getRoleById(@PathVariable Long roleId) {
+        try {
+            RoleDTO role = roleServiceImpl.getRoleById(roleId);
+            return ResponseEntity.ok(new RestAPIResponse("success", "Role retrieved successfully", role));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new RestAPIResponse("error", "Failed to retrieve role: " + e.getMessage(), null));
+        }
+    }
+
+    // ✅ Get privileges assigned to a role
+    @GetMapping("/{roleId}/privileges")
+    public ResponseEntity<RestAPIResponse> getPrivilegesByRole(@PathVariable Long roleId) {
+        try {
+            Map<String, List<PrivilegeDTO>> privileges = privilegeServiceImpl.getPrivilegesByRole(roleId);
+            return ResponseEntity.ok(new RestAPIResponse("success", "Fetched privileges for role", privileges));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new RestAPIResponse("error", "Failed to fetch privileges: " + e.getMessage(), null));
+        }
+    }
+
+    // ✅ Update role details
+    @PutMapping("/{roleId}")
+    public ResponseEntity<RestAPIResponse> updateRole(
+            @PathVariable Long roleId,
+            @RequestBody RoleDTO roleDTO,
+            Authentication authentication) {
+        try {
+            String loggedInEmail = authentication.getName();
+            RoleDTO updated = roleServiceImpl.updateRole(roleId, roleDTO, loggedInEmail);
+            return ResponseEntity.ok(new RestAPIResponse("success", "Role updated successfully", updated));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new RestAPIResponse("error", e.getMessage(), null));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new RestAPIResponse("error", "Failed to update role: " + e.getMessage(), null));
+        }
+    }
+
+    // ✅ Update privileges for a role
+    @PutMapping("/{roleId}/privileges")
+    public ResponseEntity<RestAPIResponse> updateRolePrivileges(
+            @PathVariable Long roleId,
+            @RequestBody Map<String, Object> payload) {
+
+        try {
+            // Extract category and privilege IDs from JSON
+            String category = payload.get("category").toString();
             List<Integer> privilegeIds = (List<Integer>) payload.get("privilegeIds");
 
             Set<Long> privilegeIdSet = privilegeIds.stream()
                     .map(Integer::longValue)
                     .collect(Collectors.toSet());
 
-            Role updatedRole = roleServiceImpl.updateRolePrivileges(roleId, privilegeIdSet);
+            // ✅ Call category-aware update
+            RoleDTO updated = roleServiceImpl.updateRolePrivileges(roleId, privilegeIdSet, category);
 
-            return ResponseEntity.ok(new RestAPIResponse("Success",
-                    "Privileges assigned successfully", updatedRole));
+            return ResponseEntity.ok(
+                    new RestAPIResponse("success", "Privileges updated successfully", updated)
+            );
         } catch (Exception e) {
+            log.error("❌ Failed to update privileges for role {}: {}", roleId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new RestAPIResponse("Error", "Failed to assign privileges: " + e.getMessage(), null));
+                    .body(new RestAPIResponse("error", "Failed to update privileges: " + e.getMessage(), null));
         }
     }
 
-    @GetMapping("/getall")
-    public ResponseEntity<RestAPIResponse> getAll() {
-        try {
-            return ResponseEntity.ok(new RestAPIResponse("Success", "All roles retrieved successfully",roleServiceImpl.getAllRoles()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new RestAPIResponse("Error", "Failed to retrieve roles: " + e.getMessage(), null));
-        }
-    }
-
-    @GetMapping("/{roleId}")
-    public ResponseEntity<RestAPIResponse> getRoleById(@PathVariable Long roleId) {
-        try {
-            return ResponseEntity.ok(new RestAPIResponse("Success", "Role retrieved successfully",
-                    roleServiceImpl.getRoleById(roleId)));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new RestAPIResponse("Error", "Failed to retrieve Role: " + e.getMessage(), null));
-        }
-    }
-    
-    @GetMapping("/{roleId}/privileges")
-    public ResponseEntity<RestAPIResponse> getPrivilegesByRole(@PathVariable Long roleId) {
-        try {
-            Role role = roleServiceImpl.getRoleById(roleId);
-            Set<Privilege> privileges = role.getPrivileges();
-            return ResponseEntity.ok(new RestAPIResponse("Success", "Fetched privileges for role", privileges));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new RestAPIResponse("Error", "Failed to fetch privileges: " + e.getMessage(), null));
-        }
-    }
-
-    @PutMapping("/{roleId}")
-    public ResponseEntity<RestAPIResponse> updateRole(@PathVariable Long roleId, @RequestBody Role role) {
-        try {
-            Role updatedRole = roleServiceImpl.updateRole(roleId, role);
-            return ResponseEntity.ok(new RestAPIResponse("Success", "Role updated successfully", updatedRole));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new RestAPIResponse("Error", e.getMessage(), null));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new RestAPIResponse("Error", "Failed to update Role: " + e.getMessage(), null));
-        }
-    }
-
-
-    @PutMapping("/{roleId}/privileges")
-    public ResponseEntity<RestAPIResponse> updateRolePrivileges(@PathVariable Long roleId, @RequestBody Set<Long> privilegeIds) {
-        try {
-            Role role = roleServiceImpl.updateRolePrivileges(roleId, privilegeIds);
-            return ResponseEntity.ok(new RestAPIResponse("Success", "Privileges updated successfully", role));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new RestAPIResponse("Error", "Failed to update privileges: " + e.getMessage(), null));
-        }
-    }
-
+    // ✅ Delete role
     @DeleteMapping("/{roleId}")
-    public ResponseEntity<RestAPIResponse> deleteRoleById(@PathVariable Long roleId) {
+    public ResponseEntity<RestAPIResponse> deleteRole(@PathVariable Long roleId) {
         try {
             roleServiceImpl.deleteRole(roleId);
-            return ResponseEntity.ok(new RestAPIResponse("Success", "Role deleted successfully", null));
+            return ResponseEntity.ok(new RestAPIResponse("success", "Role deleted successfully", null));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new RestAPIResponse("Error", "Failed to delete Role: " + e.getMessage(), null));
+                    .body(new RestAPIResponse("error", "Failed to delete role: " + e.getMessage(), null));
         }
     }
 }

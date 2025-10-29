@@ -1,18 +1,25 @@
 package com.example.service;
 
+
 import java.util.List;
 import java.util.Set;
 
-import com.example.entity.Role;
+import com.example.DTO.RoleDTO;
 
 public interface RoleService {
-	
-	Role createRole(Role role);
-    Role updateRole(Long roleId, Role role);
+
+    RoleDTO createRole(RoleDTO roleDTO);
+
+    RoleDTO updateRole(Long roleId, RoleDTO roleDTO, String loggedInEmail);
+
     void deleteRole(Long roleId);
-    Role assignPrivilegeToRole(Long roleId, Long privilegeId, Long adminId);
-    List<Role> getAllRoles();
-    Role getRoleById(Long id);
-    
-    Role updateRolePrivileges(Long roleId, Set<Long> privilegeIds);
+
+    RoleDTO assignPrivilegeToRole(Long roleId, Long privilegeId, Long adminId);
+
+    List<RoleDTO> getAllRoles();
+
+    RoleDTO getRoleById(Long id);
+
+    // ✅ Updated signature
+    RoleDTO updateRolePrivileges(Long roleId, Set<Long> selectedPrivilegeIds, String category);
 }

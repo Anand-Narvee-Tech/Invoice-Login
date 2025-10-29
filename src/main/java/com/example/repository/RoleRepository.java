@@ -8,6 +8,6 @@ import com.example.entity.Role;
 
 public interface RoleRepository extends JpaRepository<Role, Long>{
 	
-	   Role findByRoleName(String roleName);
-	   Optional<Role> findByRoleNameIgnoreCase(String roleName);
+	Optional<Role> findByRoleName(String roleName);
+    Optional<Role> findByRoleNameIgnoreCase(String roleName);
 }

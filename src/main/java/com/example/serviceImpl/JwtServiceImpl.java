@@ -60,16 +60,23 @@
 
 package com.example.serviceImpl;
 
+
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.example.entity.Privilege;
 import com.example.entity.User;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -79,10 +86,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 public class JwtServiceImpl {
-	
-	
 
-    // Load secret & expiration from application.properties
     @Value("${jwt.secret}")
     private String secret;
 
@@ -90,53 +94,65 @@ public class JwtServiceImpl {
     private long expiration;
 
     private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    /** Generate token with email as subject */
+//    public String generateToken(User user) {
+//        return Jwts.builder()
+//                .setSubject(user.getEmail())
+//                .claim("roles", List.of(user.getRole().getRoleName())) // include roles in JWT
+//                .claim(secret, user)
+//                .setIssuedAt(new Date())
+//                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+//                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+//                .compact();
+//    }
+
     public String generateToken(User user) {
+        // Fetch privileges from user's role
+        Set<String> privileges = new HashSet<>();
+        if (user.getRole() != null && user.getRole().getPrivileges() != null) {
+            privileges = user.getRole().getPrivileges()
+                    .stream()
+                    .map(Privilege::getName)
+                    .collect(Collectors.toSet());
+        }
+
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("roles", List.of(user.getRole().getRoleName()));
+        claims.put("privileges", privileges); // ✅ add privilege list to JWT
+
         return Jwts.builder()
+                .setClaims(claims)
                 .setSubject(user.getEmail())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
-
-    /** Validate token (check signature + expiry) */
+    
+    
     public boolean validateToken(String token) {
         try {
-            Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token);
+            Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token);
             return true;
-        } catch (ExpiredJwtException e) {
-            log.warn("JWT expired at {}", e.getClaims().getExpiration());
-            return false;
         } catch (JwtException e) {
             log.warn("Invalid JWT: {}", e.getMessage());
             return false;
         }
     }
 
-    /** Extract username/email */
     public String extractUsername(String token) {
-        Claims claims = Jwts.parserBuilder()
+        return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
-                .getBody();
-        return claims.getSubject();
+                .getBody()
+                .getSubject();
     }
 
-    /** Extract expiration date */
-    public Date extractExpiration(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-        return claims.getExpiration();
+    // ✅ Added getter for secret
+    public String getSecret() {
+        return secret;
     }
 }

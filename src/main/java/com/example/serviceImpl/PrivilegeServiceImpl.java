@@ -1,6 +1,9 @@
 package com.example.serviceImpl;
 
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -8,108 +11,165 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import com.example.DTO.PrivilegeDTO;
 import com.example.entity.Privilege;
 import com.example.entity.Role;
 import com.example.repository.PrivilegeRepository;
 import com.example.repository.RoleRepository;
 import com.example.service.PrivilegeService;
 
-@Service
-public class PrivilegeServiceImpl implements PrivilegeService {
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 
-	@Autowired
+@Service
+@Transactional
+public class PrivilegeServiceImpl implements PrivilegeService {
+	
+	@PersistenceContext
+    private EntityManager entityManager;
+
+    @Autowired
     private PrivilegeRepository privilegeRepository;
 
     @Autowired
     private RoleRepository roleRepository;
 
     @Override
-    public Privilege createPrivilege(Privilege privilege) {
-        return privilegeRepository.save(privilege);
+    public PrivilegeDTO createPrivilege(PrivilegeDTO dto) {
+        Privilege privilege = Privilege.builder()
+                .name(dto.getName())
+                .cardType(dto.getCardType())
+                .status(dto.getStatus())
+                .category(dto.getCategory())
+                .build();
+        Privilege saved = privilegeRepository.save(privilege);
+        return convertToDTO(saved);
     }
 
     @Override
-    public Privilege updatePrivilege(Long id, Privilege privilege) {
-        Privilege existing = privilegeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Privilege not found"));
+    public PrivilegeDTO updatePrivilege(Long id, PrivilegeDTO dto) {
+        Privilege privilege = privilegeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Privilege not found with ID: " + id));
 
-        existing.setName(privilege.getName());
-        existing.setCardType(privilege.getCardType());
-        existing.setSelected(privilege.isSelected());
-        existing.setStatus(privilege.getStatus());
-        existing.setCategory(privilege.getCategory());
-        existing.setUpdatedBy(privilege.getUpdatedBy());
-        existing.setUpdatedByName(privilege.getUpdatedByName());
+        privilege.setName(dto.getName());
+        privilege.setCardType(dto.getCardType());
+        privilege.setStatus(dto.getStatus());
+        privilege.setCategory(dto.getCategory());
 
-        return privilegeRepository.save(existing);
+        Privilege updated = privilegeRepository.save(privilege);
+        return convertToDTO(updated);
     }
 
+    // 🟢 Safe Delete Privilege
     @Override
+    @Transactional
     public void deletePrivilege(Long id) {
-        privilegeRepository.deleteById(id);
+        try {
+            Privilege privilege = privilegeRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Privilege not found with ID: " + id));
+
+            // ✅ Unlink from all roles first
+            Set<Role> linkedRoles = new HashSet<>(privilege.getRoles());
+            for (Role role : linkedRoles) {
+                role.getPrivileges().remove(privilege);
+                roleRepository.save(role);
+            }
+
+            // ✅ Explicitly clear the join table (prevents constraint issues)
+            entityManager.createNativeQuery("DELETE FROM role_privileges WHERE privilegeid = :pid")
+                    .setParameter("pid", id)
+                    .executeUpdate();
+
+            // ✅ Delete the privilege entity itself
+            privilegeRepository.delete(privilege);
+            privilegeRepository.flush();
+
+            // ✅ Clear Hibernate persistence context (forces fresh state)
+            entityManager.clear();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error deleting privilege ID " + id + ": " + e.getMessage(), e);
+        }
+    }
+
+
+    @Override
+    public List<PrivilegeDTO> getAllPrivileges() {
+        return privilegeRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public List<Privilege> getAllPrivileges() {
-        return privilegeRepository.findAll();
-    }
-
-    @Override
-    public Privilege getPrivilegeById(Long id) {
+    public PrivilegeDTO getPrivilegeById(Long id) {
         return privilegeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Privilege not found"));
+                .map(this::convertToDTO)
+                .orElseThrow(() -> new RuntimeException("Privilege not found with ID: " + id));
     }
 
     @Override
-    public List<Privilege> getPrivilegesByCategory(String category) {
-        return privilegeRepository.getPrivilegesByCategory(category);
+    public List<PrivilegeDTO> getPrivilegesByCategory(String category) {
+        return privilegeRepository.findByCategoryIgnoreCase(category).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
-    /**
-     * Group all privileges by their category.
-     */
     @Override
-    public Map<String, List<Privilege>> getAllPrivilegesGrouped() {
+    public Map<String, List<PrivilegeDTO>> getAllPrivilegesGrouped() {
         List<Privilege> privileges = privilegeRepository.findAll();
+
         return privileges.stream()
                 .collect(Collectors.groupingBy(
-                        p -> p.getCategory() != null ? p.getCategory() : "Uncategorized",
-                        LinkedHashMap::new,
-                        Collectors.toList()
+                        Privilege::getCategory,
+                        Collectors.mapping(this::convertToDTO, Collectors.toList())
                 ));
     }
 
-
-    /**
-     * Fetch all privileges for a role (selected=true).
-     */
     @Override
-    @Transactional(readOnly = true)
-    public Map<String, List<Privilege>> getPrivilegesByRole(Long roleId) {
+    public Map<String, List<PrivilegeDTO>> getPrivilegesByRole(Long roleId) {
         Role role = roleRepository.findById(roleId)
-                .orElseThrow(() -> new RuntimeException("Role not found"));
+                .orElseThrow(() -> new RuntimeException("Role not found with ID: " + roleId));
 
-        // Ensure privileges are fetched eagerly
-        Set<Long> assignedPrivilegeIds = role.getPrivileges().stream()
-                .map(Privilege::getId)
-                .collect(Collectors.toSet());
+        Map<String, List<PrivilegeDTO>> grouped = new HashMap<>();
 
         List<Privilege> allPrivileges = privilegeRepository.findAll();
 
-        // Mark selected ones
-        allPrivileges.forEach(p -> {
-            boolean isSelected = assignedPrivilegeIds.contains(p.getId());
-            p.setSelected(isSelected);
+        allPrivileges.forEach(privilege -> {
+            String category = privilege.getCategory();
+            grouped.putIfAbsent(category, new ArrayList<>());
+
+            boolean selected = role.getPrivileges().contains(privilege);
+
+            grouped.get(category).add(
+                    PrivilegeDTO.builder()
+                            .id(privilege.getId())
+                            .name(privilege.getName())
+                            .cardType(privilege.getCardType())
+                            .selected(selected)
+                            .status(privilege.getStatus())
+                            .category(category)
+                            .build()
+            );
         });
 
-        // Group by category, handle nulls safely
-        return allPrivileges.stream()
-                .collect(Collectors.groupingBy(
-                        p -> p.getCategory() != null ? p.getCategory() : "Uncategorized",
-                        LinkedHashMap::new,
-                        Collectors.toList()
-                ));
+        return grouped;
+    }
+
+    @Override
+    public Map<String, String> getEndpointPrivilegesMap() {
+        return Collections.emptyMap(); // implement later if needed
+    }
+
+    private PrivilegeDTO convertToDTO(Privilege privilege) {
+        return PrivilegeDTO.builder()
+                .id(privilege.getId())
+                .name(privilege.getName())
+                .cardType(privilege.getCardType())
+                .selected(false)
+                .status(privilege.getStatus())
+                .category(privilege.getCategory())
+                .build();
     }
 }
