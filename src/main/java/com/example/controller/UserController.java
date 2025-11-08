@@ -14,6 +14,7 @@ import com.example.entity.User;
 import com.example.serviceImpl.JwtServiceImpl;
 import com.example.serviceImpl.UserServiceImpl;
 
+//@CrossOrigin("*")
 @RestController
 @RequestMapping("/auth")
 public class UserController {

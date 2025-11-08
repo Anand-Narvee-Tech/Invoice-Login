@@ -103,7 +103,7 @@ public class PrivilegeController {
     }
 
     //  Delete Privilege
-    @DeleteMapping("/category/{id}")
+    @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERADMIN')")
     public ResponseEntity<RestAPIResponse> deletePrivilegesByCategoryId(@PathVariable Long id) {
         try {
