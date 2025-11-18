@@ -20,6 +20,8 @@ public interface ManageUserRepository extends JpaRepository<ManageUsers, Long> ,
 	 Optional<ManageUsers> findByEmailIgnoreCase(String email);
 	 List<ManageUsers> findByCreatedBy(User createdBy);
 	 boolean  existsByEmailIgnoreCase(String email);
+	 
+	 Optional<ManageUsers> findByEmail(String email);
 
 	    List<ManageUsers> findByAddedBy(User addedBy);
 	    List<ManageUsers> findByAddedBy_Id(Long addedById);

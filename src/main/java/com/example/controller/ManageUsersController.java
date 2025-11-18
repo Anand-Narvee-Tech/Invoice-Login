@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -19,14 +20,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.DTO.ManageUserDTO;
+import com.example.DTO.UserUpdateRequest;
 import com.example.commons.RestAPIResponse;
 import com.example.entity.ManageUsers;
+import com.example.entity.User;
 import com.example.service.ManageUserService;
 
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/auth/manageusers")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 public class ManageUsersController {
 
@@ -34,7 +37,7 @@ public class ManageUsersController {
 
     // 🔹 Create user (accessible by SUPERADMIN or ADMIN)
     @PreAuthorize("hasAnyAuthority('SUPERADMIN','ADMIN')")
-    @PostMapping("/save")
+    @PostMapping("/manageusers/save")
     public ResponseEntity<RestAPIResponse> createUser(
             @RequestBody ManageUsers manageUsers,
             Authentication authentication) {
@@ -47,8 +50,30 @@ public class ManageUsersController {
         );
     }
 
+    @PreAuthorize("isAuthenticated()") // any logged-in user can update their profile
+    @PostMapping("/updated/save")
+    public ResponseEntity<RestAPIResponse> updateUserProfile(
+            @RequestBody UserUpdateRequest request,
+            Authentication authentication) {
+
+        String loggedInEmail = authentication.getName(); // Extract from JWT
+
+        try {
+            User updatedUser = manageUsersService.updateUserProfile(request, loggedInEmail);
+
+            return ResponseEntity.ok(
+                    new RestAPIResponse("Success", "Profile updated successfully", updatedUser)
+            );
+        } catch (RuntimeException e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new RestAPIResponse("Error", e.getMessage(), null));
+        }
+    }
+
+
     // 🔹 Update user (own user or accessible by admin/superadmin)
-    @PutMapping("/{id}")
+    @PutMapping("/manageusers/{id}")
     public ResponseEntity<RestAPIResponse> updateUser(
             @PathVariable Long id,
             @RequestBody ManageUsers manageUsers,
@@ -63,7 +88,7 @@ public class ManageUsersController {
     }
 
     // 🔹 Delete user (allowed only for SUPERADMIN or ADMIN)
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/manageusers/{id}")
     public ResponseEntity<RestAPIResponse> deleteUser(
             @PathVariable Long id,
             Authentication authentication) {
@@ -77,7 +102,7 @@ public class ManageUsersController {
     }
 
     // 🔹 Get all users (role-based filtered automatically in service layer)
-    @GetMapping("/getall")
+    @GetMapping("/manageusers/getall")
     public ResponseEntity<RestAPIResponse> getAllUsers(Authentication authentication) {
         String loggedInEmail = authentication.getName();
         List<ManageUserDTO> users = manageUsersService.getAllUsers(loggedInEmail);
@@ -88,7 +113,7 @@ public class ManageUsersController {
     }
 
     // 🔹 Get logged-in user’s own data
-    @GetMapping("/me")
+    @GetMapping("/manageusers/me")
     public ResponseEntity<RestAPIResponse> getMyProfile(Authentication authentication) {
         String loggedInEmail = authentication.getName();
         ManageUserDTO user = manageUsersService.getByEmail(loggedInEmail);
@@ -99,7 +124,7 @@ public class ManageUsersController {
     }
 
     // 🔹 Get specific user by ID (visible based on access rules)
-    @GetMapping("/{id}")
+    @GetMapping("/manageusers/{id}")
     public ResponseEntity<RestAPIResponse> getUserById(
             @PathVariable Long id,
             Authentication authentication) {
@@ -113,7 +138,7 @@ public class ManageUsersController {
     }
 
     // 🔹 Get available roles for dropdowns (UI helper)
-    @GetMapping("/roles")
+    @GetMapping("/manageusers/roles")
     public ResponseEntity<RestAPIResponse> getAllRolesForSelection() {
         List<String> roles = List.of("SUPERADMIN", "ADMIN", "ACCOUNTANT", "DEVELOPER");
         return ResponseEntity.ok(
@@ -121,7 +146,7 @@ public class ManageUsersController {
         );
     }
     
-    @GetMapping("/searchAndsorting")
+    @GetMapping("/manageusers/searchAndsorting")
     public ResponseEntity<RestAPIResponse> getAllUsersWithPaginationAndSearch(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,

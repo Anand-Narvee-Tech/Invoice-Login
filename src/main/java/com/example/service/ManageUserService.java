@@ -5,7 +5,9 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 
 import com.example.DTO.ManageUserDTO;
+import com.example.DTO.UserUpdateRequest;
 import com.example.entity.ManageUsers;
+import com.example.entity.User;
 
 public interface ManageUserService {
 
@@ -25,4 +27,6 @@ public interface ManageUserService {
     ManageUserDTO getByIdAndLoggedInUser(Long id, String loggedInEmail);
     
     public Page<ManageUserDTO> getAllUsersWithPaginationAndSearch(String loggedInEmail, int page, int size,String sortField,  String sortDir, String keyword) ;
+
+	User updateUserProfile(UserUpdateRequest request, String loggedInEmail);
 }

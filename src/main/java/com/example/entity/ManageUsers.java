@@ -32,6 +32,15 @@ public class ManageUsers {
 
     // Stores the full name of the user who last updated this record
     private String updatedByName;
+    
+    public String getFullName() {
+        return String.join(" ",
+            firstName != null ? firstName : "",
+            middleName != null ? middleName : "",
+            lastName != null ? lastName : ""
+        ).trim();
+    }
+
 
     // Admin (User) who added this ManageUser record
     @ManyToOne(fetch = FetchType.EAGER)

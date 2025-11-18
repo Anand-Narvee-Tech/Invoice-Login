@@ -1,13 +1,12 @@
 package com.example.serviceImpl;
 
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -17,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.DTO.ManageUserDTO;
+import com.example.DTO.UserUpdateRequest;
 import com.example.entity.AuditLog;
 import com.example.entity.ManageUsers;
 import com.example.entity.Role;
@@ -119,6 +119,56 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
         return convertToDTO(saved);
     }
+
+    /** ================= UPDATE USER Profile Info================= **/
+    
+    @Override
+    public User updateUserProfile(UserUpdateRequest request, String loggedInEmail) {
+        // ✅ Get the currently logged-in user
+        User currentUser = getCurrentLoggedInUser(loggedInEmail);
+
+        // ✅ Admins can update any user, normal users can only update their own
+        User userToUpdate;
+
+        boolean isAdmin = currentUser.getRole() != null &&
+                List.of("SUPERADMIN", "ADMIN").contains(currentUser.getRole().getRoleName().toUpperCase());
+
+        if (isAdmin && request.getId() != null && request.getId() > 0) {
+            // Admin updating another user
+            userToUpdate = userRepository.findById(request.getId())
+                    .orElseThrow(() -> new RuntimeException("User not found with id: " + request.getId()));
+        } else {
+            // Normal user updating their own profile
+            userToUpdate = userRepository.findByEmailIgnoreCase(loggedInEmail)
+                    .orElseThrow(() -> new RuntimeException("Logged-in user not found: " + loggedInEmail));
+        }
+
+        // ✅ Update editable fields
+        userToUpdate.setFullName(request.getFullName());
+        userToUpdate.setPrimaryEmail(request.getPrimaryEmail());
+        userToUpdate.setAlternativeEmail(request.getAlternativeEmail());
+        userToUpdate.setMobileNumber(request.getMobileNumber());
+        userToUpdate.setAlternativeMobileNumber(request.getAlternativeMobileNumber());
+        userToUpdate.setTaxId(request.getTaxId());
+        userToUpdate.setBusinessId(request.getBusinessId());
+        userToUpdate.setPreferredCurrency(request.getPreferredCurrency());
+        userToUpdate.setInvoicePrefix(request.getInvoicePrefix());
+        userToUpdate.setCompanyName(request.getCompanyName());
+
+        // ✅ Save update
+        User updatedUser = userRepository.save(userToUpdate);
+
+        // ✅ Update manage_users table audit fields if applicable
+        manageUserRepository.findByEmailIgnoreCase(updatedUser.getEmail()).ifPresent(manageUser -> {
+            manageUser.setUpdatedBy(currentUser.getId());
+            manageUser.setUpdatedByName(buildFullName(currentUser));
+            manageUserRepository.save(manageUser);
+        });
+
+        return updatedUser;
+    }
+
+
 
 
     /** ================= UPDATE USER ================= **/

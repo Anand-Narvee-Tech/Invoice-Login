@@ -4,6 +4,8 @@ package com.example.DTO;
 import java.time.LocalDateTime;
 import java.util.Set;
 
+import com.example.entity.User;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +20,6 @@ public class RoleDTO {
     private String roleName;
     private String description;
     private String status;
-
     private Long addedBy;
     private String addedByName;
     private Long updatedBy;

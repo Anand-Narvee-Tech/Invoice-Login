@@ -1,23 +1,32 @@
 package com.example.serviceImpl;
 
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+
 import com.example.DTO.PrivilegeDTO;
 import com.example.DTO.RoleDTO;
+import com.example.entity.ManageUsers;
 import com.example.entity.Privilege;
 import com.example.entity.Role;
 import com.example.entity.User;
+import com.example.repository.ManageUserRepository;
 import com.example.repository.PrivilegeRepository;
 import com.example.repository.RoleRepository;
 import com.example.repository.UserRepository;
 import com.example.service.RoleService;
 
 import jakarta.transaction.Transactional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class RoleServiceImpl implements RoleService {
@@ -30,16 +39,42 @@ public class RoleServiceImpl implements RoleService {
 
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private ManageUserRepository repository;
 
     private static final Logger log = LoggerFactory.getLogger(RoleServiceImpl.class);
 
     // ✅ Create Role
     @Override
     public RoleDTO createRole(RoleDTO roleDTO) {
+
+        // 1️⃣ Get logged-in user's email
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        // 2️⃣ Fetch user correctly
+        ManageUsers currentUser = repository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Logged-in user not found: " + email));
+
+        // 3️⃣ Set audit fields
+//        roleDTO.setAddedBy(currentUser.getId());
+//        roleDTO.setAddedByName(currentUser.getRoleName());
+        roleDTO.setCreatedDate(LocalDateTime.now());
+        roleDTO.setAddedBy(currentUser.getId());
+        roleDTO.setAddedByName(currentUser.getRoleName());
+
+
+        // 4️⃣ Convert DTO → Entity
         Role role = convertToEntity(roleDTO);
+
+        // 5️⃣ Save entity
         Role saved = roleRepository.save(role);
+
+        // 6️⃣ Return DTO
         return convertToDTO(saved);
     }
+
+
 
     // ✅ Update Role
     @Override
@@ -163,17 +198,18 @@ public class RoleServiceImpl implements RoleService {
     // ==============================
 
     private RoleDTO convertToDTO(Role role) {
+
         Set<PrivilegeDTO> privilegeDTOs = role.getPrivileges() != null
                 ? role.getPrivileges().stream()
-                .map(p -> new PrivilegeDTO(
-                        p.getId(),
-                        p.getName(),
-                        p.getCardType(),
-                        true,
-                        p.getStatus(),
-                        p.getCategory()
-                ))
-                .collect(Collectors.toSet())
+                    .map(p -> new PrivilegeDTO(
+                            p.getId(),
+                            p.getName(),
+                            p.getCardType(),
+                            true,
+                            p.getStatus(),
+                            p.getCategory()
+                    ))
+                    .collect(Collectors.toSet())
                 : new HashSet<>();
 
         return RoleDTO.builder()
@@ -191,6 +227,7 @@ public class RoleServiceImpl implements RoleService {
                 .build();
     }
 
+
     private Role convertToEntity(RoleDTO dto) {
         Role role = new Role();
         role.setRoleId(dto.getRoleId());
@@ -198,6 +235,15 @@ public class RoleServiceImpl implements RoleService {
         role.setDescription(dto.getDescription());
         role.setStatus(dto.getStatus());
 
+        // Audit fields must be mapped
+        role.setAddedBy(dto.getAddedBy());
+        role.setAddedByName(dto.getAddedByName());
+        role.setUpdatedBy(dto.getUpdatedBy());
+        role.setUpdatedByName(dto.getUpdatedByName());
+        role.setCreatedDate(dto.getCreatedDate());
+        role.setUpdatedDate(dto.getUpdatedDate());
+
+        // Privileges mapping
         if (dto.getPrivileges() != null) {
             Set<Privilege> privileges = dto.getPrivileges().stream()
                     .map(p -> privilegeRepository.findById(p.getId())
@@ -205,8 +251,12 @@ public class RoleServiceImpl implements RoleService {
                     .collect(Collectors.toSet());
             role.setPrivileges(privileges);
         }
+
         return role;
     }
+
+
+
 
     // ✅ Alternative mapping method used after updates
     private RoleDTO mapToDTO(Role role) {
