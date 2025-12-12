@@ -37,6 +37,8 @@ public class User {
 
     @Column(unique = true, nullable = false)
     private String email;
+    
+//    private Long companyId;
 
     private String mobileNumber;
     private String companyName;
@@ -58,6 +60,10 @@ public class User {
 
     @Column(nullable = false)
     private String primaryEmail;
+    
+    @Column(name = "profile_pic_path")
+    private String profilePicPath;
+
 
     private String alternativeEmail;
     private String alternativeMobileNumber;

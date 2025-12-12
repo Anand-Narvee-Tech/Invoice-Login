@@ -8,7 +8,7 @@ import com.example.DTO.RoleDTO;
 
 public interface RoleService {
 
-    RoleDTO createRole(RoleDTO roleDTO);
+	public RoleDTO createRole(RoleDTO roleDTO, String loggedInEmail);
 
     RoleDTO updateRole(Long roleId, RoleDTO roleDTO, String loggedInEmail);
 

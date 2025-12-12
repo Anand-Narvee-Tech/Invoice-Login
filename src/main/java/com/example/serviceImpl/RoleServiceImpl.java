@@ -10,13 +10,14 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.example.DTO.PrivilegeDTO;
 import com.example.DTO.RoleDTO;
-import com.example.entity.ManageUsers;
 import com.example.entity.Privilege;
 import com.example.entity.Role;
 import com.example.entity.User;
@@ -47,32 +48,22 @@ public class RoleServiceImpl implements RoleService {
 
     // ✅ Create Role
     @Override
-    public RoleDTO createRole(RoleDTO roleDTO) {
+    public RoleDTO createRole(RoleDTO roleDTO, String loggedInEmail) {
 
-        // 1️⃣ Get logged-in user's email
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByEmailIgnoreCase(loggedInEmail)
+                .orElseThrow(() -> new RuntimeException("Logged-in user not found: " + loggedInEmail));
 
-        // 2️⃣ Fetch user correctly
-        ManageUsers currentUser = repository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Logged-in user not found: " + email));
-
-        // 3️⃣ Set audit fields
-//        roleDTO.setAddedBy(currentUser.getId());
-//        roleDTO.setAddedByName(currentUser.getRoleName());
-        roleDTO.setCreatedDate(LocalDateTime.now());
-        roleDTO.setAddedBy(currentUser.getId());
-        roleDTO.setAddedByName(currentUser.getRoleName());
-
-
-        // 4️⃣ Convert DTO → Entity
         Role role = convertToEntity(roleDTO);
 
-        // 5️⃣ Save entity
-        Role saved = roleRepository.save(role);
+        role.setAddedBy(currentUser.getId());
+        role.setAddedByName(currentUser.getFullName());
 
-        // 6️⃣ Return DTO
+        role.setCreatedDate(LocalDateTime.now());
+
+        Role saved = roleRepository.save(role);
         return convertToDTO(saved);
     }
+
 
 
 
@@ -287,6 +278,29 @@ public class RoleServiceImpl implements RoleService {
                 )
                 .build();
     }
+
+    
+    
+
+public Page<Role> searchRoles(
+            int page, int size, String sortBy, String sortDir,
+            String keyword
+    ) {
+
+        Sort sort = sortDir.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        if (keyword == null || keyword.isBlank()) {
+            return roleRepository.findAll(pageable);
+        }
+
+        return roleRepository.searchAll(keyword, pageable);
+    }
+
+
 
 
 }

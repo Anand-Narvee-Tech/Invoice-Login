@@ -8,6 +8,8 @@ import lombok.*;
 @Builder
 public class ManageUserDTO {
     private Long id;
+    private String fullName;      // include this        
+    private String primaryEmail;  // include this for profile display
     private String firstName;
     private String middleName;
     private String lastName;

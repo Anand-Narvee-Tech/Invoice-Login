@@ -3,12 +3,14 @@ package com.example.serviceImpl;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,7 +35,6 @@ import com.example.repository.TokenRepository;
 import com.example.repository.UserRepository;
 import com.example.service.UserService;
 
-import jakarta.annotation.PostConstruct;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -271,7 +272,7 @@ public class UserServiceImpl implements UserService {
         String email = request.getEmail().trim().toLowerCase();
         String enteredOtp = request.getOtp();
 
-        // Fetch ManageUsers or fallback SUPERADMIN
+        // Fetch ManageUsers
         ManageUsers manageUser = manageUserRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new RuntimeException("Invalid credentials: email not registered"));
 
@@ -288,19 +289,22 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new RuntimeException("User not found in system"));
 
-        // Generate JWT
-        String jwtToken = jwtServiceImpl.generateToken(user);
-
-        // Determine privileges
+        // Determine role and selected privileges
         String roleName = manageUser.getRoleName();
-        Set<Privilege> privileges;
-        if ("SUPERADMIN".equalsIgnoreCase(roleName) || "ADMIN".equalsIgnoreCase(roleName)) {
-            privileges = new HashSet<>(privilegeRepository.findAll());
-        } else {
-            Role role = roleRepository.findByRoleNameIgnoreCase(roleName)
-                    .orElseThrow(() -> new RuntimeException("Role not assigned properly"));
-            privileges = role.getPrivileges();
+        Set<String> privilegeNames = new HashSet<>();
+        if (roleName != null) {
+            Role roleEntity = roleRepository.findByRoleNameIgnoreCase(roleName).orElse(null);
+            if (roleEntity != null && roleEntity.getPrivileges() != null) {
+                // Include only selected privileges
+                privilegeNames = roleEntity.getPrivileges()
+                        .stream()
+                        .map(Privilege::getName)
+                        .collect(Collectors.toSet());
+            }
         }
+
+        // Generate JWT with selected privileges
+        String jwtToken = jwtServiceImpl.generateToken(user, roleName, privilegeNames);
 
         // Prepare response
         Map<String, Object> data = new HashMap<>();
@@ -311,7 +315,7 @@ public class UserServiceImpl implements UserService {
         data.put("middleName", user.getMiddleName());
         data.put("lastName", user.getLastName());
         data.put("userRole", roleName);
-        data.put("rolePrivileges", privileges.stream().map(Privilege::getName).toList());
+        data.put("rolePrivileges", privilegeNames);
 
         // Admin info
         User admin = manageUser.getAddedBy();
@@ -335,6 +339,9 @@ public class UserServiceImpl implements UserService {
                 "timeStamp", LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
         );
     }
+
+
+
 
     /** ===================== Other Methods ===================== **/
     @Override

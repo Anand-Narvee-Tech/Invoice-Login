@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -20,13 +21,16 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.DTO.PrivilegeDTO;
 import com.example.DTO.RoleDTO;
 import com.example.commons.RestAPIResponse;
+import com.example.entity.Role;
 import com.example.serviceImpl.PrivilegeServiceImpl;
 import com.example.serviceImpl.RoleServiceImpl;
+import com.example.utils.SanitizerUtils;
 
 @RestController
 @RequestMapping("/auth/roles")
@@ -42,15 +46,19 @@ public class RoleController {
 
     // ✅ Create Role (already correct)
     @PostMapping(value = "/save", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<RestAPIResponse> createRole(@RequestBody RoleDTO roleDTO) {
+    public ResponseEntity<RestAPIResponse> createRole(
+            @RequestBody RoleDTO roleDTO,
+            Authentication authentication) {
         try {
-            RoleDTO saved = roleServiceImpl.createRole(roleDTO);
+            String loggedInEmail = authentication.getName();
+            RoleDTO saved = roleServiceImpl.createRole(roleDTO, loggedInEmail);
             return ResponseEntity.ok(new RestAPIResponse("success", "Role saved successfully", saved));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new RestAPIResponse("error", "Failed to save role: " + e.getMessage(), null));
         }
     }
+
 
     // ✅ Assign privileges category-wise to a role
     @PostMapping("/privilege/save")
@@ -91,6 +99,26 @@ public class RoleController {
         }
     }
 
+
+    @GetMapping("/search")
+    public ResponseEntity<RestAPIResponse> searchRoles(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "roleId") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir,
+
+            @RequestParam(required = false) String keyword
+    ) {
+
+        Page<Role> result = roleServiceImpl.searchRoles(
+                page, size, sortBy, sortDir,
+                SanitizerUtils.sanitize(keyword)
+        );
+
+        return ResponseEntity.ok(
+                new RestAPIResponse("success", "Roles fetched", result)
+        );
+    }
 
 
     // ✅ Get all roles

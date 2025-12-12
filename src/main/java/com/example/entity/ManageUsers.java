@@ -25,29 +25,36 @@ public class ManageUsers {
     @Column(unique = true, nullable = false)
     private String email;
 
-    private String roleName;  // SUPERADMIN, ADMIN, etc.
-
-    // Stores the ID of the user who last updated this record
-    private Long updatedBy;
-
-    // Stores the full name of the user who last updated this record
-    private String updatedByName;
+    private String primaryEmail;
     
-    public String getFullName() {
-        return String.join(" ",
-            firstName != null ? firstName : "",
-            middleName != null ? middleName : "",
-            lastName != null ? lastName : ""
-        ).trim();
-    }
+    @Column(name = "role_name")
+    private String roleName;
+    
+    // Link to Role entity
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "role_id")  // This column must exist in DB
+    private Role role;
 
+    private Long updatedBy;
+    private String addedByName;
+    private String updatedByName;
 
-    // Admin (User) who added this ManageUser record
+    // STORED VALUE
+    private String fullName;
+
+    // COMPUTED NAME (DO NOT OVERRIDE stored fullname)
+//    public String getComputedFullName() {
+//        StringBuilder sb = new StringBuilder();
+//        if (firstName != null && !firstName.isBlank()) sb.append(firstName.trim());
+//        if (middleName != null && !middleName.isBlank()) sb.append(" ").append(middleName.trim());
+//        if (lastName != null && !lastName.isBlank()) sb.append(" ").append(lastName.trim());
+//        return sb.toString().trim();
+//    }
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "added_by_user_id")
     private User addedBy;
 
-    // User who created this ManageUser record (system tracking)
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "created_by_user_id")
     @JsonIgnore

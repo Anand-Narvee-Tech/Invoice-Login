@@ -28,4 +28,5 @@ public interface PrivilegeService {
     Map<String, List<PrivilegeDTO>> getPrivilegesByRole(Long roleId);
 
     Map<String, String> getEndpointPrivilegesMap();
+    public void deletePrivilegesByCategoryId(Long categoryId);
 }
