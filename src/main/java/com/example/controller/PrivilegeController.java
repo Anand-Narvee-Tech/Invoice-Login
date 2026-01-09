@@ -123,7 +123,7 @@ public class PrivilegeController {
             return ResponseEntity.ok(
                     new RestAPIResponse(
                             "success",
-                            "All privileges under the same category as privilege ID " + id + " deleted successfully",
+                            "All privileges under the same category deleted successfully",
                             null
                     )
             );

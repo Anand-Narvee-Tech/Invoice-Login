@@ -26,31 +26,29 @@ public class ManageUsers {
     private String email;
 
     private String primaryEmail;
-    
+
     @Column(name = "role_name")
     private String roleName;
-    
-    // Link to Role entity
+
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "role_id")  // This column must exist in DB
+    @JoinColumn(name = "role_id")
     private Role role;
 
+    // ID fields for audit
     private Long updatedBy;
+
+    // Stored name fields
+ 
+    @Column(name = "added_by_name")
     private String addedByName;
+
+    @Column(name = "updated_by_name")
     private String updatedByName;
 
-    // STORED VALUE
+    // Stored full name
     private String fullName;
 
-    // COMPUTED NAME (DO NOT OVERRIDE stored fullname)
-//    public String getComputedFullName() {
-//        StringBuilder sb = new StringBuilder();
-//        if (firstName != null && !firstName.isBlank()) sb.append(firstName.trim());
-//        if (middleName != null && !middleName.isBlank()) sb.append(" ").append(middleName.trim());
-//        if (lastName != null && !lastName.isBlank()) sb.append(" ").append(lastName.trim());
-//        return sb.toString().trim();
-//    }
-
+    // Relations for addedBy and createdBy
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "added_by_user_id")
     private User addedBy;
@@ -59,4 +57,13 @@ public class ManageUsers {
     @JoinColumn(name = "created_by_user_id")
     @JsonIgnore
     private User createdBy;
+
+    // Optional helper method to compute full name
+    public String computeFullName() {
+        StringBuilder sb = new StringBuilder();
+        if (firstName != null && !firstName.isBlank()) sb.append(firstName.trim());
+        if (middleName != null && !middleName.isBlank()) sb.append(" ").append(middleName.trim());
+        if (lastName != null && !lastName.isBlank()) sb.append(" ").append(lastName.trim());
+        return sb.toString().trim();
+    }
 }

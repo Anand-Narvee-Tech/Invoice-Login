@@ -6,14 +6,23 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +40,9 @@ import com.example.repository.RoleRepository;
 import com.example.repository.UserRepository;
 import com.example.service.ManageUserService;
 
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -91,7 +103,6 @@ public class ManageUsersServiceImpl implements ManageUserService {
                 .build();
     }
 
-
     /** ================= BUILD FULL NAME ================= **/
     private String buildFullName(ManageUsers user) {
         return Stream.of(user.getFirstName(), user.getMiddleName(), user.getLastName())
@@ -126,10 +137,8 @@ public class ManageUsersServiceImpl implements ManageUserService {
         manageUsers.setAddedBy(currentUser);
         manageUsers.setAddedByName(buildFullName(currentUser));
         manageUsers.setCreatedBy(currentUser);
-//        manageUsers.setUpdatedBy(currentUser.getId());
-//        manageUsers.setUpdatedByName(buildFullName(currentUser));
 
-        if(manageUsers.getFullName() != null && !manageUsers.getFullName().isBlank()) {
+        if (manageUsers.getFullName() != null && !manageUsers.getFullName().isBlank()) {
             manageUsers.setFullName(manageUsers.getFullName().trim());
         }
 
@@ -172,21 +181,15 @@ public class ManageUsersServiceImpl implements ManageUserService {
     /** ================= UPDATE USER ================= **/
     @Override
     public ManageUserDTO updateUser(Long id, ManageUsers manageUsers, String loggedInEmail) {
-        // Fetch current logged-in user
         User currentUser = getCurrentLoggedInUser(loggedInEmail);
 
-        // Fetch existing ManageUsers entity
         ManageUsers existing = manageUserRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // ----------------------------
-        // 1️⃣ Handle fullName properly
-        // ----------------------------
         if (manageUsers.getFullName() != null && !manageUsers.getFullName().isBlank()) {
             String[] parts = manageUsers.getFullName().trim().split("\\s+");
 
             existing.setFirstName(parts[0]);
-
             if (parts.length == 2) {
                 existing.setMiddleName(null);
                 existing.setLastName(parts[1]);
@@ -203,24 +206,18 @@ public class ManageUsersServiceImpl implements ManageUserService {
             existing.setLastName(manageUsers.getLastName());
         }
 
-        // Update email and role if provided
         existing.setEmail(manageUsers.getEmail());
         if (manageUsers.getRoleName() != null) {
             existing.setRoleName(manageUsers.getRoleName().toUpperCase());
         }
 
-        // ----------------------------
-        // 2️⃣ Rebuild fullName dynamically
-        // ----------------------------
         existing.setFullName(buildFullName(existing));
         existing.setUpdatedBy(currentUser.getId());
         existing.setUpdatedByName(buildFullName(currentUser));
 
         ManageUsers saved = manageUserRepository.save(existing);
 
-        // ----------------------------
-        // 3️⃣ Audit log
-        // ----------------------------
+        // Audit log
         AuditLog audit = AuditLog.builder()
                 .action("UPDATE")
                 .entityName("ManageUsers")
@@ -233,9 +230,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
                 .build();
         auditLogRepository.save(audit);
 
-        // ----------------------------
-        // 4️⃣ Sync with User table
-        // ----------------------------
+        // Sync with User table
         userRepository.findByEmailIgnoreCase(existing.getEmail()).ifPresentOrElse(user -> {
             user.setFirstName(existing.getFirstName());
             user.setMiddleName(existing.getMiddleName());
@@ -258,7 +253,6 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
         return convertToDTO(saved);
     }
-
 
     /** ================= DELETE USER ================= **/
     @Override
@@ -323,7 +317,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
         return convertToDTO(entity);
     }
 
-    /** ================= PAGINATION + SEARCH ================= **/
+    /** ================= PAGINATION + SEARCH (FIXED ALPHABETICAL) ================= **/
     @Override
     public Page<ManageUserDTO> getAllUsersWithPaginationAndSearch(
             int page,
@@ -333,60 +327,70 @@ public class ManageUsersServiceImpl implements ManageUserService {
             String keyword
     ) {
 
-        // Map UI field "name" → DB field "fullName"
-        if ("name".equalsIgnoreCase(sortField)) {
-            sortField = "fullName";
-        }
+        final String finalSortField =
+                "name".equalsIgnoreCase(sortField) ? "fullName" : sortField;
 
-        // Valid fields
-        Set<String> validFields = Set.of(
-                "id", "firstName", "middleName", "lastName", "fullName",
-                "email", "primaryEmail", "roleName",
-                "addedByName", "updatedByName"
+        // All DB sortable fields
+        Set<String> dbSortableFields = Set.of(
+                "id",
+                "firstName",
+                "middleName",
+                "lastName",
+                "fullName",
+                "email",
+                "primaryEmail",
+                "roleName",
+                "addedByName",
+                "updatedByName"
         );
 
-        // Fallback to id only if sorting field is invalid
-        if (!validFields.contains(sortField)) {
-            sortField = "id";
+        boolean isDbSortable = dbSortableFields.contains(finalSortField);
+
+        Pageable pageable;
+        if (isDbSortable) {
+            Sort sort = sortDir.equalsIgnoreCase("asc")
+                    ? Sort.by(finalSortField).ascending()
+                    : Sort.by(finalSortField).descending();
+            pageable = PageRequest.of(page, size, sort);
+        } else {
+            pageable = PageRequest.of(page, size);
         }
 
-        // PRIMARY FIELD ONLY (NO SECONDARY SORT)
-        Sort sort = sortDir.equalsIgnoreCase("asc")
-                ? Sort.by(sortField).ascending()
-                : Sort.by(sortField).descending();
-
-        Pageable pageable = PageRequest.of(page, size, sort);
-
-        // Search Specification
         Specification<ManageUsers> spec = (root, query, cb) -> {
-            if (keyword == null || keyword.isBlank()) {
+
+            if (keyword == null || keyword.trim().isEmpty()) {
                 return cb.conjunction();
             }
 
-            String likeKeyword = "%" + keyword.trim().toLowerCase() + "%";
+            String like = "%" + keyword.trim().toLowerCase() + "%";
+            List<Predicate> predicates = new ArrayList<>();
 
-            return cb.or(
-                    cb.like(cb.lower(root.get("firstName")), likeKeyword),
-                    cb.like(cb.lower(root.get("middleName")), likeKeyword),
-                    cb.like(cb.lower(root.get("lastName")), likeKeyword),
-                    cb.like(cb.lower(root.get("fullName")), likeKeyword),
-                    cb.like(cb.lower(root.get("email")), likeKeyword),
-                    cb.like(cb.lower(root.get("primaryEmail")), likeKeyword),
-                    cb.like(cb.lower(root.get("roleName")), likeKeyword),
-                    cb.like(cb.lower(root.get("addedByName")), likeKeyword),
-                    cb.like(cb.lower(root.get("updatedByName")), likeKeyword)
-            );
+            predicates.add(cb.like(cb.lower(root.get("firstName")), like));
+            predicates.add(cb.like(cb.lower(root.get("middleName")), like));
+            predicates.add(cb.like(cb.lower(root.get("lastName")), like));
+            predicates.add(cb.like(cb.lower(root.get("fullName")), like));
+            predicates.add(cb.like(cb.lower(root.get("email")), like));
+            predicates.add(cb.like(cb.lower(root.get("primaryEmail")), like));
+            predicates.add(cb.like(cb.lower(root.get("roleName")), like));
+
+            // ✅ NEW: audit name search
+            predicates.add(cb.like(cb.lower(root.get("addedByName")), like));
+            predicates.add(cb.like(cb.lower(root.get("updatedByName")), like));
+
+            return cb.or(predicates.toArray(new Predicate[0]));
         };
 
-        Page<ManageUsers> userPage = manageUserRepository.findAll(spec, pageable);
+        Page<ManageUsers> userPage =
+                manageUserRepository.findAll(spec, pageable);
 
         List<ManageUserDTO> dtoList = userPage.getContent()
                 .stream()
                 .map(this::convertToDTO)
-                .toList();
+                .collect(Collectors.toList());
 
         return new PageImpl<>(dtoList, pageable, userPage.getTotalElements());
     }
+
 
 
 
@@ -439,20 +443,15 @@ public class ManageUsersServiceImpl implements ManageUserService {
     /** ================= MAP USER TO DTO ================= **/
     @Override
     public UserUpdateRequest mapToDto(User user) {
-
-        Optional<ManageUsers> optionalManageUser =
-                manageUserRepository.findByEmailIgnoreCase(user.getEmail());
-
+        Optional<ManageUsers> optionalManageUser = manageUserRepository.findByEmailIgnoreCase(user.getEmail());
         String fullName = user.getFullName();
         String primaryEmail = user.getPrimaryEmail();
 
         if (optionalManageUser.isPresent()) {
             ManageUsers manageUser = optionalManageUser.get();
-
             if (manageUser.getFullName() != null && !manageUser.getFullName().isBlank()) {
                 fullName = manageUser.getFullName().trim();
             }
-
             if (manageUser.getEmail() != null && !manageUser.getEmail().isBlank()) {
                 primaryEmail = manageUser.getEmail().trim();
             }
@@ -500,7 +499,6 @@ public class ManageUsersServiceImpl implements ManageUserService {
         }
     }
 
-
     @Override
     public User updateUserProfileDynamic(
             Long id,
@@ -537,6 +535,4 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
         return userRepository.save(user);
     }
-
-
 }
