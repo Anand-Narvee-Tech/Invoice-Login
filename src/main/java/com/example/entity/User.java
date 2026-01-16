@@ -49,7 +49,7 @@ public class User {
     private Boolean approved;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "role_id")
+    @JoinColumn(name = "roleid")
     private Role role;
 
     private String position;

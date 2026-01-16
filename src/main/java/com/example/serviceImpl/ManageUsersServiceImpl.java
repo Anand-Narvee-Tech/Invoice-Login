@@ -10,8 +10,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -40,8 +40,6 @@ import com.example.repository.RoleRepository;
 import com.example.repository.UserRepository;
 import com.example.service.ManageUserService;
 
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 
@@ -104,17 +102,17 @@ public class ManageUsersServiceImpl implements ManageUserService {
     }
 
     /** ================= BUILD FULL NAME ================= **/
-    private String buildFullName(ManageUsers user) {
-        return Stream.of(user.getFirstName(), user.getMiddleName(), user.getLastName())
-                .filter(s -> s != null && !s.isBlank())
-                .collect(Collectors.joining(" "));
-    }
-
-    private String buildFullName(User user) {
-        return Stream.of(user.getFirstName(), user.getMiddleName(), user.getLastName())
-                .filter(s -> s != null && !s.isBlank())
-                .collect(Collectors.joining(" "));
-    }
+	    private String buildFullName(ManageUsers user) {
+	        return Stream.of(user.getFirstName(), user.getMiddleName(), user.getLastName())
+	                .filter(s -> s != null && !s.isBlank())
+	                .collect(Collectors.joining(" "));
+	    }
+	
+	    private String buildFullName(User user) {
+	        return Stream.of(user.getFirstName(), user.getMiddleName(), user.getLastName())
+	                .filter(s -> s != null && !s.isBlank())
+	                .collect(Collectors.joining(" "));
+	    }
 
     /** ================= CREATE USER ================= **/
     @Override
@@ -180,26 +178,24 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
     /** ================= UPDATE USER ================= **/
     @Override
+    @Transactional
     public ManageUserDTO updateUser(Long id, ManageUsers manageUsers, String loggedInEmail) {
+
+        // ---------------- 1️Get current logged-in user ----------------
         User currentUser = getCurrentLoggedInUser(loggedInEmail);
 
+        // ---------------- 2️ Fetch existing ManageUsers ----------------
         ManageUsers existing = manageUserRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
 
+        // ---------------- 3️Handle name updates ----------------
         if (manageUsers.getFullName() != null && !manageUsers.getFullName().isBlank()) {
             String[] parts = manageUsers.getFullName().trim().split("\\s+");
-
             existing.setFirstName(parts[0]);
-            if (parts.length == 2) {
-                existing.setMiddleName(null);
-                existing.setLastName(parts[1]);
-            } else if (parts.length > 2) {
-                existing.setMiddleName(String.join(" ", Arrays.copyOfRange(parts, 1, parts.length - 1)));
-                existing.setLastName(parts[parts.length - 1]);
-            } else {
-                existing.setMiddleName(null);
-                existing.setLastName(null);
-            }
+            existing.setMiddleName(parts.length > 2
+                    ? String.join(" ", Arrays.copyOfRange(parts, 1, parts.length - 1))
+                    : null);
+            existing.setLastName(parts.length > 1 ? parts[parts.length - 1] : null);
         } else {
             existing.setFirstName(manageUsers.getFirstName());
             existing.setMiddleName(manageUsers.getMiddleName());
@@ -207,52 +203,69 @@ public class ManageUsersServiceImpl implements ManageUserService {
         }
 
         existing.setEmail(manageUsers.getEmail());
-        if (manageUsers.getRoleName() != null) {
-            existing.setRoleName(manageUsers.getRoleName().toUpperCase());
-        }
-
         existing.setFullName(buildFullName(existing));
         existing.setUpdatedBy(currentUser.getId());
         existing.setUpdatedByName(buildFullName(currentUser));
 
+        // ---------------- 4️ Handle role updates safely ----------------
+        Role role = null;
+        if (manageUsers.getRoleName() != null && !manageUsers.getRoleName().isBlank()) {
+            String roleName = manageUsers.getRoleName().trim().toUpperCase();
+            existing.setRoleName(roleName);
+
+            //  Use case-insensitive role lookup
+            role = roleRepository.findByRoleNameIgnoreCase(roleName)
+                    .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+
+            // Assign the Role entity to ManageUsers
+            existing.setRole(role);
+        } else {
+            existing.setRoleName(null);
+            existing.setRole(null);
+        }
+
+        // ---------------- 5️ Save ManageUsers ----------------
         ManageUsers saved = manageUserRepository.save(existing);
 
-        // Audit log
-        AuditLog audit = AuditLog.builder()
-                .action("UPDATE")
-                .entityName("ManageUsers")
-                .entityId(saved.getId())
-                .performedBy(buildFullName(currentUser))
-                .performedById(currentUser.getId())
-                .email(currentUser.getEmail())
-                .timestamp(LocalDateTime.now())
-                .details("Updated ManageUser ID: " + saved.getId())
-                .build();
-        auditLogRepository.save(audit);
+        // ---------------- 6️ Sync User table ----------------
+        User user = userRepository.findByEmailIgnoreCase(saved.getEmail())
+                .orElseGet(User::new);
 
-        // Sync with User table
-        userRepository.findByEmailIgnoreCase(existing.getEmail()).ifPresentOrElse(user -> {
-            user.setFirstName(existing.getFirstName());
-            user.setMiddleName(existing.getMiddleName());
-            user.setLastName(existing.getLastName());
-            user.setFullName(existing.getFullName());
-            user.setPrimaryEmail(existing.getEmail());
-            userRepository.save(user);
-        }, () -> {
-            User user = new User();
-            user.setEmail(existing.getEmail());
-            user.setFirstName(existing.getFirstName());
-            user.setMiddleName(existing.getMiddleName());
-            user.setLastName(existing.getLastName());
-            user.setFullName(existing.getFullName());
-            user.setPrimaryEmail(existing.getEmail());
-            user.setActive(true);
-            user.setApproved(true);
-            userRepository.save(user);
-        });
+        user.setEmail(saved.getEmail());
+        user.setPrimaryEmail(saved.getEmail());
+        user.setFirstName(saved.getFirstName());
+        user.setMiddleName(saved.getMiddleName());
+        user.setLastName(saved.getLastName());
+        user.setFullName(saved.getFullName());
+        user.setActive(true);
+        user.setApproved(true);
 
+        if (role != null) {
+            user.setRole(role);  // SINGLE source of truth
+        } else {
+            user.setRole(null);
+        }
+
+        userRepository.save(user);
+
+        // ---------------- 7️Audit log ----------------
+        auditLogRepository.save(
+                AuditLog.builder()
+                        .action("UPDATE")
+                        .entityName("ManageUsers")
+                        .entityId(saved.getId())
+                        .performedBy(buildFullName(currentUser))
+                        .performedById(currentUser.getId())
+                        .email(currentUser.getEmail())
+                        .timestamp(LocalDateTime.now())
+                        .details("Updated ManageUser ID: " + saved.getId())
+                        .build()
+        );
+
+        // ---------------- 8️ Return DTO ----------------
         return convertToDTO(saved);
     }
+
 
     /** ================= DELETE USER ================= **/
     @Override
@@ -327,43 +340,34 @@ public class ManageUsersServiceImpl implements ManageUserService {
             String keyword
     ) {
 
-        final String finalSortField =
-                "name".equalsIgnoreCase(sortField) ? "fullName" : sortField;
-
-        // All DB sortable fields
-        Set<String> dbSortableFields = Set.of(
-                "id",
-                "firstName",
-                "middleName",
-                "lastName",
-                "fullName",
-                "email",
-                "primaryEmail",
-                "roleName",
-                "addedByName",
-                "updatedByName"
-        );
-
-        boolean isDbSortable = dbSortableFields.contains(finalSortField);
-
-        Pageable pageable;
-        if (isDbSortable) {
-            Sort sort = sortDir.equalsIgnoreCase("asc")
-                    ? Sort.by(finalSortField).ascending()
-                    : Sort.by(finalSortField).descending();
-            pageable = PageRequest.of(page, size, sort);
-        } else {
-            pageable = PageRequest.of(page, size);
+        if (!"asc".equalsIgnoreCase(sortDir) && !"desc".equalsIgnoreCase(sortDir)) {
+            sortDir = "asc";
         }
 
-        Specification<ManageUsers> spec = (root, query, cb) -> {
+        // Map external sortField names to entity fields
+        Map<String, String> sortFieldMap = Map.of(
+                "id", "id",
+                "firstName", "firstName",
+                "middleName", "middleName",
+                "lastName", "lastName",
+                "fullName", "fullName",
+                "email", "email",
+                "primaryEmail", "primaryEmail",
+                "roleName", "roleName",
+                "addedByName", "addedByName",
+                "updatedByName", "updatedByName"
+        );
 
+        String mappedSortField = sortFieldMap.getOrDefault(sortField, "id");
+
+        //  Specification for keyword search
+        Specification<ManageUsers> spec = (root, query, cb) -> {
             if (keyword == null || keyword.trim().isEmpty()) {
                 return cb.conjunction();
             }
 
             String like = "%" + keyword.trim().toLowerCase() + "%";
-            List<Predicate> predicates = new ArrayList<>();
+            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
 
             predicates.add(cb.like(cb.lower(root.get("firstName")), like));
             predicates.add(cb.like(cb.lower(root.get("middleName")), like));
@@ -372,28 +376,30 @@ public class ManageUsersServiceImpl implements ManageUserService {
             predicates.add(cb.like(cb.lower(root.get("email")), like));
             predicates.add(cb.like(cb.lower(root.get("primaryEmail")), like));
             predicates.add(cb.like(cb.lower(root.get("roleName")), like));
-
-            // ✅ NEW: audit name search
             predicates.add(cb.like(cb.lower(root.get("addedByName")), like));
             predicates.add(cb.like(cb.lower(root.get("updatedByName")), like));
 
-            return cb.or(predicates.toArray(new Predicate[0]));
+            return cb.or(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
         };
 
-        Page<ManageUsers> userPage =
-                manageUserRepository.findAll(spec, pageable);
+        //  Sort case-insensitive
+        Sort sort = Sort.by(sortDir.equalsIgnoreCase("desc")
+                        ? Sort.Order.desc(mappedSortField).ignoreCase()
+                        : Sort.Order.asc(mappedSortField).ignoreCase());
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<ManageUsers> userPage = manageUserRepository.findAll(spec, pageable);
 
         List<ManageUserDTO> dtoList = userPage.getContent()
                 .stream()
                 .map(this::convertToDTO)
-                .collect(Collectors.toList());
+                .toList();
 
         return new PageImpl<>(dtoList, pageable, userPage.getTotalElements());
     }
 
-
-
-
+    
     /** ================= UPDATE USER PROFILE ================= **/
     @Override
     public User updateUserProfile(UserUpdateRequest request, MultipartFile profileImage, String loggedInEmail) {

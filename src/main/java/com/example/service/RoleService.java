@@ -4,6 +4,8 @@ package com.example.service;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.data.domain.Page;
+
 import com.example.DTO.RoleDTO;
 
 public interface RoleService {
@@ -13,6 +15,8 @@ public interface RoleService {
     RoleDTO updateRole(Long roleId, RoleDTO roleDTO, String loggedInEmail);
 
     void deleteRole(Long roleId);
+    
+    public Page<RoleDTO> searchRoles(int page, int size, String sortBy, String sortDir, String keyword) ;
 
     RoleDTO assignPrivilegeToRole(Long roleId, Long privilegeId, Long adminId);
 

@@ -26,6 +26,10 @@ public interface ManageUserRepository extends JpaRepository<ManageUsers, Long>, 
     List<ManageUsers> findByAddedBy_Id(Long addedById);
     
     Optional<ManageUsers> findByEmail(String email);
+    
+    @Query("SELECT COUNT(u) FROM User u WHERE u.role.roleId = :roleId")
+    long countUsersWithRole(@Param("roleId") Long roleId);
+
 
 
     // === Company-based filters ===
@@ -59,6 +63,26 @@ public interface ManageUserRepository extends JpaRepository<ManageUsers, Long>, 
     	          LOWER(m.updatedByName) LIKE LOWER(CONCAT('%', :keyword, '%'))
     	""")
     	Page<ManageUsers> search(@Param("keyword") String keyword, Pageable pageable);
+
+    @Query("""
+            SELECT u FROM ManageUsers u
+            WHERE
+                (:keyword IS NULL OR :keyword = '' OR
+                 LOWER(u.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                 LOWER(u.middleName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                 LOWER(u.lastName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                 LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                 LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                 LOWER(u.primaryEmail) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                 LOWER(u.roleName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                 LOWER(u.addedByName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                 LOWER(u.updatedByName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                )
+            """)
+        Page<ManageUsers> searchUsers(
+                @Param("keyword") String keyword,
+                Pageable pageable
+        );
 
 }
 

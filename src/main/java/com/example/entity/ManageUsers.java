@@ -31,7 +31,7 @@ public class ManageUsers {
     private String roleName;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "role_id")
+    @JoinColumn(name = "roleid")
     private Role role;
 
     // ID fields for audit
@@ -65,5 +65,22 @@ public class ManageUsers {
         if (middleName != null && !middleName.isBlank()) sb.append(" ").append(middleName.trim());
         if (lastName != null && !lastName.isBlank()) sb.append(" ").append(lastName.trim());
         return sb.toString().trim();
+    }
+    
+    @PrePersist
+    @PreUpdate
+    public void capitalizeNames() {
+        this.firstName = capitalize(this.firstName);
+        this.middleName = capitalize(this.middleName);
+        this.lastName = capitalize(this.lastName);
+
+        // Recompute fullName with capitalized parts
+        this.fullName = computeFullName();
+    }
+
+    private String capitalize(String value) {
+        if (value == null || value.isBlank()) return value;
+        value = value.trim();
+        return value.substring(0, 1).toUpperCase() + value.substring(1).toLowerCase();
     }
 }

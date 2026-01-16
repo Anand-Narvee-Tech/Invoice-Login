@@ -2,6 +2,7 @@ package com.example.serviceImpl;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -11,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -37,6 +39,9 @@ public class RoleServiceImpl implements RoleService {
 
     @Autowired
     private PrivilegeRepository privilegeRepository;
+    
+    @Autowired
+    private ManageUserRepository manageUserRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -168,7 +173,6 @@ public class RoleServiceImpl implements RoleService {
         return mapToDTO(updatedRole);
     }
 
-    // ✅ Delete Role (safe delete)
     @Override
     public void deleteRole(Long roleId) {
         Role role = roleRepository.findById(roleId)
@@ -184,8 +188,9 @@ public class RoleServiceImpl implements RoleService {
         roleRepository.delete(role);
     }
 
+
     // ==============================
-    // 🔸 Helper Methods (DTO Mapping)
+    // Helper Methods (DTO Mapping)
     // ==============================
 
     private RoleDTO convertToDTO(Role role) {
@@ -279,28 +284,64 @@ public class RoleServiceImpl implements RoleService {
                 .build();
     }
 
-    
-    
 
-public Page<Role> searchRoles(
-            int page, int size, String sortBy, String sortDir,
+    public Page<RoleDTO> searchRoles(
+            int page,
+            int size,
+            String sortBy,
+            String sortDir,
             String keyword
     ) {
 
-        Sort sort = sortDir.equalsIgnoreCase("desc")
-                ? Sort.by(sortBy).descending()
-                : Sort.by(sortBy).ascending();
+        boolean sortByUserName =
+                "addedByName".equals(sortBy) || "updatedByName".equals(sortBy);
 
-        Pageable pageable = PageRequest.of(page, size, sort);
-        
-        if (keyword == null || keyword.isBlank()) {
-            return roleRepository.findAll(pageable);
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                sortByUserName
+                        ? Sort.by("roleId") // dummy DB sort
+                        : (sortDir.equalsIgnoreCase("desc")
+                            ? Sort.by(sortBy).descending()
+                            : Sort.by(sortBy).ascending())
+        );
+
+        Page<RoleDTO> dtoPage =
+                (keyword == null || keyword.isBlank())
+                        ? roleRepository.findAll(pageable).map(this::mapToDTO)
+                        : roleRepository.searchAll(keyword, pageable).map(this::mapToDTO);
+
+        // 🔥 IN-MEMORY SORT (CORRECT WAY)
+        if (sortByUserName) {
+            Comparator<RoleDTO> comparator =
+                    "addedByName".equals(sortBy)
+                            ? Comparator.comparing(
+                                RoleDTO::getAddedByName,
+                                Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)
+                            )
+                            : Comparator.comparing(
+                                RoleDTO::getUpdatedByName,
+                                Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)
+                            );
+
+            if ("desc".equalsIgnoreCase(sortDir)) {
+                comparator = comparator.reversed();
+            }
+
+            List<RoleDTO> sorted = dtoPage.getContent()
+                    .stream()
+                    .sorted(comparator)
+                    .toList();
+
+            return new PageImpl<>(
+                    sorted,
+                    pageable,
+                    dtoPage.getTotalElements()
+            );
         }
 
-        return roleRepository.searchAll(keyword, pageable);
+        return dtoPage;
     }
-
-
 
 
 }

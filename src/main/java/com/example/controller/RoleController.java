@@ -106,11 +106,10 @@ public class RoleController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "roleId") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir,
-
             @RequestParam(required = false) String keyword
     ) {
 
-        Page<Role> result = roleServiceImpl.searchRoles(
+        Page<RoleDTO> result = roleServiceImpl.searchRoles(
                 page, size, sortBy, sortDir,
                 SanitizerUtils.sanitize(keyword)
         );
@@ -121,7 +120,7 @@ public class RoleController {
     }
 
 
-    // ✅ Get all roles
+    //  Get all roles
     @GetMapping("/getall")
     public ResponseEntity<RestAPIResponse> getAllRoles() {
         try {
@@ -191,20 +190,20 @@ public class RoleController {
                     .map(Integer::longValue)
                     .collect(Collectors.toSet());
 
-            // ✅ Call category-aware update
+            //  Call category-aware update
             RoleDTO updated = roleServiceImpl.updateRolePrivileges(roleId, privilegeIdSet, category);
 
             return ResponseEntity.ok(
                     new RestAPIResponse("success", "Privileges updated successfully", updated)
             );
         } catch (Exception e) {
-            log.error("❌ Failed to update privileges for role {}: {}", roleId, e.getMessage());
+            log.error(" Failed to update privileges for role {}: {}", roleId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new RestAPIResponse("error", "Failed to update privileges: " + e.getMessage(), null));
         }
     }
 
-    // ✅ Delete role
+    //  Delete role
     @DeleteMapping("/{roleId}")
     public ResponseEntity<RestAPIResponse> deleteRole(@PathVariable Long roleId) {
         try {
