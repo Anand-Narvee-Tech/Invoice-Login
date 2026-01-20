@@ -11,12 +11,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -40,7 +42,6 @@ import com.example.repository.RoleRepository;
 import com.example.repository.UserRepository;
 import com.example.service.ManageUserService;
 
-import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -50,6 +51,9 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
     @Value("${file.upload-dir}")
     private String uploadDir;
+    
+    @Autowired
+    private UserNameSyncServiceImpl userNameSyncServiceImpl;
 
     private final ManageUserRepository manageUserRepository;
     private final UserRepository userRepository;
@@ -66,19 +70,19 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
     /** ================= CONVERT ENTITY TO DTO ================= **/
     private ManageUserDTO convertToDTO(ManageUsers entity) {
-        // Full name
-        String fullName = (entity.getFullName() != null && !entity.getFullName().isBlank())
+        // fullName comes directly from entity
+        String fullName = entity.getFullName() != null && !entity.getFullName().isBlank()
                 ? entity.getFullName()
                 : buildFullName(entity);
 
-        // Dynamically compute addedByName
+        // addedByName
         String addedByName = "SYSTEM";
         if (entity.getAddedBy() != null) {
             Optional<User> addedByUser = userRepository.findById(entity.getAddedBy().getId());
             addedByName = addedByUser.map(this::buildFullName).orElse(buildFullName(entity.getAddedBy()));
         }
 
-        // Dynamically compute updatedByName
+        // updatedByName
         String updatedByName = null;
         if (entity.getUpdatedBy() != null) {
             Optional<User> updatedByUser = userRepository.findById(entity.getUpdatedBy());
@@ -87,7 +91,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
         return ManageUserDTO.builder()
                 .id(entity.getId())
-                .fullName(fullName)
+                .fullName(fullName)                  // ✅ fullName guaranteed
                 .firstName(entity.getFirstName())
                 .middleName(entity.getMiddleName())
                 .lastName(entity.getLastName())
@@ -100,6 +104,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
                 .updatedByName(updatedByName)
                 .build();
     }
+
 
     /** ================= BUILD FULL NAME ================= **/
 	    private String buildFullName(ManageUsers user) {
@@ -115,66 +120,79 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	    }
 
     /** ================= CREATE USER ================= **/
-    @Override
-    public ManageUserDTO createUser(ManageUsers manageUsers, String loggedInEmail) {
-        User currentUser = getCurrentLoggedInUser(loggedInEmail);
-        String currentUserRole = currentUser.getRole() != null ? currentUser.getRole().getRoleName() : null;
+	    @Override
+	    public ManageUserDTO createUser(ManageUsers manageUsers, String loggedInEmail) {
 
-        if (!List.of("SUPERADMIN", "ADMIN").contains(currentUserRole.toUpperCase())) {
-            throw new RuntimeException("You do not have permission to create users");
-        }
-        if ("ADMIN".equalsIgnoreCase(currentUserRole) &&
-                "SUPERADMIN".equalsIgnoreCase(manageUsers.getRoleName())) {
-            throw new RuntimeException("ADMIN cannot create SUPERADMIN");
-        }
-        if (manageUserRepository.existsByEmailIgnoreCase(manageUsers.getEmail())) {
-            throw new RuntimeException("Email already exists");
-        }
+	        // 1️⃣ Get current logged-in user
+	        User currentUser = getCurrentLoggedInUser(loggedInEmail);
+	        String currentUserRole = currentUser.getRole() != null ? currentUser.getRole().getRoleName() : null;
 
-        manageUsers.setRoleName(manageUsers.getRoleName().toUpperCase());
-        manageUsers.setAddedBy(currentUser);
-        manageUsers.setAddedByName(buildFullName(currentUser));
-        manageUsers.setCreatedBy(currentUser);
+	        // 2️⃣ Role permission checks
+	        if (!List.of("SUPERADMIN", "ADMIN").contains(currentUserRole.toUpperCase())) {
+	            throw new RuntimeException("You do not have permission to create users");
+	        }
+	        if ("ADMIN".equalsIgnoreCase(currentUserRole) &&
+	                "SUPERADMIN".equalsIgnoreCase(manageUsers.getRoleName())) {
+	            throw new RuntimeException("ADMIN cannot create SUPERADMIN");
+	        }
 
-        if (manageUsers.getFullName() != null && !manageUsers.getFullName().isBlank()) {
-            manageUsers.setFullName(manageUsers.getFullName().trim());
-        }
+	        // 3️⃣ Email duplication check
+	        if (manageUserRepository.existsByEmailIgnoreCase(manageUsers.getEmail())) {
+	            throw new RuntimeException("Email already exists");
+	        }
 
-        ManageUsers saved = manageUserRepository.save(manageUsers);
+	        // 4️⃣ Set role and audit fields
+	        manageUsers.setRoleName(manageUsers.getRoleName().toUpperCase());
+	        manageUsers.setAddedBy(currentUser);
+	        manageUsers.setAddedByName(buildFullName(currentUser));
+	        manageUsers.setCreatedBy(currentUser);
 
-        // Sync to User table
-        userRepository.findByEmailIgnoreCase(saved.getEmail()).ifPresentOrElse(u -> {
-            if (u.getCreatedBy() == null) u.setCreatedBy(currentUser);
+	        // 5️⃣ ✅ Handle fullName
+	        if (manageUsers.getFullName() != null && !manageUsers.getFullName().isBlank()) {
+	            manageUsers.setFullName(manageUsers.getFullName().trim());
+	        } else {
+	            manageUsers.setFullName(buildFullName(manageUsers)); // fallback if empty
+	        }
 
-            Role role = roleRepository.findByRoleNameIgnoreCase(saved.getRoleName())
-                    .orElseThrow(() -> new RuntimeException("Role not found: " + saved.getRoleName()));
-            u.setRole(role);
+	        // 6️⃣ Save ManageUsers entity
+	        ManageUsers saved = manageUserRepository.save(manageUsers);
 
-            u.setFullName(buildFullName(saved));
-            u.setPrimaryEmail(saved.getPrimaryEmail());
+	        // 7️⃣ Sync to User table
+	        userRepository.findByEmailIgnoreCase(saved.getEmail()).ifPresentOrElse(u -> {
+	            if (u.getCreatedBy() == null) u.setCreatedBy(currentUser);
 
-            userRepository.save(u);
-        }, () -> {
-            User user = new User();
-            user.setEmail(saved.getEmail());
-            user.setFirstName(saved.getFirstName());
-            user.setMiddleName(saved.getMiddleName());
-            user.setLastName(saved.getLastName());
-            user.setFullName(buildFullName(saved));
-            user.setPrimaryEmail(saved.getPrimaryEmail());
-            user.setApproved(true);
-            user.setActive(true);
-            user.setCreatedBy(currentUser);
+	            Role role = roleRepository.findByRoleNameIgnoreCase(saved.getRoleName())
+	                    .orElseThrow(() -> new RuntimeException("Role not found: " + saved.getRoleName()));
+	            u.setRole(role);
 
-            Role role = roleRepository.findByRoleNameIgnoreCase(saved.getRoleName())
-                    .orElseThrow(() -> new RuntimeException("Role not found: " + saved.getRoleName()));
-            user.setRole(role);
+	            u.setFullName(saved.getFullName());       // ✅ ensure fullName is stored
+	            u.setPrimaryEmail(saved.getPrimaryEmail());
 
-            userRepository.save(user);
-        });
+	            userRepository.save(u);
+	        }, () -> {
+	            User user = new User();
+	            user.setEmail(saved.getEmail());
+	            user.setFirstName(saved.getFirstName());
+	            user.setMiddleName(saved.getMiddleName());
+	            user.setLastName(saved.getLastName());
+	            user.setFullName(saved.getFullName());    // ✅ fullName is set
+	            user.setPrimaryEmail(saved.getPrimaryEmail());
+	            user.setApproved(true);
+	            user.setActive(true);
+	            user.setCreatedBy(currentUser);
 
-        return convertToDTO(saved);
-    }
+	            Role role = roleRepository.findByRoleNameIgnoreCase(saved.getRoleName())
+	                    .orElseThrow(() -> new RuntimeException("Role not found: " + saved.getRoleName()));
+	            user.setRole(role);
+
+	            userRepository.save(user);
+	        });
+
+	        // 8️⃣ Convert to DTO and return
+	        return convertToDTO(saved);
+	    }
+
+
 
     /** ================= UPDATE USER ================= **/
     @Override
@@ -185,8 +203,11 @@ public class ManageUsersServiceImpl implements ManageUserService {
         User currentUser = getCurrentLoggedInUser(loggedInEmail);
 
         // ---------------- 2️ Fetch existing ManageUsers ----------------
+        
         ManageUsers existing = manageUserRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
+        
+        String oldFullName = existing.getFullName();
 
         // ---------------- 3️Handle name updates ----------------
         if (manageUsers.getFullName() != null && !manageUsers.getFullName().isBlank()) {
@@ -247,6 +268,16 @@ public class ManageUsersServiceImpl implements ManageUserService {
         }
 
         userRepository.save(user);
+        
+        String newFullName = saved.getFullName();
+
+        if (!Objects.equals(oldFullName, newFullName)) {
+            userNameSyncServiceImpl.syncUserFullName(
+                    user.getId(),     // IMPORTANT: User ID
+                    newFullName
+            );
+        }
+
 
         // ---------------- 7️Audit log ----------------
         auditLogRepository.save(

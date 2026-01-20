@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -16,6 +17,24 @@ import com.example.entity.User;
 
 @Repository
 public interface ManageUserRepository extends JpaRepository<ManageUsers, Long>, JpaSpecificationExecutor<ManageUsers> {
+	
+	
+	@Modifying(clearAutomatically = true, flushAutomatically = true)
+	@Query("""
+	    UPDATE ManageUsers m
+	    SET m.addedByName = :fullName
+	    WHERE m.addedBy.id = :userId
+	""")
+	void updateAddedByName(Long userId, String fullName);
+
+	@Modifying(clearAutomatically = true, flushAutomatically = true)
+	@Query("""
+	    UPDATE ManageUsers m
+	    SET m.updatedByName = :fullName
+	    WHERE m.updatedBy = :userId
+	""")
+	void updateUpdatedByName(Long userId, String fullName);
+
 
     // === Existing methods ===
     boolean existsByEmail(String email);

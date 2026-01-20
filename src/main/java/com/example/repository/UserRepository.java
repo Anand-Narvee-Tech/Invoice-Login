@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -14,7 +15,16 @@ import com.example.entity.User;
 public interface UserRepository extends JpaRepository<User, Long>{
 	Optional<User> findByEmailIgnoreCase(String email);
 	 boolean existsByEmailIgnoreCase(String email);
-	 Optional<User> findByEmail(String email);
+	 Optional<User> findByEmail(String email)
+	 
+	 
+	 ;@Modifying
+	 @Query("UPDATE User u SET u.fullName = :fullName WHERE u.id = :userId")
+	 void updateFullName(@Param("userId") Long userId,
+	                     @Param("fullName") String fullName);
+
+	 
+	 
 	 
 	 @Query("SELECT COUNT(u) FROM User u WHERE u.role.roleId = :roleId")
 	 long countByRoleId(@Param("roleId") Long roleId);

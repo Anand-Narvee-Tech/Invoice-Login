@@ -2,8 +2,23 @@ package com.example.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.persistence.*;
-import lombok.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
@@ -46,6 +61,8 @@ public class ManageUsers {
     private String updatedByName;
 
     // Stored full name
+    @JsonProperty("fullName")
+    @Column(name = "full_name", nullable = false)
     private String fullName;
 
     // Relations for addedBy and createdBy
@@ -74,9 +91,12 @@ public class ManageUsers {
         this.middleName = capitalize(this.middleName);
         this.lastName = capitalize(this.lastName);
 
-        // Recompute fullName with capitalized parts
-        this.fullName = computeFullName();
+        // ✅ DO NOT override frontend fullName
+        if (this.fullName == null || this.fullName.isBlank()) {
+            this.fullName = computeFullName();
+        }
     }
+
 
     private String capitalize(String value) {
         if (value == null || value.isBlank()) return value;
