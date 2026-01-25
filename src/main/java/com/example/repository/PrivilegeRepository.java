@@ -27,10 +27,6 @@ public interface PrivilegeRepository extends JpaRepository<Privilege, Long> {
     // Optional: fetch by name (if needed)
     Optional<Privilege> findByNameIgnoreCase(String name);
     
-    @Modifying
-    @Query(value = "DELETE FROM privilege WHERE category = :category", nativeQuery = true)
-    void deleteByCategoryNative(@Param("category") String category);
-    
  // Step 1: Find all privilege IDs by category (string)
     @Query("SELECT p.id FROM Privilege p WHERE p.category = :category")
     List<Long> findIdsByCategory(@Param("category") String category);
@@ -39,6 +35,7 @@ public interface PrivilegeRepository extends JpaRepository<Privilege, Long> {
     @Modifying
     @Query("DELETE FROM Privilege p WHERE p.category = :category")
     void deleteByCategory(@Param("category") String category);
+
 
 
 }

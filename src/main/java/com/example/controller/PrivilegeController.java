@@ -102,7 +102,18 @@ public class PrivilegeController {
         }
     }
 
-    //  Delete Privilege
+    // ✅ Delete Privilege
+//    @DeleteMapping("/{id}")
+//    public ResponseEntity<RestAPIResponse> deletePrivilege(@PathVariable Long id) {
+//        try {
+//            privilegeServiceImpl.deletePrivilege(id);
+//            return ResponseEntity.ok(new RestAPIResponse("success", "Privilege deleted successfully", null));
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(new RestAPIResponse("error", "Failed to delete privilege: " + e.getMessage(), null));
+//        }
+//    }
+    
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERADMIN')")
     public ResponseEntity<RestAPIResponse> deletePrivilegesByCategoryId(@PathVariable Long id) {
@@ -112,7 +123,7 @@ public class PrivilegeController {
             return ResponseEntity.ok(
                     new RestAPIResponse(
                             "success",
-                            "All privileges under the same category as privilege ID " + id + " deleted successfully",
+                            "All privileges under the same category deleted successfully",
                             null
                     )
             );
@@ -150,4 +161,6 @@ public class PrivilegeController {
                     ));
         }
     }
+
+
     }

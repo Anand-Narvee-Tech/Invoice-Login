@@ -1,23 +1,37 @@
 package com.example.serviceImpl;
 
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+
 import com.example.DTO.PrivilegeDTO;
 import com.example.DTO.RoleDTO;
 import com.example.entity.Privilege;
 import com.example.entity.Role;
 import com.example.entity.User;
+import com.example.repository.ManageUserRepository;
 import com.example.repository.PrivilegeRepository;
 import com.example.repository.RoleRepository;
 import com.example.repository.UserRepository;
 import com.example.service.RoleService;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class RoleServiceImpl implements RoleService {
@@ -27,30 +41,54 @@ public class RoleServiceImpl implements RoleService {
 
     @Autowired
     private PrivilegeRepository privilegeRepository;
+    
+    @Autowired
+    private ManageUserRepository manageUserRepository;
 
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private ManageUserRepository repository;
+    
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private static final Logger log = LoggerFactory.getLogger(RoleServiceImpl.class);
 
     // ✅ Create Role
     @Override
-    public RoleDTO createRole(RoleDTO roleDTO) {
+    public RoleDTO createRole(RoleDTO roleDTO, String loggedInEmail) {
+
+        User currentUser = userRepository.findByEmailIgnoreCase(loggedInEmail)
+                .orElseThrow(() -> new RuntimeException("Logged-in user not found: " + loggedInEmail));
+
         Role role = convertToEntity(roleDTO);
+
+        role.setAddedBy(currentUser.getId());
+        role.setAddedByName(currentUser.getFullName());
+
+        role.setCreatedDate(LocalDateTime.now());
+
         Role saved = roleRepository.save(role);
         return convertToDTO(saved);
     }
 
-    // ✅ Update Role
+
     @Override
+    @Transactional
     public RoleDTO updateRole(Long roleId, RoleDTO roleDTO, String loggedInEmail) {
+
+        // 1️⃣ Get current logged-in user
         User currentUser = userRepository.findByEmailIgnoreCase(loggedInEmail)
                 .orElseThrow(() -> new RuntimeException("Logged-in user not found: " + loggedInEmail));
 
-        Role existing = roleRepository.findById(roleId)
+        // 2️⃣ Fetch existing Role
+        Role existing = roleRepository.findByIdWithPrivileges(roleId)
                 .orElseThrow(() -> new RuntimeException("Role not found"));
 
-        existing.setRoleName(roleDTO.getRoleName());
+        // 3️⃣ Update role fields
+        existing.setRoleName(roleDTO.getRoleName().trim().toUpperCase());
         existing.setDescription(roleDTO.getDescription());
         existing.setStatus(roleDTO.getStatus());
 
@@ -62,11 +100,18 @@ public class RoleServiceImpl implements RoleService {
         existing.setUpdatedBy(currentUser.getId());
         existing.setUpdatedByName(currentUser.getFullName());
 
+        // 4️⃣ Save role
         Role updated = roleRepository.save(existing);
+
+        // ❌ STEP 5 REMOVED (NO SYNC REQUIRED)
+
+        // 5️⃣ Return DTO
         return convertToDTO(updated);
     }
 
-    // ✅ Assign a single privilege to a role
+
+
+    //  Assign a single privilege to a role
     @Override
     public RoleDTO assignPrivilegeToRole(Long roleId, Long privilegeId, Long creatorId) {
         Role role = roleRepository.findById(roleId)
@@ -142,7 +187,6 @@ public class RoleServiceImpl implements RoleService {
         return mapToDTO(updatedRole);
     }
 
-    // ✅ Delete Role (safe delete)
     @Override
     public void deleteRole(Long roleId) {
         Role role = roleRepository.findById(roleId)
@@ -158,13 +202,15 @@ public class RoleServiceImpl implements RoleService {
         roleRepository.delete(role);
     }
 
+
     // ==============================
-    // 🔸 Helper Methods (DTO Mapping)
+    // Helper Methods (DTO Mapping)
     // ==============================
 
     private RoleDTO convertToDTO(Role role) {
-        Set<PrivilegeDTO> privilegeDTOs = role.getPrivileges() != null
-                ? role.getPrivileges().stream()
+
+        // privileges are already loaded inside the transaction
+        Set<PrivilegeDTO> privilegeDTOs = role.getPrivileges().stream()
                 .map(p -> new PrivilegeDTO(
                         p.getId(),
                         p.getName(),
@@ -173,8 +219,7 @@ public class RoleServiceImpl implements RoleService {
                         p.getStatus(),
                         p.getCategory()
                 ))
-                .collect(Collectors.toSet())
-                : new HashSet<>();
+                .collect(Collectors.toSet());
 
         return RoleDTO.builder()
                 .roleId(role.getRoleId())
@@ -191,6 +236,8 @@ public class RoleServiceImpl implements RoleService {
                 .build();
     }
 
+
+
     private Role convertToEntity(RoleDTO dto) {
         Role role = new Role();
         role.setRoleId(dto.getRoleId());
@@ -198,6 +245,15 @@ public class RoleServiceImpl implements RoleService {
         role.setDescription(dto.getDescription());
         role.setStatus(dto.getStatus());
 
+        // Audit fields must be mapped
+        role.setAddedBy(dto.getAddedBy());
+        role.setAddedByName(dto.getAddedByName());
+        role.setUpdatedBy(dto.getUpdatedBy());
+        role.setUpdatedByName(dto.getUpdatedByName());
+        role.setCreatedDate(dto.getCreatedDate());
+        role.setUpdatedDate(dto.getUpdatedDate());
+
+        // Privileges mapping
         if (dto.getPrivileges() != null) {
             Set<Privilege> privileges = dto.getPrivileges().stream()
                     .map(p -> privilegeRepository.findById(p.getId())
@@ -205,8 +261,12 @@ public class RoleServiceImpl implements RoleService {
                     .collect(Collectors.toSet());
             role.setPrivileges(privileges);
         }
+
         return role;
     }
+
+
+
 
     // ✅ Alternative mapping method used after updates
     private RoleDTO mapToDTO(Role role) {
@@ -236,6 +296,65 @@ public class RoleServiceImpl implements RoleService {
                                 : Collections.emptySet()
                 )
                 .build();
+    }
+
+
+    public Page<RoleDTO> searchRoles(
+            int page,
+            int size,
+            String sortBy,
+            String sortDir,
+            String keyword
+    ) {
+
+        boolean sortByUserName =
+                "addedByName".equals(sortBy) || "updatedByName".equals(sortBy);
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                sortByUserName
+                        ? Sort.by("roleId") // dummy DB sort
+                        : (sortDir.equalsIgnoreCase("desc")
+                            ? Sort.by(sortBy).descending()
+                            : Sort.by(sortBy).ascending())
+        );
+
+        Page<RoleDTO> dtoPage =
+                (keyword == null || keyword.isBlank())
+                        ? roleRepository.findAll(pageable).map(this::mapToDTO)
+                        : roleRepository.searchAll(keyword, pageable).map(this::mapToDTO);
+
+        // 🔥 IN-MEMORY SORT (CORRECT WAY)
+        if (sortByUserName) {
+            Comparator<RoleDTO> comparator =
+                    "addedByName".equals(sortBy)
+                            ? Comparator.comparing(
+                                RoleDTO::getAddedByName,
+                                Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)
+                            )
+                            : Comparator.comparing(
+                                RoleDTO::getUpdatedByName,
+                                Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)
+                            );
+
+            if ("desc".equalsIgnoreCase(sortDir)) {
+                comparator = comparator.reversed();
+            }
+
+            List<RoleDTO> sorted = dtoPage.getContent()
+                    .stream()
+                    .sorted(comparator)
+                    .toList();
+
+            return new PageImpl<>(
+                    sorted,
+                    pageable,
+                    dtoPage.getTotalElements()
+            );
+        }
+
+        return dtoPage;
     }
 
 

@@ -1,16 +1,29 @@
 package com.example.controller;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.example.DTO.LoginRequest;
 import com.example.DTO.RegisterRequest;
 import com.example.commons.RestAPIResponse;
+import com.example.entity.ManageUsers;
 import com.example.entity.User;
+import com.example.repository.ManageUserRepository;
+import com.example.repository.UserRepository;
 import com.example.serviceImpl.JwtServiceImpl;
 import com.example.serviceImpl.UserServiceImpl;
 
@@ -24,6 +37,12 @@ public class UserController {
 
     @Autowired
     private JwtServiceImpl jwtService;
+    
+    @Autowired
+    private UserRepository userRepository;
+    
+    @Autowired
+    private ManageUserRepository manageUserRepository;
 
     /** Register */
 //    @PostMapping("/register")
@@ -119,15 +138,67 @@ public class UserController {
         return ResponseEntity.ok( new RestAPIResponse( isValid ? "success" : "error", isValid ? "Token is valid" : "Token is invalid", username));
     }
     
-    @GetMapping("/updated/{id}")
-    public ResponseEntity<RestAPIResponse> getUser(@PathVariable Long id) {
-    	try {
-    		return new ResponseEntity<>(new RestAPIResponse("Success" ,"Profile is  getting Sucessfully" , userServiceImpl.getUserById(id)) , HttpStatus.OK);
-    	} catch (Exception e) {
-    		return new ResponseEntity<>(new RestAPIResponse("Fail" , "No User found with this Id" + id), HttpStatus.OK);
-    	}
+    @GetMapping("/updated/{email}")
+    public ResponseEntity<RestAPIResponse> getUserProfile(@PathVariable String email) {
+
+        Optional<User> userOpt = userRepository.findByEmailIgnoreCase(email);
+        Optional<ManageUsers> muOpt = manageUserRepository.findByEmailIgnoreCase(email);
+
+        if (userOpt.isEmpty() && muOpt.isEmpty()) {
+            return ResponseEntity.ok(
+                    new RestAPIResponse("Fail", "No user found with this email: " + email, null)
+            );
+        }
+
+        User user = userOpt.orElse(null);
+        ManageUsers mu = muOpt.orElse(null);
+
+        // ---------------- Determine fullName ----------------
+        String fullName = null;
+        if (mu != null && mu.getFullName() != null && !mu.getFullName().isBlank()) {
+            fullName = mu.getFullName();
+        } else if (user != null && user.getFullName() != null) {
+            fullName = user.getFullName();
+        }
+
+        // ---------------- Build response ----------------
+        Map<String, Object> responseData = new HashMap<>();
+
+        if (user != null) {
+            responseData.put("id", user.getId());
+            responseData.put("mobileNumber", user.getMobileNumber());
+            responseData.put("alternativeEmail", user.getAlternativeEmail());
+            responseData.put("alternativeMobileNumber", user.getAlternativeMobileNumber());
+            responseData.put("companyName", user.getCompanyName());
+            responseData.put("taxId", user.getTaxId());
+            responseData.put("businessId", user.getBusinessId());
+            responseData.put("preferredCurrency", user.getPreferredCurrency());
+            responseData.put("invoicePrefix", user.getInvoicePrefix());
+            responseData.put("profilePicPath", user.getProfilePicPath());
+        }
+
+        if (mu != null) {
+            responseData.put("primaryEmail", mu.getEmail());
+ 
+            // ✅ FIXED ROLE ACCESS
+            responseData.put(
+                    "role",
+                    mu.getRole() != null ? mu.getRole().getRoleName() : null
+            );
+        }
+
+        responseData.put("fullName", fullName);
+
+        return ResponseEntity.ok(
+                new RestAPIResponse("Success", "Profile retrieved successfully", responseData)
+        );
     }
-    
+
+
+
+
+
+
 //    @PutMapping("/updated/{id}")
 //    public ResponseEntity<RestAPIResponse> updateProfile(@PathVariable Long id, @RequestBody User user){
 //    	try {

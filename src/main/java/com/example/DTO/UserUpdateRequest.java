@@ -21,4 +21,5 @@ public class UserUpdateRequest {
     private String preferredCurrency;
     private String invoicePrefix;
     private String companyName;
+    private String profilePicPath;  
 }

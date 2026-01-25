@@ -37,6 +37,8 @@ public class User {
 
     @Column(unique = true, nullable = false)
     private String email;
+    
+//    private Long companyId;
 
     private String mobileNumber;
     private String companyName;
@@ -47,7 +49,7 @@ public class User {
     private Boolean approved;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "role_id")
+    @JoinColumn(name = "roleid")
     private Role role;
 
     private String position;
@@ -58,6 +60,10 @@ public class User {
 
     @Column(nullable = false)
     private String primaryEmail;
+    
+    @Column(name = "profile_pic_path")
+    private String profilePicPath;
+
 
     private String alternativeEmail;
     private String alternativeMobileNumber;

@@ -63,18 +63,16 @@ package com.example.serviceImpl;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.example.entity.Privilege;
 import com.example.entity.User;
 
 import io.jsonwebtoken.JwtException;
@@ -108,19 +106,10 @@ public class JwtServiceImpl {
 //                .compact();
 //    }
 
-    public String generateToken(User user) {
-        // Fetch privileges from user's role
-        Set<String> privileges = new HashSet<>();
-        if (user.getRole() != null && user.getRole().getPrivileges() != null) {
-            privileges = user.getRole().getPrivileges()
-                    .stream()
-                    .map(Privilege::getName)
-                    .collect(Collectors.toSet());
-        }
-
+    public String generateToken(User user, String roleName, Set<String> privileges) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("roles", List.of(user.getRole().getRoleName()));
-        claims.put("privileges", privileges); // ✅ add privilege list to JWT
+        claims.put("roles", roleName != null ? List.of(roleName) : Collections.emptyList());
+        claims.put("privileges", privileges != null ? privileges : Collections.emptySet());
 
         return Jwts.builder()
                 .setClaims(claims)
@@ -130,6 +119,7 @@ public class JwtServiceImpl {
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
+
     
     
     public boolean validateToken(String token) {
