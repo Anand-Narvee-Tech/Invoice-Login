@@ -26,7 +26,8 @@ public interface RoleRepository extends JpaRepository<Role, Long>{
     @Query("UPDATE Role r SET r.updatedByName = :fullName WHERE r.updatedBy = :userId")
     void updateUpdatedByName(Long userId, String fullName);
 
-
+    @Query("SELECT r FROM Role r LEFT JOIN FETCH r.privileges WHERE r.roleId = :roleId")
+    Optional<Role> findByIdWithPrivileges(@Param("roleId") Long roleId);
 
 
     

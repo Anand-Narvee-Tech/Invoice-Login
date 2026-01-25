@@ -70,42 +70,33 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
     /** ================= CONVERT ENTITY TO DTO ================= **/
     private ManageUserDTO convertToDTO(ManageUsers entity) {
-        // fullName comes directly from entity
         String fullName = entity.getFullName() != null && !entity.getFullName().isBlank()
-                ? entity.getFullName()
+                ? entity.getFullName().trim().replaceAll("\\s+", " ")
                 : buildFullName(entity);
 
-        // addedByName
-        String addedByName = "SYSTEM";
-        if (entity.getAddedBy() != null) {
-            Optional<User> addedByUser = userRepository.findById(entity.getAddedBy().getId());
-            addedByName = addedByUser.map(this::buildFullName).orElse(buildFullName(entity.getAddedBy()));
-        }
+        String addedByName = entity.getAddedByName() != null ? entity.getAddedByName() : "SYSTEM";
 
-        // updatedByName
-        String updatedByName = null;
-        if (entity.getUpdatedBy() != null) {
+        String updatedByName = entity.getUpdatedByName(); // already stored
+        if (updatedByName == null && entity.getUpdatedBy() != null) {
             Optional<User> updatedByUser = userRepository.findById(entity.getUpdatedBy());
-            updatedByName = updatedByUser.map(this::buildFullName).orElse(entity.getUpdatedByName());
+            updatedByName = updatedByUser.map(this::buildFullName).orElse(null);
         }
 
         return ManageUserDTO.builder()
                 .id(entity.getId())
-                .fullName(fullName)                  // ✅ fullName guaranteed
+                .fullName(fullName)
                 .firstName(entity.getFirstName())
                 .middleName(entity.getMiddleName())
                 .lastName(entity.getLastName())
                 .email(entity.getEmail())
                 .primaryEmail(entity.getPrimaryEmail())
-                .roleName(entity.getRoleName())
+                .roleName(entity.getRole() != null ? entity.getRole().getRoleName() : null)
                 .addedBy(entity.getAddedBy() != null ? entity.getAddedBy().getId().toString() : null)
                 .addedByName(addedByName)
                 .updatedBy(entity.getUpdatedBy())
                 .updatedByName(updatedByName)
                 .build();
     }
-
-
     /** ================= BUILD FULL NAME ================= **/
 	    private String buildFullName(ManageUsers user) {
 	        return Stream.of(user.getFirstName(), user.getMiddleName(), user.getLastName())
@@ -121,6 +112,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
     /** ================= CREATE USER ================= **/
 	    @Override
+	    @Transactional
 	    public ManageUserDTO createUser(ManageUsers manageUsers, String loggedInEmail) {
 
 	        // 1️⃣ Get current logged-in user
@@ -141,33 +133,33 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	            throw new RuntimeException("Email already exists");
 	        }
 
-	        // 4️⃣ Set role and audit fields
-	        manageUsers.setRoleName(manageUsers.getRoleName().toUpperCase());
+	        // 4️⃣ Fetch Role entity and set in ManageUsers
+	        Role role = roleRepository.findByRoleNameIgnoreCase(manageUsers.getRoleName())
+	                .orElseThrow(() -> new RuntimeException("Role not found: " + manageUsers.getRoleName()));
+	        manageUsers.setRole(role);                       // ✅ important: set entity
+	        manageUsers.setRoleName(role.getRoleName());     // optional: keep string if needed
+
+	        // 5️⃣ Set audit fields
 	        manageUsers.setAddedBy(currentUser);
 	        manageUsers.setAddedByName(buildFullName(currentUser));
 	        manageUsers.setCreatedBy(currentUser);
 
-	        // 5️⃣ ✅ Handle fullName
+	        // 6️⃣ Handle fullName
 	        if (manageUsers.getFullName() != null && !manageUsers.getFullName().isBlank()) {
 	            manageUsers.setFullName(manageUsers.getFullName().trim());
 	        } else {
 	            manageUsers.setFullName(buildFullName(manageUsers)); // fallback if empty
 	        }
 
-	        // 6️⃣ Save ManageUsers entity
+	        // 7️⃣ Save ManageUsers entity
 	        ManageUsers saved = manageUserRepository.save(manageUsers);
 
-	        // 7️⃣ Sync to User table
+	        // 8️⃣ Sync to User table
 	        userRepository.findByEmailIgnoreCase(saved.getEmail()).ifPresentOrElse(u -> {
 	            if (u.getCreatedBy() == null) u.setCreatedBy(currentUser);
-
-	            Role role = roleRepository.findByRoleNameIgnoreCase(saved.getRoleName())
-	                    .orElseThrow(() -> new RuntimeException("Role not found: " + saved.getRoleName()));
-	            u.setRole(role);
-
-	            u.setFullName(saved.getFullName());       // ✅ ensure fullName is stored
+	            u.setRole(role);                            // ✅ set role entity
+	            u.setFullName(saved.getFullName());
 	            u.setPrimaryEmail(saved.getPrimaryEmail());
-
 	            userRepository.save(u);
 	        }, () -> {
 	            User user = new User();
@@ -175,22 +167,19 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	            user.setFirstName(saved.getFirstName());
 	            user.setMiddleName(saved.getMiddleName());
 	            user.setLastName(saved.getLastName());
-	            user.setFullName(saved.getFullName());    // ✅ fullName is set
+	            user.setFullName(saved.getFullName());
 	            user.setPrimaryEmail(saved.getPrimaryEmail());
 	            user.setApproved(true);
 	            user.setActive(true);
 	            user.setCreatedBy(currentUser);
-
-	            Role role = roleRepository.findByRoleNameIgnoreCase(saved.getRoleName())
-	                    .orElseThrow(() -> new RuntimeException("Role not found: " + saved.getRoleName()));
-	            user.setRole(role);
-
+	            user.setRole(role);                          // ✅ set role entity
 	            userRepository.save(user);
 	        });
 
-	        // 8️⃣ Convert to DTO and return
+	        // 9️⃣ Convert to DTO and return
 	        return convertToDTO(saved);
 	    }
+
 
 
 

@@ -15,6 +15,8 @@ import org.springframework.stereotype.Repository;
 import com.example.entity.ManageUsers;
 import com.example.entity.User;
 
+import jakarta.transaction.Transactional;
+
 @Repository
 public interface ManageUserRepository extends JpaRepository<ManageUsers, Long>, JpaSpecificationExecutor<ManageUsers> {
 	
@@ -48,6 +50,10 @@ public interface ManageUserRepository extends JpaRepository<ManageUsers, Long>, 
     
     @Query("SELECT COUNT(u) FROM User u WHERE u.role.roleId = :roleId")
     long countUsersWithRole(@Param("roleId") Long roleId);
+    
+
+    
+
 
 
 
@@ -84,24 +90,25 @@ public interface ManageUserRepository extends JpaRepository<ManageUsers, Long>, 
     	Page<ManageUsers> search(@Param("keyword") String keyword, Pageable pageable);
 
     @Query("""
-            SELECT u FROM ManageUsers u
-            WHERE
-                (:keyword IS NULL OR :keyword = '' OR
-                 LOWER(u.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-                 LOWER(u.middleName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-                 LOWER(u.lastName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-                 LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-                 LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-                 LOWER(u.primaryEmail) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-                 LOWER(u.roleName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-                 LOWER(u.addedByName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-                 LOWER(u.updatedByName) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                )
-            """)
-        Page<ManageUsers> searchUsers(
-                @Param("keyword") String keyword,
-                Pageable pageable
-        );
+    	    SELECT u FROM ManageUsers u
+    	    LEFT JOIN FETCH u.role r
+    	    WHERE
+    	        (:keyword IS NULL OR :keyword = '' OR
+    	         LOWER(u.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+    	         LOWER(u.middleName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+    	         LOWER(u.lastName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+    	         LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+    	         LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+    	         LOWER(u.primaryEmail) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+    	         LOWER(r.roleName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+    	         LOWER(u.addedByName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+    	         LOWER(u.updatedByName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    	        )
+    	""")
+    	Page<ManageUsers> searchUsers(@Param("keyword") String keyword, Pageable pageable);
+
+
+
 
 }
 

@@ -29,6 +29,8 @@ import com.example.repository.RoleRepository;
 import com.example.repository.UserRepository;
 import com.example.service.RoleService;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -48,6 +50,9 @@ public class RoleServiceImpl implements RoleService {
     
     @Autowired
     private ManageUserRepository repository;
+    
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private static final Logger log = LoggerFactory.getLogger(RoleServiceImpl.class);
 
@@ -70,18 +75,20 @@ public class RoleServiceImpl implements RoleService {
     }
 
 
-
-
-    // ✅ Update Role
     @Override
+    @Transactional
     public RoleDTO updateRole(Long roleId, RoleDTO roleDTO, String loggedInEmail) {
+
+        // 1️⃣ Get current logged-in user
         User currentUser = userRepository.findByEmailIgnoreCase(loggedInEmail)
                 .orElseThrow(() -> new RuntimeException("Logged-in user not found: " + loggedInEmail));
 
-        Role existing = roleRepository.findById(roleId)
+        // 2️⃣ Fetch existing Role
+        Role existing = roleRepository.findByIdWithPrivileges(roleId)
                 .orElseThrow(() -> new RuntimeException("Role not found"));
 
-        existing.setRoleName(roleDTO.getRoleName());
+        // 3️⃣ Update role fields
+        existing.setRoleName(roleDTO.getRoleName().trim().toUpperCase());
         existing.setDescription(roleDTO.getDescription());
         existing.setStatus(roleDTO.getStatus());
 
@@ -93,11 +100,18 @@ public class RoleServiceImpl implements RoleService {
         existing.setUpdatedBy(currentUser.getId());
         existing.setUpdatedByName(currentUser.getFullName());
 
+        // 4️⃣ Save role
         Role updated = roleRepository.save(existing);
+
+        // ❌ STEP 5 REMOVED (NO SYNC REQUIRED)
+
+        // 5️⃣ Return DTO
         return convertToDTO(updated);
     }
 
-    // ✅ Assign a single privilege to a role
+
+
+    //  Assign a single privilege to a role
     @Override
     public RoleDTO assignPrivilegeToRole(Long roleId, Long privilegeId, Long creatorId) {
         Role role = roleRepository.findById(roleId)
@@ -195,18 +209,17 @@ public class RoleServiceImpl implements RoleService {
 
     private RoleDTO convertToDTO(Role role) {
 
-        Set<PrivilegeDTO> privilegeDTOs = role.getPrivileges() != null
-                ? role.getPrivileges().stream()
-                    .map(p -> new PrivilegeDTO(
-                            p.getId(),
-                            p.getName(),
-                            p.getCardType(),
-                            true,
-                            p.getStatus(),
-                            p.getCategory()
-                    ))
-                    .collect(Collectors.toSet())
-                : new HashSet<>();
+        // privileges are already loaded inside the transaction
+        Set<PrivilegeDTO> privilegeDTOs = role.getPrivileges().stream()
+                .map(p -> new PrivilegeDTO(
+                        p.getId(),
+                        p.getName(),
+                        p.getCardType(),
+                        true,
+                        p.getStatus(),
+                        p.getCategory()
+                ))
+                .collect(Collectors.toSet());
 
         return RoleDTO.builder()
                 .roleId(role.getRoleId())
@@ -222,6 +235,7 @@ public class RoleServiceImpl implements RoleService {
                 .privileges(privilegeDTOs)
                 .build();
     }
+
 
 
     private Role convertToEntity(RoleDTO dto) {

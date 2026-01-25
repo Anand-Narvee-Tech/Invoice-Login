@@ -3,8 +3,6 @@ package com.example.controller;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -154,7 +152,7 @@ public class UserController {
         User user = userOpt.orElse(null);
         ManageUsers mu = muOpt.orElse(null);
 
-        // Determine fullName
+        // ---------------- Determine fullName ----------------
         String fullName = null;
         if (mu != null && mu.getFullName() != null && !mu.getFullName().isBlank()) {
             fullName = mu.getFullName();
@@ -162,7 +160,7 @@ public class UserController {
             fullName = user.getFullName();
         }
 
-        // Build response
+        // ---------------- Build response ----------------
         Map<String, Object> responseData = new HashMap<>();
 
         if (user != null) {
@@ -179,8 +177,13 @@ public class UserController {
         }
 
         if (mu != null) {
-            responseData.put("role", mu.getRoleName());
             responseData.put("primaryEmail", mu.getEmail());
+ 
+            // ✅ FIXED ROLE ACCESS
+            responseData.put(
+                    "role",
+                    mu.getRole() != null ? mu.getRole().getRoleName() : null
+            );
         }
 
         responseData.put("fullName", fullName);
@@ -189,6 +192,7 @@ public class UserController {
                 new RestAPIResponse("Success", "Profile retrieved successfully", responseData)
         );
     }
+
 
 
 
