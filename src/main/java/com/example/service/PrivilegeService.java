@@ -14,7 +14,7 @@ public interface PrivilegeService {
 
     PrivilegeDTO updatePrivilege(Long id, PrivilegeDTO privilegeDTO);
 
-    public void deletePrivilege(Long id);
+
 
     // Fetch operations
     List<PrivilegeDTO> getAllPrivileges();

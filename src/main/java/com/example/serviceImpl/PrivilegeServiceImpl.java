@@ -20,6 +20,7 @@ import com.example.repository.RoleRepository;
 import com.example.service.PrivilegeService;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 
@@ -62,35 +63,58 @@ public class PrivilegeServiceImpl implements PrivilegeService {
         return convertToDTO(updated);
     }
 
-    // 🟢 Safe Delete Privilege
+    // Safe Delete Privilege
     @Override
     @Transactional
     public void deletePrivilege(Long id) {
-        try {
-            Privilege privilege = privilegeRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Privilege not found with ID: " + id));
+        Privilege privilege = privilegeRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Privilege not found with ID: " + id));
 
-            // ✅ Unlink from all roles first
-            Set<Role> linkedRoles = new HashSet<>(privilege.getRoles());
-            for (Role role : linkedRoles) {
-                role.getPrivileges().remove(privilege);
-                roleRepository.save(role);
+        Set<Role> linkedRoles = new HashSet<>(privilege.getRoles());
+        for (Role role : linkedRoles) {
+            role.getPrivileges().remove(privilege);
+            roleRepository.save(role);
+        }
+
+        entityManager.createNativeQuery("DELETE FROM role_privileges WHERE privilegeid = :pid")
+                .setParameter("pid", id)
+                .executeUpdate();
+
+        privilegeRepository.delete(privilege);
+        privilegeRepository.flush();
+        entityManager.clear();
+    }
+
+    @Override
+    @Transactional
+    public void deletePrivilegesByCategoryId(Long categoryId) {
+        try {
+            // 1️⃣ Fetch any privilege for the given ID to extract category name
+            Privilege privilege = privilegeRepository.findById(categoryId)
+                    .orElseThrow(() -> new RuntimeException("Privilege not found with ID: " + categoryId));
+
+            String category = privilege.getCategory();
+
+            // 2️⃣ Get all privilege IDs belonging to that category
+            List<Long> privilegeIds = privilegeRepository.findIdsByCategory(category);
+
+            if (privilegeIds.isEmpty()) {
+                throw new RuntimeException("No privileges found for category: " + category);
             }
 
-            // ✅ Explicitly clear the join table (prevents constraint issues)
-            entityManager.createNativeQuery("DELETE FROM role_privileges WHERE privilegeid = :pid")
-                    .setParameter("pid", id)
+            // 3️⃣ Delete join table records (role_privileges)
+            entityManager.createNativeQuery("DELETE FROM role_privileges WHERE privilegeid IN (:ids)")
+                    .setParameter("ids", privilegeIds)
                     .executeUpdate();
 
-            // ✅ Delete the privilege entity itself
-            privilegeRepository.delete(privilege);
-            privilegeRepository.flush();
+            // 4️⃣ Delete privileges under this category
+            privilegeRepository.deleteByCategory(category);
 
-            // ✅ Clear Hibernate persistence context (forces fresh state)
+            // 5️⃣ Clear persistence context to avoid stale data
             entityManager.clear();
 
         } catch (Exception e) {
-            throw new RuntimeException("Error deleting privilege ID " + id + ": " + e.getMessage(), e);
+            throw new RuntimeException("Error deleting privileges for categoryId " + categoryId + ": " + e.getMessage(), e);
         }
     }
 
