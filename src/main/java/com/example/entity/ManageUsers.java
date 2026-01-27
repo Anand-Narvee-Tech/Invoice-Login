@@ -41,6 +41,10 @@ public class ManageUsers {
     private String firstName;
     private String middleName;
     private String lastName;
+    
+    
+    @Column(nullable = false)
+    private String companyDomain;
 
     @Column(unique = true, nullable = false)
     private String email;
@@ -116,4 +120,15 @@ public class ManageUsers {
         value = value.trim();
         return value.substring(0, 1).toUpperCase() + value.substring(1).toLowerCase();
     }
+
+	
+    
+    @Column(name = "approved")
+    private Boolean approved = false;
+
+    @Column(name = "active")
+    private Boolean active = true;
+
+    
+    
 }
