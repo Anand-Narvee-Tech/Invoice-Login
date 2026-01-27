@@ -29,4 +29,6 @@ public interface PrivilegeService {
 
     Map<String, String> getEndpointPrivilegesMap();
     public void deletePrivilegesByCategoryId(Long categoryId);
+
+    public void deletePrivilege(Long id);
 }
