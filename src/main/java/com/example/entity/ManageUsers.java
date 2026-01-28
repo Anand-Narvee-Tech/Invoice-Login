@@ -34,11 +34,9 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class ManageUsers {
 
-
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-
 
 	@Column(name = "first_name")
 	private String firstName;
@@ -53,14 +51,12 @@ public class ManageUsers {
 	@jakarta.validation.constraints.NotBlank(message = "Full name is mandatory")
 	private String fullName;
 
-
 	@Column(name = "company_domain", nullable = false)
 	@jakarta.validation.constraints.NotBlank(message = "Company domain is mandatory")
 	private String companyDomain;
 
 	@Column(name = "company_name")
 	private String companyName;
-
 
 	@Column(name = "email", nullable = false, unique = true)
 	@jakarta.validation.constraints.NotBlank(message = "Email is mandatory")
@@ -72,14 +68,12 @@ public class ManageUsers {
 	@Column(name = "mobile_number")
 	private String mobileNumber;
 
-
 	@Column(name = "role_name")
 	private String roleName;
 
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "roleid")
 	private Role role;
-
 
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "added_by_user_id")
@@ -99,13 +93,11 @@ public class ManageUsers {
 	@Column(name = "updated_by_name")
 	private String updatedByName;
 
-
 	@Column(name = "approved")
 	private Boolean approved = false;
 
 	@Column(name = "active")
 	private Boolean active = true;
-
 
 	@CreationTimestamp
 	@Column(name = "created_at", nullable = false, updatable = false)
@@ -114,7 +106,6 @@ public class ManageUsers {
 	@UpdateTimestamp
 	@Column(name = "updated_at")
 	private LocalDateTime updatedAt;
-
 
 	@PrePersist
 	@PreUpdate
@@ -150,7 +141,6 @@ public class ManageUsers {
 		}
 
 	}
-
 
 	private String buildFullName() {
 
