@@ -19,4 +19,7 @@ public class ManageUserDTO {
     private Long updatedBy;       // updater user ID
     private String addedByName;   // addedBy full name
     private String updatedByName; // updater full name
+    
+    private String mobileNumber;
+    private String companyName;
 }
