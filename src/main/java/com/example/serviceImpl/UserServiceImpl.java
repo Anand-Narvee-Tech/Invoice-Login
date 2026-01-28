@@ -305,8 +305,8 @@ public class UserServiceImpl implements UserService {
 		boolean isFirstUser = userRepository.count() == 0;
 
 		if (isFirstUser) {
-			Role superAdminRole = roleRepository.findByRoleName("SUPERADMIN")
-					.orElseThrow(() -> new RuntimeException("SUPERADMIN role not found in DB!"));
+			Role superAdminRole = roleRepository.findByRoleName("ADMIN")
+					.orElseThrow(() -> new RuntimeException("ADMIN role not found in DB!"));
 			user.setRole(superAdminRole);
 			user.setApproved(true);
 			user.setActive(true);
@@ -335,8 +335,8 @@ public class UserServiceImpl implements UserService {
 				u.setActive(true);
 
 				// Unwrap Optional<Role>
-				Role superAdminRole = roleRepository.findByRoleName("SUPERADMIN")
-						.orElseThrow(() -> new RuntimeException("SUPERADMIN role not found"));
+				Role superAdminRole = roleRepository.findByRoleName("ADMIN")
+						.orElseThrow(() -> new RuntimeException("ADMIN role not found"));
 				u.setRole(superAdminRole);
 
 				return u;
