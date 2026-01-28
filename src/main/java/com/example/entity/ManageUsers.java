@@ -31,104 +31,111 @@ import lombok.NoArgsConstructor;
 @Builder
 @Entity
 @Table(name = "manage_users")
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class ManageUsers {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    private String firstName;
-    private String middleName;
-    private String lastName;
-    
-    
-    @Column(nullable = false)
-    private String companyDomain;
+	private String firstName;
+	private String middleName;
+	private String lastName;
 
-    @Column(unique = true, nullable = false)
-    private String email;
+	// 🔥 REQUIRED FIELD
+	@Column(name = "company_domain", nullable = false)
+	@jakarta.validation.constraints.NotBlank(message = "Company domain is mandatory")
+	private String companyDomain;
 
-    private String primaryEmail;
+	@Column(unique = true, nullable = false)
+	@jakarta.validation.constraints.NotBlank(message = "Email is mandatory")
+	private String email;
 
-    @Column(name = "role_name")
-    private String roleName;
+	private String primaryEmail;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "roleid")
-    private Role role;
+	@Column(name = "role_name")
+	private String roleName;
 
-    // ID fields for audit
-    private Long updatedBy;
+	@ManyToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "roleid")
+	private Role role;
 
-    // Stored name fields
- 
-    @Column(name = "added_by_name")
-    private String addedByName;
+	private Long updatedBy;
 
-    @Column(name = "updated_by_name")
-    private String updatedByName;
+	@Column(name = "added_by_name")
+	private String addedByName;
 
-    // Stored full name
-    @JsonProperty("fullName")
-    @Column(name = "full_name", nullable = false)
-    private String fullName;
+	@Column(name = "updated_by_name")
+	private String updatedByName;
 
-    // Relations for addedBy and createdBy
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "added_by_user_id")
-    private User addedBy;
+	// 🔥 REQUIRED FIELD
+	@Column(name = "full_name", nullable = false)
+	private String fullName;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "created_by_user_id")
-    @JsonIgnore
-    private User createdBy;
-    
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+	@ManyToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "added_by_user_id")
+	private User addedBy;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+	@ManyToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "created_by_user_id")
+	@JsonIgnore
+	private User createdBy;
 
-    // Optional helper method to compute full name
-    public String computeFullName() {
-        StringBuilder sb = new StringBuilder();
-        if (firstName != null && !firstName.isBlank()) sb.append(firstName.trim());
-        if (middleName != null && !middleName.isBlank()) sb.append(" ").append(middleName.trim());
-        if (lastName != null && !lastName.isBlank()) sb.append(" ").append(lastName.trim());
-        return sb.toString().trim();
-    }
-    
-    @PrePersist
-    @PreUpdate
-    public void capitalizeNames() {
-        this.firstName = capitalize(this.firstName);
-        this.middleName = capitalize(this.middleName);
-        this.lastName = capitalize(this.lastName);
+	@CreationTimestamp
+	@Column(name = "created_at", nullable = false, updatable = false)
+	private LocalDateTime createdAt;
 
-        // ✅ DO NOT override frontend fullName
-        if (this.fullName == null || this.fullName.isBlank()) {
-            this.fullName = computeFullName();
-        }
-    }
+	@UpdateTimestamp
+	@Column(name = "updated_at")
+	private LocalDateTime updatedAt;
 
+	@Column(name = "approved")
+	private Boolean approved = false;
 
-    private String capitalize(String value) {
-        if (value == null || value.isBlank()) return value;
-        value = value.trim();
-        return value.substring(0, 1).toUpperCase() + value.substring(1).toLowerCase();
-    }
+	@Column(name = "active")
+	private Boolean active = true;
 
-	
-    
-    @Column(name = "approved")
-    private Boolean approved = false;
+	/* -------------------- Lifecycle hooks -------------------- */
 
-    @Column(name = "active")
-    private Boolean active = true;
+	@PrePersist
+	@PreUpdate
+	public void prePersistUpdate() {
 
-    
-    
+		// 🔥 HARD STOP (prevents DB crash)
+		if (companyDomain == null || companyDomain.isBlank()) {
+			throw new IllegalStateException("companyDomain must not be null or blank");
+		}
+
+		this.firstName = capitalize(this.firstName);
+		this.middleName = capitalize(this.middleName);
+		this.lastName = capitalize(this.lastName);
+
+		if (this.fullName == null || this.fullName.isBlank()) {
+			this.fullName = computeFullName();
+		}
+
+		if (this.fullName == null || this.fullName.isBlank()) {
+			throw new IllegalStateException("fullName must not be null or blank");
+		}
+	}
+
+	/* -------------------- Helpers -------------------- */
+
+	public String computeFullName() {
+		StringBuilder sb = new StringBuilder();
+		if (firstName != null && !firstName.isBlank())
+			sb.append(firstName.trim());
+		if (middleName != null && !middleName.isBlank())
+			sb.append(" ").append(middleName.trim());
+		if (lastName != null && !lastName.isBlank())
+			sb.append(" ").append(lastName.trim());
+		return sb.toString().trim();
+	}
+
+	private String capitalize(String value) {
+		if (value == null || value.isBlank())
+			return value;
+		value = value.trim();
+		return value.substring(0, 1).toUpperCase() + value.substring(1).toLowerCase();
+	}
 }
