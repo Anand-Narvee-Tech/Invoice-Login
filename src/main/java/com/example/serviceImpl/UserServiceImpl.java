@@ -174,52 +174,118 @@ public class UserServiceImpl implements UserService {
 //        return convertToDTO(saved);
 //    }
 
-	@Transactional
-	public ManageUserDTO registerCompanyUser(ManageUsers manageUsers) {
+	
+	
+	//done
+//	@Transactional
+//	public ManageUserDTO registerCompanyUser(ManageUsers manageUsers) {
+//
+//		// 1️⃣ Normalize email
+//		String email = manageUsers.getEmail().trim().toLowerCase();
+//		manageUsers.setEmail(email);
+//
+//		// 2️⃣ Extract domain
+//		String domain = extractDomain(email);
+//		manageUsers.setCompanyDomain(domain);
+//
+//		// 3️⃣ Check if ADMIN already exists (CORRECT)
+//		boolean adminExists = manageUserRepository.existsByCompanyDomainAndRole_RoleNameIgnoreCase(domain, "ADMIN");
+//
+//		if (adminExists) {
+//			throw new BusinessException("Company already registered. Please contact your company administrator.");
+//		}
+//
+//		// 4️⃣ Fetch ADMIN role
+//		Role adminRole = roleRepository.findByRoleNameIgnoreCase("ADMIN")
+//				.orElseThrow(() -> new RuntimeException("ADMIN role not found"));
+//
+//		// 5️⃣ Assign role
+//		manageUsers.setRole(adminRole);
+//
+//		// Optional (keep only if column exists)
+//		manageUsers.setRoleName(adminRole.getRoleName());
+//
+//		// 6️⃣ Defaults
+//		manageUsers.setApproved(true);
+//		manageUsers.setActive(true);
+//		manageUsers.setAddedByName("SELF-REGISTERED");
+//
+//		// 7️⃣ Save
+//		ManageUsers saved = manageUserRepository.save(manageUsers);
+//		
+//		User user = new User();
+//      user.setEmail(saved.getEmail());
+//      user.setFirstName(saved.getFirstName());
+//      user.setMiddleName(saved.getMiddleName());
+//      user.setLastName(saved.getLastName());
+//      user.setFullName(saved.getFullName());
+//      user.setPrimaryEmail(saved.getPrimaryEmail());
+//      user.setApproved(true);
+//      user.setActive(true);
+//      
+//
+//      userRepository.save(user);
+//
+////      return convertToDTO(saved);
+//
+//		return convertToDTO(saved);
+//	}
+	
+//done	
+	
+  @Transactional
+  public ManageUserDTO registerCompanyUser(ManageUsers manageUsers) {
 
-		// 1️⃣ Normalize email
-		String email = manageUsers.getEmail().trim().toLowerCase();
-		manageUsers.setEmail(email);
+      String email = manageUsers.getEmail().trim().toLowerCase();
+      String domain = extractDomain(email);
 
-		// 2️⃣ Extract domain
-		String domain = extractDomain(email);
-		manageUsers.setCompanyDomain(domain);
+      manageUsers.setCompanyDomain(domain);
 
-		// 3️⃣ Check if ADMIN already exists (CORRECT)
-		boolean adminExists = manageUserRepository.existsByCompanyDomainAndRole_RoleNameIgnoreCase(domain, "ADMIN");
+      boolean AdminExists =
+          manageUserRepository.existsByCompanyDomainAndRoleNameIgnoreCase(domain, "ADMIN");
 
-		if (adminExists) {
-			throw new BusinessException("Company already registered. Please contact your company administrator.");
-		}
+      if (AdminExists) {
+          throw new BusinessException(
+              "Company already registered. Please contact your company administrator."
+          );
+      }
 
-		// 4️⃣ Fetch ADMIN role
-		Role adminRole = roleRepository.findByRoleNameIgnoreCase("ADMIN")
-				.orElseThrow(() -> new RuntimeException("ADMIN role not found"));
+      Role AdminRole = roleRepository.findByRoleNameIgnoreCase("ADMIN")
+          .orElseThrow(() -> new RuntimeException("ADMIN role not found"));
 
-		// 5️⃣ Assign role
-		manageUsers.setRole(adminRole);
+      manageUsers.setRole(AdminRole);
+      manageUsers.setRoleName("ADMIN");
 
-		// Optional (keep only if column exists)
-		manageUsers.setRoleName(adminRole.getRoleName());
+      manageUsers.setCreatedBy(null);
+      manageUsers.setAddedBy(null);
+      manageUsers.setAddedByName("SELF-REGISTERED");
 
-		// 6️⃣ Defaults
-		manageUsers.setApproved(true);
-		manageUsers.setActive(true);
-		manageUsers.setAddedByName("SELF-REGISTERED");
+      ManageUsers saved = manageUserRepository.save(manageUsers);
 
-		// 7️⃣ Save
-		ManageUsers saved = manageUserRepository.save(manageUsers);
+      User user = new User();
+      user.setEmail(saved.getEmail());
+      user.setFirstName(saved.getFirstName());
+      user.setMiddleName(saved.getMiddleName());
+      user.setLastName(saved.getLastName());
+      user.setFullName(saved.getFullName());
+      user.setPrimaryEmail(saved.getPrimaryEmail());
+      user.setApproved(true);
+      user.setActive(true);
+      user.setRole(AdminRole);
 
-		return convertToDTO(saved);
-	}
+      userRepository.save(user);
+
+      return convertToDTO(saved);
+  }
+	
 
 	/**
-	 * ===================== Initialize default super admins =====================
+	 * ===================== Initialize default  admins =====================
 	 **/
 	@EventListener(ApplicationReadyEvent.class)
 	@Transactional
 	public void initDefaultSuperAdmins() {
-		log.info("Initializing default super admins...");
+		log.info("Initializing default  admins...");
 
 		// 0️⃣ Ensure SYSTEM user exists (used as addedBy)
 		User systemUser = userRepository.findByEmailIgnoreCase("system@narveetech.com").orElseGet(() -> {
@@ -232,9 +298,9 @@ public class UserServiceImpl implements UserService {
 		});
 
 		// 1️⃣ Ensure SUPERADMIN role exists
-		Role superAdminRole = roleRepository.findByRoleName("SUPERADMIN").orElseGet(() -> {
-			Role role = Role.builder().roleName("SUPERADMIN")
-					.description("Default super admin role with full privileges").status("Active")
+		Role superAdminRole = roleRepository.findByRoleName("ADMIN").orElseGet(() -> {
+			Role role = Role.builder().roleName("ADMIN")
+					.description("Default  admin role with full privileges").status("Active")
 					.createdDate(LocalDateTime.now()).build();
 			return roleRepository.saveAndFlush(role);
 		});
@@ -257,7 +323,7 @@ public class UserServiceImpl implements UserService {
 			// 2b️⃣ Ensure ManageUsers entry exists
 			if (!manageUserRepository.existsByEmailIgnoreCase(lowerEmail)) {
 				ManageUsers mu = ManageUsers.builder().email(lowerEmail).firstName(user.getFirstName())
-						.roleName("SUPERADMIN").addedBy(systemUser) // ✅ pass SYSTEM user object
+						.roleName("ADMIN").addedBy(systemUser) // ✅ pass SYSTEM user object
 						.createdBy(user) // ✅ set createdBy as the user themselves
 						.build();
 				manageUserRepository.saveAndFlush(mu);
@@ -277,8 +343,8 @@ public class UserServiceImpl implements UserService {
 		boolean isFirstUser = userRepository.count() == 0;
 
 		if (isFirstUser) {
-			Role superAdminRole = roleRepository.findByRoleName("SUPERADMIN")
-					.orElseThrow(() -> new RuntimeException("SUPERADMIN role not found in DB!"));
+			Role superAdminRole = roleRepository.findByRoleName("ADMIN")
+					.orElseThrow(() -> new RuntimeException("ADMIN role not found in DB!"));
 			user.setRole(superAdminRole);
 			user.setApproved(true);
 			user.setActive(true);
@@ -307,8 +373,8 @@ public class UserServiceImpl implements UserService {
 				u.setActive(true);
 
 				// Unwrap Optional<Role>
-				Role superAdminRole = roleRepository.findByRoleName("SUPERADMIN")
-						.orElseThrow(() -> new RuntimeException("SUPERADMIN role not found"));
+				Role superAdminRole = roleRepository.findByRoleName("ADMIN")
+						.orElseThrow(() -> new RuntimeException("ADMIN role not found"));
 				u.setRole(superAdminRole);
 
 				return u;
