@@ -93,7 +93,9 @@ public class UserController {
 		manageUsers.setMiddleName(request.getMiddleName());
 		manageUsers.setLastName(request.getLastName());
 		manageUsers.setEmail(request.getEmail());
-		manageUsers.setPrimaryEmail(request.getEmail()); // ✅ FIX (no null)
+		manageUsers.setPrimaryEmail(request.getEmail());
+		manageUsers.setMobileNumber(request.getMobileNumber());
+		manageUsers.setCompanyName(request.getCompanyName());
 
 		ManageUserDTO response = userServiceImpl.registerCompanyUser(manageUsers);
 
