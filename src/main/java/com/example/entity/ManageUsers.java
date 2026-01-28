@@ -129,6 +129,12 @@ public class ManageUsers {
     @Column(name = "active")
     private Boolean active = true;
 
+	
+//Bhargav
+   
+    private String mobileNumber;
+
+    private String companyName;
     
-    
+//Bhargav
 }
