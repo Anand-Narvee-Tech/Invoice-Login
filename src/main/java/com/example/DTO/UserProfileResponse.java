@@ -24,4 +24,5 @@ public class UserProfileResponse {
 	private String invoicePrefix;
 	private String profilePicPath;
 	private String role;
+
 }

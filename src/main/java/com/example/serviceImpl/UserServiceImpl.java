@@ -78,12 +78,17 @@ public class UserServiceImpl implements UserService {
 	}
 
 	private ManageUserDTO convertToDTO(ManageUsers user) {
-		return ManageUserDTO.builder().id(user.getId()).fullName(user.getFullName())
-				.primaryEmail(user.getPrimaryEmail()).firstName(user.getFirstName()).middleName(user.getMiddleName())
-				.lastName(user.getLastName()).email(user.getEmail()).roleName(user.getRoleName())
+
+		return ManageUserDTO.builder().id(user.getId()).fullName(user.getFullName()).firstName(user.getFirstName())
+				.middleName(user.getMiddleName()).lastName(user.getLastName()).email(user.getEmail())
+				.primaryEmail(user.getPrimaryEmail())
+				// 🔥 THESE TWO LINES WERE MISSING
+				.mobileNumber(user.getMobileNumber()).companyName(user.getCompanyName()).roleName(user.getRoleName())
 				.addedBy(user.getAddedBy() != null ? user.getAddedBy().getId().toString() : null)
 				.updatedBy(user.getUpdatedBy()).addedByName(user.getAddedByName())
-				.updatedByName(user.getUpdatedByName()).build();
+				.updatedByName(user.getUpdatedByName())
+
+				.build();
 	}
 
 	//
@@ -180,6 +185,10 @@ public class UserServiceImpl implements UserService {
 
 		final String ADMIN_ROLE = "ADMIN";
 
+		// 🔥 preserve incoming values
+		String mobileNumber = manageUsers.getMobileNumber();
+		String companyName = manageUsers.getCompanyName();
+
 		// 1️⃣ Normalize email
 		String email = manageUsers.getEmail().trim().toLowerCase();
 		manageUsers.setEmail(email);
@@ -190,9 +199,7 @@ public class UserServiceImpl implements UserService {
 		manageUsers.setCompanyDomain(domain);
 
 		// 3️⃣ Check if ADMIN already exists
-		boolean adminExists = manageUserRepository.existsByCompanyDomainAndRole_RoleNameIgnoreCase(domain, ADMIN_ROLE);
-
-		if (adminExists) {
+		if (manageUserRepository.existsByCompanyDomainAndRole_RoleNameIgnoreCase(domain, ADMIN_ROLE)) {
 			throw new BusinessException("Company already registered. Please contact your company administrator.");
 		}
 
@@ -200,7 +207,7 @@ public class UserServiceImpl implements UserService {
 		Role adminRole = roleRepository.findByRoleNameIgnoreCase(ADMIN_ROLE).orElseThrow(() -> new BusinessException(
 				"Required role ADMIN is not configured. Please contact system administrator."));
 
-		// 5️⃣ Create USER (🔥 REQUIRED FOR LOGIN)
+		// 5️⃣ Create USER
 		User user = userRepository.findByEmailIgnoreCase(email).orElseGet(() -> {
 			User u = new User();
 			u.setEmail(email);
@@ -211,85 +218,21 @@ public class UserServiceImpl implements UserService {
 			return userRepository.save(u);
 		});
 
-		// 6️⃣ Create ManageUsers
+		// 6️⃣ Restore preserved fields 🔥
+		manageUsers.setMobileNumber(mobileNumber);
+		manageUsers.setCompanyName(companyName);
+
+		// 7️⃣ Create ManageUsers
 		manageUsers.setRole(adminRole);
 		manageUsers.setRoleName(adminRole.getRoleName());
 		manageUsers.setApproved(true);
 		manageUsers.setActive(true);
 		manageUsers.setAddedByName("SELF-REGISTERED");
-		manageUsers.setCreatedBy(user); // important linkage
+		manageUsers.setCreatedBy(user);
 		manageUsers.setAddedBy(user);
 
 		ManageUsers saved = manageUserRepository.save(manageUsers);
-
 		return convertToDTO(saved);
-	}
-
-	@EventListener(ApplicationReadyEvent.class)
-	@Transactional
-	public void initDefaultSuperAdmins() {
-
-		log.info("Initializing default roles and super admins...");
-
-		// 0️⃣ Ensure SYSTEM user exists
-		User systemUser = userRepository.findByEmailIgnoreCase("system@narveetech.com").orElseGet(() -> {
-			User u = new User();
-			u.setEmail("system@narveetech.com");
-			u.setFirstName("SYSTEM");
-			u.setApproved(true);
-			u.setActive(true);
-			return userRepository.saveAndFlush(u);
-		});
-
-		// 1️⃣ Ensure ADMIN role exists ✅ (THIS WAS MISSING)
-		Role adminRole = roleRepository.findByRoleNameIgnoreCase("ADMIN").orElseGet(() -> {
-			Role role = new Role();
-			role.setRoleName("ADMIN");
-			role.setDescription("Company administrator role");
-			role.setStatus("ACTIVE");
-			role.setCreatedDate(LocalDateTime.now());
-			return roleRepository.saveAndFlush(role);
-		});
-
-		// 2️⃣ Ensure SUPERADMIN role exists
-		Role superAdminRole = roleRepository.findByRoleNameIgnoreCase("SUPERADMIN").orElseGet(() -> {
-			Role role = new Role();
-			role.setRoleName("SUPERADMIN");
-			role.setDescription("Default super admin role with full privileges");
-			role.setStatus("ACTIVE");
-			role.setCreatedDate(LocalDateTime.now());
-			return roleRepository.saveAndFlush(role);
-		});
-
-		// 3️⃣ Create default super admins
-		for (String email : DEFAULT_SUPERUSERS) {
-
-			String lowerEmail = email.trim().toLowerCase();
-			String companyDomain = lowerEmail.substring(lowerEmail.indexOf("@") + 1);
-
-			// Ensure User exists
-			User user = userRepository.findByEmailIgnoreCase(lowerEmail).orElseGet(() -> {
-				User u = new User();
-				u.setEmail(lowerEmail);
-				u.setFirstName(lowerEmail.split("@")[0]);
-				u.setApproved(true);
-				u.setActive(true);
-				u.setRole(superAdminRole);
-				return userRepository.saveAndFlush(u);
-			});
-
-			// Ensure ManageUsers entry exists
-			if (!manageUserRepository.existsByEmailIgnoreCase(lowerEmail)) {
-
-				ManageUsers mu = ManageUsers.builder().email(lowerEmail).firstName(user.getFirstName())
-						.companyDomain(companyDomain).role(superAdminRole).roleName("SUPERADMIN").addedBy(systemUser)
-						.createdBy(user).approved(true).active(true).build();
-
-				manageUserRepository.saveAndFlush(mu);
-			}
-		}
-
-		log.info("✅ Default roles and super admins initialized successfully");
 	}
 
 	/**
@@ -608,31 +551,34 @@ public class UserServiceImpl implements UserService {
 		ManageUsers mu = muOpt.orElse(null);
 
 		return UserProfileResponse.builder().id(user != null ? user.getId() : 0L).fullName(resolveFullName(user, mu))
-				.primaryEmail(mu != null ? mu.getEmail() : normalizedEmail)
-				.mobileNumber(user != null ? safe(user.getMobileNumber()) : "")
-				.alternativeEmail(user != null ? safe(user.getAlternativeEmail()) : "")
-				.alternativeMobileNumber(user != null ? safe(user.getAlternativeMobileNumber()) : "")
-				.companyName(user != null ? safe(user.getCompanyName()) : "")
-				.taxId(user != null ? safe(user.getTaxId()) : "")
-				.businessId(user != null ? safe(user.getBusinessId()) : "")
-				.preferredCurrency(user != null ? safe(user.getPreferredCurrency()) : "")
-				.invoicePrefix(user != null ? safe(user.getInvoicePrefix()) : "")
-				.profilePicPath(user != null ? safe(user.getProfilePicPath()) : "")
-				.role(mu != null && mu.getRole() != null ? mu.getRole().getRoleName() : "").build();
+				.primaryEmail(user != null && hasText(user.getPrimaryEmail()) ? user.getPrimaryEmail()
+						: mu != null ? safe(mu.getEmail()) : normalizedEmail)
+				.mobileNumber(user != null && hasText(user.getMobileNumber()) ? user.getMobileNumber()
+						: mu != null ? safe(mu.getMobileNumber()) : "")
+				.alternativeEmail(user != null && hasText(user.getAlternativeEmail()) ? user.getAlternativeEmail() : "")
+				.alternativeMobileNumber(
+						user != null && hasText(user.getAlternativeMobileNumber()) ? user.getAlternativeMobileNumber()
+								: "")
+				.companyName(user != null && hasText(user.getCompanyName()) ? user.getCompanyName()
+						: mu != null ? safe(mu.getCompanyName()) : "")
+				.taxId(user != null && hasText(user.getTaxId()) ? user.getTaxId() : "")
+				.businessId(user != null && hasText(user.getBusinessId()) ? user.getBusinessId() : "")
+				.preferredCurrency(
+						user != null && hasText(user.getPreferredCurrency()) ? user.getPreferredCurrency() : "")
+				.invoicePrefix(user != null && hasText(user.getInvoicePrefix()) ? user.getInvoicePrefix() : "")
+				.profilePicPath(user != null && hasText(user.getProfilePicPath()) ? user.getProfilePicPath() : "")
+				.role(mu != null && mu.getRole() != null ? mu.getRole().getRoleName()
+						: user != null && user.getRole() != null ? user.getRole().getRoleName() : "")
+				.build();
 	}
 
-	// ---------- Helper Methods ----------
-
 	private String resolveFullName(User user, ManageUsers mu) {
-
 		if (mu != null && hasText(mu.getFullName())) {
 			return mu.getFullName();
 		}
-
 		if (user != null && hasText(user.getFullName())) {
 			return user.getFullName();
 		}
-
 		return "";
 	}
 
@@ -643,4 +589,5 @@ public class UserServiceImpl implements UserService {
 	private boolean hasText(String value) {
 		return value != null && !value.isBlank();
 	}
+
 }
