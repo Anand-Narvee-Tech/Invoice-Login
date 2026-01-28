@@ -13,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.example.entity.ManageUsers;
+import com.example.entity.Role;
 import com.example.entity.User;
 
 import jakarta.transaction.Transactional;
@@ -109,5 +110,9 @@ public interface ManageUserRepository extends JpaRepository<ManageUsers, Long>, 
 	Optional<ManageUsers> findFirstByCompanyDomainIgnoreCase(String companyDomain);
 
 	boolean existsByCompanyDomainAndRole_RoleNameIgnoreCase(String companyDomain, String roleName);
+
+	boolean existsByCompanyDomainAndRole(String domain, Role adminRole);
+	
+	
 
 }
