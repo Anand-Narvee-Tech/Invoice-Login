@@ -64,4 +64,8 @@ public interface ManageUserService {
             MultipartFile profileImage);
     // Map entity to DTO
     UserUpdateRequest mapToDto(User user);
+
+	/** ================= UPDATE USER PROFILE ================= **/
+    
+	User updateUserProfile(UserUpdateRequest request, String loggedInEmail);
 }

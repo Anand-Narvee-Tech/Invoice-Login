@@ -109,6 +109,14 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	                .filter(s -> s != null && !s.isBlank())
 	                .collect(Collectors.joining(" "));
 	    }
+	    
+	    private String extractDomain(String email) {
+	        if (email == null || !email.contains("@")) {
+	            throw new RuntimeException("Invalid email address");
+	        }
+	        return email.substring(email.indexOf("@") + 1).toLowerCase();
+	    }
+
 
     /** ================= CREATE USER ================= **/
 	    @Override
@@ -117,14 +125,21 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 	        // 1️⃣ Get current logged-in user
 	        User currentUser = getCurrentLoggedInUser(loggedInEmail);
-	        String currentUserRole = currentUser.getRole() != null ? currentUser.getRole().getRoleName() : null;
+	        String currentUserRole = currentUser.getRole() != null
+	                ? currentUser.getRole().getRoleName()
+	                : null;
+
+	        if (currentUserRole == null) {
+	            throw new RuntimeException("User role not found");
+	        }
 
 	        // 2️⃣ Role permission checks
 	        if (!List.of("SUPERADMIN", "ADMIN").contains(currentUserRole.toUpperCase())) {
 	            throw new RuntimeException("You do not have permission to create users");
 	        }
-	        if ("ADMIN".equalsIgnoreCase(currentUserRole) &&
-	                "SUPERADMIN".equalsIgnoreCase(manageUsers.getRoleName())) {
+
+	        if ("ADMIN".equalsIgnoreCase(currentUserRole)
+	                && "SUPERADMIN".equalsIgnoreCase(manageUsers.getRoleName())) {
 	            throw new RuntimeException("ADMIN cannot create SUPERADMIN");
 	        }
 
@@ -133,35 +148,56 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	            throw new RuntimeException("Email already exists");
 	        }
 
-	        // 4️⃣ Fetch Role entity and set in ManageUsers
-	        Role role = roleRepository.findByRoleNameIgnoreCase(manageUsers.getRoleName())
-	                .orElseThrow(() -> new RuntimeException("Role not found: " + manageUsers.getRoleName()));
-	        manageUsers.setRole(role);                       // ✅ important: set entity
-	        manageUsers.setRoleName(role.getRoleName());     // optional: keep string if needed
+	        // 4️⃣ Company domain restriction (VERY IMPORTANT)
+	        String currentDomain = extractDomain(currentUser.getEmail());
+	        String newUserDomain = extractDomain(manageUsers.getEmail());
 
-	        // 5️⃣ Set audit fields
-	        manageUsers.setAddedBy(currentUser);
-	        manageUsers.setAddedByName(buildFullName(currentUser));
-	        manageUsers.setCreatedBy(currentUser);
+	        if (!currentDomain.equalsIgnoreCase(newUserDomain)) {
+	            throw new RuntimeException("You can create users only for your own company");
+	        }
+
+	        manageUsers.setCompanyDomain(currentDomain);
+
+	        // 5️⃣ Fetch Role entity
+	        Role role = roleRepository.findByRoleNameIgnoreCase(manageUsers.getRoleName())
+	                .orElseThrow(() ->
+	                        new RuntimeException("Role not found: " + manageUsers.getRoleName()));
+
+	        manageUsers.setRole(role);
+	        manageUsers.setRoleName(role.getRoleName());
 
 	        // 6️⃣ Handle fullName
 	        if (manageUsers.getFullName() != null && !manageUsers.getFullName().isBlank()) {
 	            manageUsers.setFullName(manageUsers.getFullName().trim());
 	        } else {
-	            manageUsers.setFullName(buildFullName(manageUsers)); // fallback if empty
+	            manageUsers.setFullName(manageUsers.computeFullName());
 	        }
 
-	        // 7️⃣ Save ManageUsers entity
+	        // 7️⃣ Set audit fields
+	        manageUsers.setAddedBy(currentUser);
+	        manageUsers.setAddedByName(buildFullName(currentUser));
+	        manageUsers.setCreatedBy(currentUser);
+
+	        // 8️⃣ Save ManageUsers
 	        ManageUsers saved = manageUserRepository.save(manageUsers);
 
-	        // 8️⃣ Sync to User table
-	        userRepository.findByEmailIgnoreCase(saved.getEmail()).ifPresentOrElse(u -> {
-	            if (u.getCreatedBy() == null) u.setCreatedBy(currentUser);
-	            u.setRole(role);                            // ✅ set role entity
-	            u.setFullName(saved.getFullName());
-	            u.setPrimaryEmail(saved.getPrimaryEmail());
-	            userRepository.save(u);
+	        // 9️⃣ Sync User table
+	        userRepository.findByEmailIgnoreCase(saved.getEmail()).ifPresentOrElse(existingUser -> {
+
+	            if (existingUser.getCreatedBy() == null) {
+	                existingUser.setCreatedBy(currentUser);
+	            }
+
+	            existingUser.setRole(role);
+	            existingUser.setFullName(saved.getFullName());
+	            existingUser.setPrimaryEmail(saved.getPrimaryEmail());
+	            existingUser.setActive(true);
+	            existingUser.setApproved(true);
+
+	            userRepository.save(existingUser);
+
 	        }, () -> {
+
 	            User user = new User();
 	            user.setEmail(saved.getEmail());
 	            user.setFirstName(saved.getFirstName());
@@ -172,13 +208,15 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	            user.setApproved(true);
 	            user.setActive(true);
 	            user.setCreatedBy(currentUser);
-	            user.setRole(role);                          // ✅ set role entity
+	            user.setRole(role);
+
 	            userRepository.save(user);
 	        });
 
-	        // 9️⃣ Convert to DTO and return
+	        // 🔟 Convert to DTO
 	        return convertToDTO(saved);
 	    }
+
 
 
 

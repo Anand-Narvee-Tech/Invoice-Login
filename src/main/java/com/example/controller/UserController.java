@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.DTO.LoginRequest;
+import com.example.DTO.ManageUserDTO;
 import com.example.DTO.RegisterRequest;
 import com.example.commons.RestAPIResponse;
 import com.example.entity.ManageUsers;
@@ -61,41 +62,52 @@ public class UserController {
 //        }
 //    }
     
+//    @PostMapping("/register")
+//    public ResponseEntity<RestAPIResponse> register(@RequestBody RegisterRequest request) {
+//
+//        ManageUsers manageUsers = new ManageUsers();
+//        manageUsers.setFirstName(request.getFirstName());
+//        manageUsers.setMiddleName(request.getMiddleName());
+//        manageUsers.setLastName(request.getLastName());
+//        manageUsers.setEmail(request.getEmail());
+//        manageUsers.setPrimaryEmail(null);
+//
+//        // fullName handled automatically by @PrePersist
+//        ManageUserDTO response = userServiceImpl.registerCompanyUser(manageUsers);
+//
+//        return ResponseEntity.ok(
+//                new RestAPIResponse(
+//                        "success",
+//                        "Company registered successfully. SUPERADMIN created.",
+//                        response
+//                )
+//        );
+//    }
+
+    
+    
+    
     @PostMapping("/register")
     public ResponseEntity<RestAPIResponse> register(@RequestBody RegisterRequest request) {
-        try {
-            //  Validate required email
-            if (request.getEmail() == null || request.getEmail().isBlank()) {
-                return ResponseEntity.badRequest()
-                        .body(new RestAPIResponse("error", "Email is required", null));
-            }
 
-            // Map DTO → Entity
-            User user = new User();
-            user.setFirstName(request.getFirstName());
-            user.setMiddleName(request.getMiddleName());
-            user.setLastName(request.getLastName());
-            user.setEmail(request.getEmail());
-            user.setPrimaryEmail(request.getEmail()); // always set
-            user.setFullName(String.join(" ",
-                    request.getFirstName() != null ? request.getFirstName() : "",
-                    request.getMiddleName() != null ? request.getMiddleName() : "",
-                    request.getLastName() != null ? request.getLastName() : ""
-            ).trim());
-            user.setMobileNumber(request.getMobileNumber());
-            user.setCompanyName(request.getCompanyName());
+        ManageUsers manageUsers = new ManageUsers();
+        manageUsers.setFirstName(request.getFirstName());
+        manageUsers.setMiddleName(request.getMiddleName());
+        manageUsers.setLastName(request.getLastName());
+        manageUsers.setEmail(request.getEmail());
+        manageUsers.setPrimaryEmail(null);
 
-            // Call service
-            userServiceImpl.register(user);
+        // fullName handled automatically by @PrePersist
+        ManageUserDTO response = userServiceImpl.registerCompanyUser(manageUsers);
 
-            return ResponseEntity.ok(new RestAPIResponse("success", "Registered Successfully", null));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(
-                    new RestAPIResponse("error", e.getMessage(), null)
-            );
-        }
+        return ResponseEntity.ok(
+                new RestAPIResponse(
+                        "success",
+                        "Company registered successfully. ADMIN created.",
+                        response
+                )
+        );
     }
-
 
 
     /** Send OTP */
