@@ -7,7 +7,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -20,6 +19,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -30,111 +30,142 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "manage_users")
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@Table(name = "manage_users", uniqueConstraints = { @UniqueConstraint(columnNames = "email") })
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class ManageUsers {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    private String firstName;
-    private String middleName;
-    private String lastName;
-    
-    
-    @Column(nullable = false)
-    private String companyDomain;
+	@Column(name = "first_name")
+	private String firstName;
 
-    @Column(unique = true, nullable = false)
-    private String email;
+	@Column(name = "middle_name")
+	private String middleName;
 
-    private String primaryEmail;
+	@Column(name = "last_name")
+	private String lastName;
 
-    @Column(name = "role_name")
-    private String roleName;
+	@Column(name = "full_name", nullable = false)
+	@jakarta.validation.constraints.NotBlank(message = "Full name is mandatory")
+	private String fullName;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "roleid")
-    private Role role;
+	@Column(name = "company_domain", nullable = false)
+	@jakarta.validation.constraints.NotBlank(message = "Company domain is mandatory")
+	private String companyDomain;
 
-    // ID fields for audit
-    private Long updatedBy;
+	@Column(name = "company_name")
+	private String companyName;
 
-    // Stored name fields
- 
-    @Column(name = "added_by_name")
-    private String addedByName;
+	@Column(name = "email", nullable = false, unique = true)
+	@jakarta.validation.constraints.NotBlank(message = "Email is mandatory")
+	private String email;
 
-    @Column(name = "updated_by_name")
-    private String updatedByName;
+	@Column(name = "primary_email")
+	private String primaryEmail;
 
-    // Stored full name
-    @JsonProperty("fullName")
-    @Column(name = "full_name", nullable = false)
-    private String fullName;
+	@Column(name = "mobile_number")
+	private String mobileNumber;
 
-    // Relations for addedBy and createdBy
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "added_by_user_id")
-    private User addedBy;
+	@Column(name = "role_name")
+	private String roleName;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "created_by_user_id")
-    @JsonIgnore
-    private User createdBy;
-    
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+	@ManyToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "roleid")
+	private Role role;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+	@ManyToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "added_by_user_id")
+	private User addedBy;
 
-    // Optional helper method to compute full name
-    public String computeFullName() {
-        StringBuilder sb = new StringBuilder();
-        if (firstName != null && !firstName.isBlank()) sb.append(firstName.trim());
-        if (middleName != null && !middleName.isBlank()) sb.append(" ").append(middleName.trim());
-        if (lastName != null && !lastName.isBlank()) sb.append(" ").append(lastName.trim());
-        return sb.toString().trim();
-    }
-    
-    @PrePersist
-    @PreUpdate
-    public void capitalizeNames() {
-        this.firstName = capitalize(this.firstName);
-        this.middleName = capitalize(this.middleName);
-        this.lastName = capitalize(this.lastName);
+	@ManyToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "created_by_user_id")
+	@JsonIgnore
+	private User createdBy;
 
-        // ✅ DO NOT override frontend fullName
-        if (this.fullName == null || this.fullName.isBlank()) {
-            this.fullName = computeFullName();
-        }
-    }
+	@Column(name = "added_by_name")
+	private String addedByName;
 
+	@Column(name = "updated_by")
+	private Long updatedBy;
 
-    private String capitalize(String value) {
-        if (value == null || value.isBlank()) return value;
-        value = value.trim();
-        return value.substring(0, 1).toUpperCase() + value.substring(1).toLowerCase();
-    }
+	@Column(name = "updated_by_name")
+	private String updatedByName;
 
-	
-    
-    @Column(name = "approved")
-    private Boolean approved = false;
+	@Column(name = "approved")
+	private Boolean approved = false;
 
-    @Column(name = "active")
-    private Boolean active = true;
+	@Column(name = "active")
+	private Boolean active = true;
 
-	
-//Bhargav
-   
-    private String mobileNumber;
+	@CreationTimestamp
+	@Column(name = "created_at", nullable = false, updatable = false)
+	private LocalDateTime createdAt;
 
-    private String companyName;
-    
-//Bhargav
+	@UpdateTimestamp
+	@Column(name = "updated_at")
+	private LocalDateTime updatedAt;
+
+	@PrePersist
+	@PreUpdate
+	public void normalizeAndValidate() {
+
+		// Normalize names
+		this.firstName = capitalize(this.firstName);
+		this.middleName = capitalize(this.middleName);
+		this.lastName = capitalize(this.lastName);
+
+		// Compute full name if missing
+		if (!hasText(this.fullName)) {
+			this.fullName = buildFullName();
+		}
+
+		// Normalize emails
+		if (this.email != null) {
+			this.email = this.email.trim().toLowerCase();
+		}
+		if (this.primaryEmail != null) {
+			this.primaryEmail = this.primaryEmail.trim().toLowerCase();
+		}
+
+		// Validate required fields
+		if (!hasText(companyDomain)) {
+			throw new IllegalStateException("companyDomain must not be null or blank");
+		}
+		if (!hasText(email)) {
+			throw new IllegalStateException("email must not be null or blank");
+		}
+		if (!hasText(fullName)) {
+			throw new IllegalStateException("fullName must not be null or blank");
+		}
+
+	}
+
+	private String buildFullName() {
+
+		StringBuilder sb = new StringBuilder();
+
+		if (hasText(firstName))
+			sb.append(firstName.trim());
+		if (hasText(middleName))
+			sb.append(" ").append(middleName.trim());
+		if (hasText(lastName))
+			sb.append(" ").append(lastName.trim());
+
+		return sb.toString().trim();
+	}
+
+	private String capitalize(String value) {
+
+		if (!hasText(value))
+			return value;
+
+		value = value.trim();
+		return value.substring(0, 1).toUpperCase() + value.substring(1).toLowerCase();
+	}
+
+	private boolean hasText(String value) {
+		return value != null && !value.isBlank();
+	}
 }

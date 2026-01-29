@@ -4,22 +4,27 @@ import java.util.Map;
 import java.util.Optional;
 
 import com.example.DTO.LoginRequest;
+import com.example.DTO.UserProfileResponse;
 import com.example.entity.Role;
 import com.example.entity.User;
 
 public interface UserService {
- 
-	public String register(User user) ;
+
+	public String register(User user);
+
 	public Map<String, Object> loginWithOtp(LoginRequest request);
-    public void sendOtp(String email);//request OTP
+
+	public void sendOtp(String email);// request OTP
 //    public boolean isOTPValid(String email, String otp);
-    
-    public Optional<User> getUserById(Long id);
-    public User updateUserProfile(Long id, User updatedProfile);
-    
-    Optional<User> getUserByEmail(String email);
-    
-    Map<String, Object> getPrivilegesForUser(Long userId);
-    
-   
+
+	public Optional<User> getUserById(Long id);
+
+	public User updateUserProfile(Long id, User updatedProfile);
+
+	Optional<User> getUserByEmail(String email);
+
+	Map<String, Object> getPrivilegesForUser(Long userId);
+
+	UserProfileResponse getUserProfileByEmail(String email);
+
 }
