@@ -583,7 +583,8 @@ public class UserServiceImpl implements UserService {
 		User user = userOpt.orElse(null);
 		ManageUsers mu = muOpt.orElse(null);
 
-		return UserProfileResponse.builder().id(user != null ? user.getId() : 0L).fullName(resolveFullName(user, mu))
+		return UserProfileResponse.builder().id(user != null ? user.getId() : 0L)
+				.fullName(resolveFullName(user, mu))
 				.primaryEmail(user != null && hasText(user.getPrimaryEmail()) ? user.getPrimaryEmail()
 						: mu != null ? safe(mu.getEmail()) : normalizedEmail)
 				.mobileNumber(user != null && hasText(user.getMobileNumber()) ? user.getMobileNumber()
@@ -594,6 +595,16 @@ public class UserServiceImpl implements UserService {
 								: "")
 				.companyName(user != null && hasText(user.getCompanyName()) ? user.getCompanyName()
 						: mu != null ? safe(mu.getCompanyName()) : "")
+				// ✅ NEW FIELDS START HERE
+				.state(user != null && hasText(user.getState()) ? user.getState() : "")
+				.country(user != null && hasText(user.getCountry()) ? user.getCountry() : "")
+				.pincode(user != null && hasText(user.getPincode()) ? user.getPincode() : "")
+				.telephone(user != null && hasText(user.getTelephone()) ? user.getTelephone() : "")
+				.ein(user != null && hasText(user.getEin()) ? user.getEin() : "")
+				.gstin(user != null && hasText(user.getGstin()) ? user.getGstin() : "")
+				.website(user != null && hasText(user.getWebsite()) ? user.getWebsite() : "")
+				.address(user != null && hasText(user.getAddress()) ? user.getAddress() : "")
+				// ✅ NEW FIELDS END HERE
 				.taxId(user != null && hasText(user.getTaxId()) ? user.getTaxId() : "")
 				.businessId(user != null && hasText(user.getBusinessId()) ? user.getBusinessId() : "")
 				.preferredCurrency(
@@ -603,6 +614,7 @@ public class UserServiceImpl implements UserService {
 				.role(mu != null && mu.getRole() != null ? mu.getRole().getRoleName()
 						: user != null && user.getRole() != null ? user.getRole().getRoleName() : "")
 				.build();
+
 	}
 
 	private String resolveFullName(User user, ManageUsers mu) {

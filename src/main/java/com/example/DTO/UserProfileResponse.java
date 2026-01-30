@@ -25,4 +25,12 @@ public class UserProfileResponse {
 	private String profilePicPath;
 	private String role;
 
+	private String state;
+    private String country;
+    private String pincode;
+    private String telephone;
+    private String ein;
+    private String gstin;
+    private String website;
+	private String address;
 }
