@@ -28,4 +28,32 @@ public class RegisterRequest {
 
 	@JsonProperty("companyName")
 	private String companyName;
+	
+	//Bhargav
+	
+	@JsonProperty("state")
+	private String state;
+
+	@JsonProperty("country")
+	private String country;
+
+	@JsonProperty("pincode")
+	private String pincode;
+
+	@JsonProperty("telephone")
+	private String telephone;
+
+	@JsonProperty("ein")
+	private String ein;
+
+	@JsonProperty("gstin")
+	private String gstin;
+
+	@JsonProperty("website")
+	private String website;
+	
+	@JsonProperty("address")
+	private String address;
+	
+	//Bhargav
 }

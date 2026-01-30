@@ -1,13 +1,9 @@
 package com.example.entity;
-
 import java.time.LocalDateTime;
-
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -20,6 +16,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -48,18 +45,18 @@ public class ManageUsers {
 	private String lastName;
 
 	@Column(name = "full_name", nullable = false)
-	@jakarta.validation.constraints.NotBlank(message = "Full name is mandatory")
+	@NotBlank(message = "Full name is mandatory")
 	private String fullName;
 
 	@Column(name = "company_domain", nullable = false)
-	@jakarta.validation.constraints.NotBlank(message = "Company domain is mandatory")
+	@NotBlank(message = "Company domain is mandatory")
 	private String companyDomain;
 
 	@Column(name = "company_name")
 	private String companyName;
 
 	@Column(name = "email", nullable = false, unique = true)
-	@jakarta.validation.constraints.NotBlank(message = "Email is mandatory")
+	@NotBlank(message = "Email is mandatory")
 	private String email;
 
 	@Column(name = "primary_email")
@@ -98,7 +95,36 @@ public class ManageUsers {
 
 	@Column(name = "active")
 	private Boolean active = true;
+	
+	// Bhargav
+	
+		@Column(name = "state")
+		private String state;
+		
+		@Column(name = "country")
+		private String country;
+		
+		@Column(name = "pincode")
+		private String pincode;
+		
+		@Column(name = "telephone")
+		private String telephone;
+		
+		@Column(name = "ein")
+		private String ein;
+		
+		@Column(name = "gstin")
+		private String gstin;
+		
+		@Column(name = "website")
+		private String website;
+		
+		@Column(name = "address")
+		private String address;
 
+		// Bhargav
+
+	
 	@CreationTimestamp
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private LocalDateTime createdAt;
