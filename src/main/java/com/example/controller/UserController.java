@@ -96,6 +96,15 @@ public class UserController {
 		manageUsers.setPrimaryEmail(request.getEmail());
 		manageUsers.setMobileNumber(request.getMobileNumber());
 		manageUsers.setCompanyName(request.getCompanyName());
+		
+		manageUsers.setState(request.getState());
+		manageUsers.setCountry(request.getCountry());
+		manageUsers.setPincode(request.getPincode());
+		manageUsers.setTelephone(request.getTelephone());
+		manageUsers.setEin(request.getEin());
+		manageUsers.setGstin(request.getGstin());
+		manageUsers.setWebsite(request.getWebsite());
+
 
 		ManageUserDTO response = userServiceImpl.registerCompanyUser(manageUsers);
 

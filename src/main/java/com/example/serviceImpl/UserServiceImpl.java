@@ -78,16 +78,15 @@ public class UserServiceImpl implements UserService {
 	}
 
 	private ManageUserDTO convertToDTO(ManageUsers user) {
-
 		return ManageUserDTO.builder().id(user.getId()).fullName(user.getFullName()).firstName(user.getFirstName())
 				.middleName(user.getMiddleName()).lastName(user.getLastName()).email(user.getEmail())
-				.primaryEmail(user.getPrimaryEmail())
-				// 🔥 THESE TWO LINES WERE MISSING
-				.mobileNumber(user.getMobileNumber()).companyName(user.getCompanyName()).roleName(user.getRoleName())
+				.primaryEmail(user.getPrimaryEmail()).mobileNumber(user.getMobileNumber())
+				.companyName(user.getCompanyName()).roleName(user.getRoleName())
 				.addedBy(user.getAddedBy() != null ? user.getAddedBy().getId().toString() : null)
-				.updatedBy(user.getUpdatedBy()).addedByName(user.getAddedByName())
-				.updatedByName(user.getUpdatedByName())
-
+				.addedByName(user.getAddedByName()).updatedByName(user.getUpdatedByName())
+				// ✅ ADD THESE
+				.state(user.getState()).country(user.getCountry()).pincode(user.getPincode())
+				.telephone(user.getTelephone()).ein(user.getEin()).gstin(user.getGstin()).website(user.getWebsite())
 				.build();
 	}
 
@@ -189,6 +188,14 @@ public class UserServiceImpl implements UserService {
 		String mobileNumber = manageUsers.getMobileNumber();
 		String companyName = manageUsers.getCompanyName();
 
+		String State = manageUsers.getState();
+		String Country = manageUsers.getCountry();
+		String Pincode = manageUsers.getPincode();
+		String Telephone = manageUsers.getTelephone();
+		String Ein = manageUsers.getEin();
+		String Gstin = manageUsers.getGstin();
+		String Website = manageUsers.getWebsite();
+		
 		// 1️⃣ Normalize email
 		String email = manageUsers.getEmail().trim().toLowerCase();
 		manageUsers.setEmail(email);
@@ -209,19 +216,43 @@ public class UserServiceImpl implements UserService {
 
 		// 5️⃣ Create USER
 		User user = userRepository.findByEmailIgnoreCase(email).orElseGet(() -> {
-			User u = new User();
-			u.setEmail(email);
-			u.setFirstName(manageUsers.getFirstName());
-			u.setApproved(true);
-			u.setActive(true);
-			u.setRole(adminRole);
-			return userRepository.save(u);
+		    User u = new User();
+		    u.setEmail(email);
+		    u.setFirstName(manageUsers.getFirstName());
+		    u.setCompanyName(companyName);
+		    u.setMobileNumber(mobileNumber);
+		 // 🔽 newly added fields
+		    u.setState(State);
+		    u.setCountry(Country);
+		    u.setPincode(Pincode);
+		    u.setTelephone(Telephone);
+		    u.setEin(Ein);
+		    u.setGstin(Gstin);
+		    u.setWebsite(Website);
+		    u.setApproved(true);
+		    u.setActive(true);
+		    u.setRole(adminRole);
+		    
+		    return userRepository.save(u);
 		});
+
 
 		// 6️⃣ Restore preserved fields 🔥
 		manageUsers.setMobileNumber(mobileNumber);
 		manageUsers.setCompanyName(companyName);
-
+		manageUsers.setState(State);
+		manageUsers.setState(State);
+		manageUsers.setCountry(Country);
+		manageUsers.setPincode(Pincode);
+		manageUsers.setTelephone(Telephone);
+		manageUsers.setEin(Ein);
+		manageUsers.setGstin(Gstin);
+		manageUsers.setWebsite(Website);
+		manageUsers.setApproved(true);
+		manageUsers.setActive(true);
+		manageUsers.setRole(adminRole);
+		
+		
 		// 7️⃣ Create ManageUsers
 		manageUsers.setRole(adminRole);
 		manageUsers.setRoleName(adminRole.getRoleName());
@@ -230,7 +261,6 @@ public class UserServiceImpl implements UserService {
 		manageUsers.setAddedByName("SELF-REGISTERED");
 		manageUsers.setCreatedBy(user);
 		manageUsers.setAddedBy(user);
-
 		ManageUsers saved = manageUserRepository.save(manageUsers);
 		return convertToDTO(saved);
 	}
