@@ -119,6 +119,9 @@ public class ManageUsers {
 		@Column(name = "website")
 		private String website;
 		
+		@Column(name = "address")
+		private String address;
+
 		// Bhargav
 
 	

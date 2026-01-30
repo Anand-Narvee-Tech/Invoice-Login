@@ -104,8 +104,8 @@ public class UserController {
 		manageUsers.setEin(request.getEin());
 		manageUsers.setGstin(request.getGstin());
 		manageUsers.setWebsite(request.getWebsite());
-
-
+		manageUsers.setAddress(request.getAddress());
+		
 		ManageUserDTO response = userServiceImpl.registerCompanyUser(manageUsers);
 
 		return ResponseEntity

@@ -95,6 +95,9 @@ public class User {
  		@Column(name = "website")
 		private String website;
  		
+ 		@Column(name = "address")
+		private String address;
+ 		
  		// Bhargav
  		
     @PrePersist

@@ -86,7 +86,7 @@ public class UserServiceImpl implements UserService {
 				.addedByName(user.getAddedByName()).updatedByName(user.getUpdatedByName())
 				// ✅ ADD THESE
 				.state(user.getState()).country(user.getCountry()).pincode(user.getPincode())
-				.telephone(user.getTelephone()).ein(user.getEin()).gstin(user.getGstin()).website(user.getWebsite())
+				.telephone(user.getTelephone()).ein(user.getEin()).gstin(user.getGstin()).website(user.getWebsite()).address(user.getAddress())
 				.build();
 	}
 
@@ -195,6 +195,7 @@ public class UserServiceImpl implements UserService {
 		String Ein = manageUsers.getEin();
 		String Gstin = manageUsers.getGstin();
 		String Website = manageUsers.getWebsite();
+		String Address=manageUsers.getAddress();
 		
 		// 1️⃣ Normalize email
 		String email = manageUsers.getEmail().trim().toLowerCase();
@@ -229,6 +230,7 @@ public class UserServiceImpl implements UserService {
 		    u.setEin(Ein);
 		    u.setGstin(Gstin);
 		    u.setWebsite(Website);
+		    u.setAddress(Address);
 		    u.setApproved(true);
 		    u.setActive(true);
 		    u.setRole(adminRole);
@@ -248,6 +250,7 @@ public class UserServiceImpl implements UserService {
 		manageUsers.setEin(Ein);
 		manageUsers.setGstin(Gstin);
 		manageUsers.setWebsite(Website);
+		manageUsers.setAddress(Address);
 		manageUsers.setApproved(true);
 		manageUsers.setActive(true);
 		manageUsers.setRole(adminRole);

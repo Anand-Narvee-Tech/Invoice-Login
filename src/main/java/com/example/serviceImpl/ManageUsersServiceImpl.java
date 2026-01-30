@@ -93,7 +93,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
 				// 🔽 Newly added fields
 				.state(entity.getState()).country(entity.getCountry()).pincode(entity.getPincode())
 				.telephone(entity.getTelephone()).ein(entity.getEin()).gstin(entity.getGstin())
-				.website(entity.getWebsite()).build();
+				.website(entity.getWebsite()).address(entity.getAddress()).build();
 	}
 	//Bhargav
 	
@@ -210,6 +210,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
 			user.setTelephone(savedManageUser.getTelephone());
 			user.setWebsite(savedManageUser.getWebsite());
 			user.setEin(savedManageUser.getEin());
+			user.setAddress(savedManageUser.getAddress());
 			//Bhargav
 			user.setApproved(true);
 			user.setActive(true);

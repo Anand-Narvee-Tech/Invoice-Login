@@ -33,6 +33,8 @@ public class ManageUserDTO {
     private String ein;
     private String gstin;
     private String website;
+	private String address;
+
 
 	
 }
