@@ -71,7 +71,35 @@ public class User {
     private String businessId;
     private String preferredCurrency;
     private String invoicePrefix;
-
+    
+ // Bhargav
+	
+ 		@Column(name = "state")
+ 		private String state;
+ 		
+ 		@Column(name = "country")
+ 		private String country;
+ 		
+ 		@Column(name = "pincode")
+ 		private String pincode;
+ 		
+ 		@Column(name = "telephone")
+ 		private String telephone;
+ 		
+ 		@Column(name = "ein")
+ 		private String ein;
+ 		
+ 		@Column(name = "gstin")
+ 		private String gstin;
+ 		
+ 		@Column(name = "website")
+		private String website;
+ 		
+ 		@Column(name = "address")
+		private String address;
+ 		
+ 		// Bhargav
+ 		
     @PrePersist
     public void prePersist() {
         if (this.primaryEmail == null && this.email != null) {

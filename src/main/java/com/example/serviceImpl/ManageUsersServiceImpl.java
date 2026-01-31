@@ -82,14 +82,28 @@ public class ManageUsersServiceImpl implements ManageUserService {
 			Optional<User> updatedByUser = userRepository.findById(entity.getUpdatedBy());
 			updatedByName = updatedByUser.map(this::buildFullName).orElse(null);
 		}
-
+		//Bhargav
 		return ManageUserDTO.builder().id(entity.getId()).fullName(fullName).firstName(entity.getFirstName())
 				.middleName(entity.getMiddleName()).lastName(entity.getLastName()).email(entity.getEmail())
 				.primaryEmail(entity.getPrimaryEmail())
 				.roleName(entity.getRole() != null ? entity.getRole().getRoleName() : null)
 				.addedBy(entity.getAddedBy() != null ? entity.getAddedBy().getId().toString() : null)
-				.addedByName(addedByName).updatedBy(entity.getUpdatedBy()).updatedByName(updatedByName).build();
+				.addedByName(addedByName).updatedBy(entity.getUpdatedBy()).updatedByName(updatedByName)
+
+				// 🔽 Newly added fields
+				.state(entity.getState()).country(entity.getCountry()).pincode(entity.getPincode())
+				.telephone(entity.getTelephone()).ein(entity.getEin()).gstin(entity.getGstin())
+				.website(entity.getWebsite()).address(entity.getAddress()).build();
 	}
+	//Bhargav
+	
+//		return ManageUserDTO.builder().id(entity.getId()).fullName(fullName).firstName(entity.getFirstName())
+//				.middleName(entity.getMiddleName()).lastName(entity.getLastName()).email(entity.getEmail())
+//				.primaryEmail(entity.getPrimaryEmail())
+//				.roleName(entity.getRole() != null ? entity.getRole().getRoleName() : null)
+//				.addedBy(entity.getAddedBy() != null ? entity.getAddedBy().getId().toString() : null)
+//				.addedByName(addedByName).updatedBy(entity.getUpdatedBy()).updatedByName(updatedByName).build();
+//	}
 
 	/** ================= BUILD FULL NAME ================= **/
 	private String buildFullName(ManageUsers user) {
@@ -187,6 +201,17 @@ public class ManageUsersServiceImpl implements ManageUserService {
 			user.setLastName(savedManageUser.getLastName());
 			user.setFullName(savedManageUser.getFullName());
 			user.setPrimaryEmail(savedManageUser.getPrimaryEmail());
+			//Bhargav
+			user.setCompanyName(savedManageUser.getCompanyName());
+			user.setMobileNumber(savedManageUser.getMobileNumber());
+			user.setState(savedManageUser.getState());
+			user.setCountry(savedManageUser.getCountry());
+			user.setPincode(savedManageUser.getPincode());
+			user.setTelephone(savedManageUser.getTelephone());
+			user.setWebsite(savedManageUser.getWebsite());
+			user.setEin(savedManageUser.getEin());
+			user.setAddress(savedManageUser.getAddress());
+			//Bhargav
 			user.setApproved(true);
 			user.setActive(true);
 			user.setCreatedBy(currentUser);

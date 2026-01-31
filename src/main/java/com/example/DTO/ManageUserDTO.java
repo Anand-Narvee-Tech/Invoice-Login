@@ -22,4 +22,19 @@ public class ManageUserDTO {
 	private Long updatedBy; // updater user ID
 	private String addedByName; // addedBy display name
 	private String updatedByName; // updater display name
+	
+	
+	 // 🔽 Newly added fields
+	//Bhargav
+    private String state;
+    private String country;
+    private String pincode;
+    private String telephone;
+    private String ein;
+    private String gstin;
+    private String website;
+	private String address;
+
+
+	
 }
