@@ -113,6 +113,7 @@ public interface ManageUserRepository extends JpaRepository<ManageUsers, Long>, 
 
 	boolean existsByCompanyDomainAndRole(String domain, Role adminRole);
 	
-	
+	List<ManageUsers> findByCompanyDomainIgnoreCase(String companyDomain);
+
 
 }
