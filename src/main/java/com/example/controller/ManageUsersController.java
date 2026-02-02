@@ -32,10 +32,10 @@ import com.example.service.ManageUserService;
 
 import lombok.RequiredArgsConstructor;
 
-	@RestController
-	@RequestMapping("/auth")
-	@RequiredArgsConstructor
-	public class ManageUsersController {
+@RestController
+@RequestMapping("/auth")
+@RequiredArgsConstructor
+public class ManageUsersController {
 	
 	    private final ManageUserService manageUsersService;
 	    

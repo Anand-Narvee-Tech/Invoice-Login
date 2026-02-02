@@ -270,96 +270,226 @@ public class ManageUsersServiceImpl implements ManageUserService {
 		return updatedUser;
 	}
 
+	
+//Bhargav	
 	/** ================= UPDATE USER ================= **/
+//	@Override
+//	@Transactional
+//	public ManageUserDTO updateUser(Long id, ManageUsers manageUsers, String loggedInEmail) {
+//
+//		// ---------------- 1️Get current logged-in user ----------------
+//		User currentUser = getCurrentLoggedInUser(loggedInEmail);
+//
+//		// ---------------- 2️ Fetch existing ManageUsers ----------------
+//
+//		ManageUsers existing = manageUserRepository.findById(id)
+//				.orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
+//
+//		String oldFullName = existing.getFullName();
+//
+//		// ---------------- 3️Handle name updates ----------------
+//		if (manageUsers.getFullName() != null && !manageUsers.getFullName().isBlank()) {
+//			String[] parts = manageUsers.getFullName().trim().split("\\s+");
+//			existing.setFirstName(parts[0]);
+//			existing.setMiddleName(
+//					parts.length > 2 ? String.join(" ", Arrays.copyOfRange(parts, 1, parts.length - 1)) : null);
+//			existing.setLastName(parts.length > 1 ? parts[parts.length - 1] : null);
+//		} else {
+//			existing.setFirstName(manageUsers.getFirstName());
+//			existing.setMiddleName(manageUsers.getMiddleName());
+//			existing.setLastName(manageUsers.getLastName());
+//		}
+//
+//		existing.setEmail(manageUsers.getEmail());
+//		existing.setFullName(buildFullName(existing));
+//		existing.setUpdatedBy(currentUser.getId());
+//		existing.setUpdatedByName(buildFullName(currentUser));
+//
+//		// ---------------- 4️ Handle role updates safely ----------------
+//		Role role = null;
+//		if (manageUsers.getRoleName() != null && !manageUsers.getRoleName().isBlank()) {
+//			String roleName = manageUsers.getRoleName().trim().toUpperCase();
+//			existing.setRoleName(roleName);
+//
+//			// Use case-insensitive role lookup
+//			role = roleRepository.findByRoleNameIgnoreCase(roleName)
+//					.orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+//
+//			// Assign the Role entity to ManageUsers
+//			existing.setRole(role);
+//		} else {
+//			existing.setRoleName(null);
+//			existing.setRole(null);
+//		}
+//
+//		// ---------------- 5️ Save ManageUsers ----------------
+//		ManageUsers saved = manageUserRepository.save(existing);
+//
+//		// ---------------- 6️ Sync User table ----------------
+//		User user = userRepository.findByEmailIgnoreCase(saved.getEmail()).orElseGet(User::new);
+//
+//		user.setEmail(saved.getEmail());
+//		user.setPrimaryEmail(saved.getEmail());
+//		user.setFirstName(saved.getFirstName());
+//		user.setMiddleName(saved.getMiddleName());
+//		user.setLastName(saved.getLastName());
+//		user.setFullName(saved.getFullName());
+//		user.setActive(true);
+//		user.setApproved(true);
+//
+//		if (role != null) {
+//			user.setRole(role); // SINGLE source of truth
+//		} else {
+//			user.setRole(null);
+//		}
+//
+//		userRepository.save(user);
+//
+//		String newFullName = saved.getFullName();
+//
+//		if (!Objects.equals(oldFullName, newFullName)) {
+//			userNameSyncServiceImpl.syncUserFullName(user.getId(), // IMPORTANT: User ID
+//					newFullName);
+//		}
+//
+//		// ---------------- 7️Audit log ----------------
+//		auditLogRepository.save(AuditLog.builder().action("UPDATE").entityName("ManageUsers").entityId(saved.getId())
+//				.performedBy(buildFullName(currentUser)).performedById(currentUser.getId())
+//				.email(currentUser.getEmail()).timestamp(LocalDateTime.now())
+//				.details("Updated ManageUser ID: " + saved.getId()).build());
+//
+//		// ---------------- 8️ Return DTO ----------------
+//		return convertToDTO(saved);
+//	}
+
+//Bhargav	
+	
 	@Override
 	@Transactional
 	public ManageUserDTO updateUser(Long id, ManageUsers manageUsers, String loggedInEmail) {
 
-		// ---------------- 1️Get current logged-in user ----------------
+		// ---------------- 1️⃣ Get current logged-in user ----------------
 		User currentUser = getCurrentLoggedInUser(loggedInEmail);
 
-		// ---------------- 2️ Fetch existing ManageUsers ----------------
-
+		// ---------------- 2️⃣ Fetch existing ManageUsers ----------------
 		ManageUsers existing = manageUserRepository.findById(id)
 				.orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
 
 		String oldFullName = existing.getFullName();
 
-		// ---------------- 3️Handle name updates ----------------
+		// ---------------- 3️⃣ Handle name updates ----------------
 		if (manageUsers.getFullName() != null && !manageUsers.getFullName().isBlank()) {
+
 			String[] parts = manageUsers.getFullName().trim().split("\\s+");
 			existing.setFirstName(parts[0]);
 			existing.setMiddleName(
 					parts.length > 2 ? String.join(" ", Arrays.copyOfRange(parts, 1, parts.length - 1)) : null);
 			existing.setLastName(parts.length > 1 ? parts[parts.length - 1] : null);
+
 		} else {
-			existing.setFirstName(manageUsers.getFirstName());
-			existing.setMiddleName(manageUsers.getMiddleName());
-			existing.setLastName(manageUsers.getLastName());
+			if (manageUsers.getFirstName() != null)
+				existing.setFirstName(manageUsers.getFirstName());
+			if (manageUsers.getMiddleName() != null)
+				existing.setMiddleName(manageUsers.getMiddleName());
+			if (manageUsers.getLastName() != null)
+				existing.setLastName(manageUsers.getLastName());
 		}
 
-		existing.setEmail(manageUsers.getEmail());
 		existing.setFullName(buildFullName(existing));
-		existing.setUpdatedBy(currentUser.getId());
-		existing.setUpdatedByName(buildFullName(currentUser));
 
-		// ---------------- 4️ Handle role updates safely ----------------
+		// ---------------- 4️⃣ Core fields ----------------
+		if (manageUsers.getEmail() != null && !manageUsers.getEmail().isBlank()) {
+			existing.setEmail(manageUsers.getEmail());
+		}
+
+		if (manageUsers.getPrimaryEmail() != null && !manageUsers.getPrimaryEmail().isBlank()) {
+			existing.setPrimaryEmail(manageUsers.getPrimaryEmail());
+		}
+
+		if (manageUsers.getMobileNumber() != null && !manageUsers.getMobileNumber().isBlank()) {
+			existing.setMobileNumber(manageUsers.getMobileNumber());
+		}
+
+		if (manageUsers.getCompanyName() != null && !manageUsers.getCompanyName().isBlank()) {
+			existing.setCompanyName(manageUsers.getCompanyName());
+		}
+
+		// ---------------- 5️⃣ Newly added fields ----------------
+		if (manageUsers.getState() != null)
+			existing.setState(manageUsers.getState());
+		if (manageUsers.getCountry() != null)
+			existing.setCountry(manageUsers.getCountry());
+		if (manageUsers.getPincode() != null)
+			existing.setPincode(manageUsers.getPincode());
+		if (manageUsers.getTelephone() != null)
+			existing.setTelephone(manageUsers.getTelephone());
+		if (manageUsers.getEin() != null)
+			existing.setEin(manageUsers.getEin());
+		if (manageUsers.getGstin() != null)
+			existing.setGstin(manageUsers.getGstin());
+		if (manageUsers.getWebsite() != null)
+			existing.setWebsite(manageUsers.getWebsite());
+		if (manageUsers.getAddress() != null)
+			existing.setAddress(manageUsers.getAddress());
+
+		// ---------------- 6️⃣ Handle role updates safely ----------------
 		Role role = null;
 		if (manageUsers.getRoleName() != null && !manageUsers.getRoleName().isBlank()) {
+
 			String roleName = manageUsers.getRoleName().trim().toUpperCase();
 			existing.setRoleName(roleName);
 
-			// Use case-insensitive role lookup
 			role = roleRepository.findByRoleNameIgnoreCase(roleName)
 					.orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
 
-			// Assign the Role entity to ManageUsers
 			existing.setRole(role);
-		} else {
-			existing.setRoleName(null);
-			existing.setRole(null);
 		}
+		// ❌ DO NOT reset role if not provided
 
-		// ---------------- 5️ Save ManageUsers ----------------
+		// ---------------- 7️⃣ Audit fields ----------------
+		existing.setUpdatedBy(currentUser.getId());
+		existing.setUpdatedByName(buildFullName(currentUser));
+		// existing.setUpdatedOn(LocalDateTime.now());
+
+		// ---------------- 8️⃣ Save ManageUsers ----------------
 		ManageUsers saved = manageUserRepository.save(existing);
 
-		// ---------------- 6️ Sync User table ----------------
-		User user = userRepository.findByEmailIgnoreCase(saved.getEmail()).orElseGet(User::new);
+		// ---------------- 9️⃣ Sync User table (NO new record) ----------------
+		User user = userRepository.findByEmailIgnoreCase(saved.getEmail())
+				.orElseThrow(() -> new RuntimeException("Linked User not found"));
 
-		user.setEmail(saved.getEmail());
-		user.setPrimaryEmail(saved.getEmail());
 		user.setFirstName(saved.getFirstName());
 		user.setMiddleName(saved.getMiddleName());
 		user.setLastName(saved.getLastName());
 		user.setFullName(saved.getFullName());
-		user.setActive(true);
-		user.setApproved(true);
+		user.setEmail(saved.getEmail());
+		user.setPrimaryEmail(saved.getEmail());
 
 		if (role != null) {
-			user.setRole(role); // SINGLE source of truth
-		} else {
-			user.setRole(null);
+			user.setRole(role);
 		}
 
 		userRepository.save(user);
 
-		String newFullName = saved.getFullName();
-
-		if (!Objects.equals(oldFullName, newFullName)) {
-			userNameSyncServiceImpl.syncUserFullName(user.getId(), // IMPORTANT: User ID
-					newFullName);
+		// ---------------- 🔟 Sync username if changed ----------------
+		if (!Objects.equals(oldFullName, saved.getFullName())) {
+			userNameSyncServiceImpl.syncUserFullName(user.getId(), saved.getFullName());
 		}
 
-		// ---------------- 7️Audit log ----------------
+		// ---------------- 1️⃣1️⃣ Audit log ----------------
 		auditLogRepository.save(AuditLog.builder().action("UPDATE").entityName("ManageUsers").entityId(saved.getId())
 				.performedBy(buildFullName(currentUser)).performedById(currentUser.getId())
 				.email(currentUser.getEmail()).timestamp(LocalDateTime.now())
 				.details("Updated ManageUser ID: " + saved.getId()).build());
 
-		// ---------------- 8️ Return DTO ----------------
+		// ---------------- 1️⃣2️⃣ Return DTO ----------------
 		return convertToDTO(saved);
 	}
-
+	
+	
+	
+	
+	
 	/** ================= DELETE USER ================= **/
 	@Override
 	public void deleteUser(Long id, String loggedInEmail) {
@@ -385,24 +515,60 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	}
 
 	/** ================= GET ALL USERS ================= **/
+//	@Override
+//	public List<ManageUserDTO> getAllUsers(String loggedInEmail) {
+//		User currentUser = getCurrentLoggedInUser(loggedInEmail);
+//		String roleName = currentUser.getRole() != null ? currentUser.getRole().getRoleName() : null;
+//
+//		List<ManageUsers> users;
+//		if ("SUPERADMIN".equalsIgnoreCase(roleName)) {
+//			users = manageUserRepository.findAll();
+//		} else if ("ADMIN".equalsIgnoreCase(roleName)) {
+//			users = manageUserRepository.findAll().stream().filter(u -> !"SUPERADMIN".equalsIgnoreCase(u.getRoleName()))
+//					.collect(Collectors.toList());
+//		} else {
+//			users = manageUserRepository.findByEmailIgnoreCase(currentUser.getEmail()).map(List::of)
+//					.orElse(Collections.emptyList());
+//		}
+//
+//		return users.stream().map(this::convertToDTO).collect(Collectors.toList());
+//	}
+	
 	@Override
 	public List<ManageUserDTO> getAllUsers(String loggedInEmail) {
-		User currentUser = getCurrentLoggedInUser(loggedInEmail);
-		String roleName = currentUser.getRole() != null ? currentUser.getRole().getRoleName() : null;
 
-		List<ManageUsers> users;
-		if ("SUPERADMIN".equalsIgnoreCase(roleName)) {
-			users = manageUserRepository.findAll();
-		} else if ("ADMIN".equalsIgnoreCase(roleName)) {
-			users = manageUserRepository.findAll().stream().filter(u -> !"SUPERADMIN".equalsIgnoreCase(u.getRoleName()))
-					.collect(Collectors.toList());
-		} else {
-			users = manageUserRepository.findByEmailIgnoreCase(currentUser.getEmail()).map(List::of)
-					.orElse(Collections.emptyList());
-		}
+	    User currentUser = getCurrentLoggedInUser(loggedInEmail);
 
-		return users.stream().map(this::convertToDTO).collect(Collectors.toList());
+	    String roleName = currentUser.getRole() != null ? currentUser.getRole().getRoleName() : null;
+
+	    String domain = extractDomain(currentUser.getEmail());
+
+	    List<ManageUsers> users;
+
+	    if ("SUPERADMIN".equalsIgnoreCase(roleName)) {
+
+	        // Superadmin can see everything
+	        users = manageUserRepository.findAll();
+
+	    } else if ("ADMIN".equalsIgnoreCase(roleName)) {
+
+	        // 🔥 ADMIN should see ONLY their domain users
+	        users = manageUserRepository.findByCompanyDomainIgnoreCase(domain);
+
+	    } else {
+
+	        // Normal user can see only himself
+	        users = manageUserRepository
+	                .findByEmailIgnoreCase(currentUser.getEmail())
+	                .map(List::of)
+	                .orElse(Collections.emptyList());
+	    }
+
+	    return users.stream()
+	            .map(this::convertToDTO)
+	            .collect(Collectors.toList());
 	}
+
 
 	/** ================= GET BY ID ================= **/
 	@Override
