@@ -15,20 +15,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.util.HtmlUtils;
 
 import com.example.DTO.LoginRequest;
 import com.example.DTO.ManageUserDTO;
 import com.example.DTO.UserProfileResponse;
+import com.example.commons.RestAPIResponse;
 import com.example.config.MailConfig;
 import com.example.entity.ManageUsers;
 import com.example.entity.OTP;
 import com.example.entity.Privilege;
 import com.example.entity.Role;
 import com.example.entity.User;
+import com.example.entity.VerifyOtpRequest;
+import com.example.entity.VerifyOtpRequest;
 import com.example.exception.BusinessException;
 import com.example.repository.ManageUserRepository;
 import com.example.repository.PrivilegeRepository;
@@ -48,6 +54,7 @@ public class UserServiceImpl implements UserService {
 	private static final Set<String> DEFAULT_SUPERUSERS = Set.of("japhanya@narveetech.com", "wasim@narveetech.com");
 
 	private final MailConfig mailConfig;
+	
 
 	@Autowired
 	private UserRepository userRepository;
@@ -66,6 +73,9 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	private ManageUserRepository manageUserRepository;
+
+
+
 
 	@Autowired
 	private JavaMailSender javaMailSender;
@@ -635,4 +645,35 @@ public class UserServiceImpl implements UserService {
 		return value != null && !value.isBlank();
 	}
 
+//Bhargav
+	
+	@Override
+	@Transactional
+	public boolean verifyOtp(String emailInput, String otpInput) {
+
+	    final String email = emailInput.trim().toLowerCase();
+
+	    // Fetch OTP record
+	    OTP otpEntity = tokenRepository.findByEmail(email)
+	            .orElseThrow(() -> new RuntimeException("OTP not found for this email"));
+
+	    // Check expiry
+	    if (System.currentTimeMillis() > otpEntity.getExpiryTime()) {
+	        tokenRepository.deleteByEmail(email);  // remove expired OTP
+	        throw new RuntimeException("OTP has expired");
+	    }
+
+	    // Validate OTP
+	    if (!otpEntity.getOtp().equals(otpInput)) {
+	        throw new RuntimeException("Invalid OTP");
+	    }
+
+	    // OTP is valid → delete it after successful verification
+	    tokenRepository.deleteByEmail(email);
+
+	    return true;
+	}
+
+//Bhargav
+	
 }
