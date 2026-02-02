@@ -24,6 +24,7 @@ import com.example.DTO.UserProfileResponse;
 import com.example.commons.RestAPIResponse;
 import com.example.entity.ManageUsers;
 import com.example.entity.User;
+import com.example.entity.VerifyOtpRequest;
 import com.example.repository.ManageUserRepository;
 import com.example.repository.UserRepository;
 import com.example.serviceImpl.JwtServiceImpl;
@@ -124,7 +125,7 @@ public class UserController {
 		}
 	}
 
-	/** Login → verify OTP & return JWT */
+	/** Login → OTP & return JWT */
 	@PostMapping("/login")
 	public ResponseEntity<RestAPIResponse> login(@RequestBody LoginRequest request) {
 		try {
@@ -135,6 +136,30 @@ public class UserController {
 		}
 	}
 
+//Bhargav
+	/** Verify OTP */
+	@PostMapping("/login/verify-otp")
+	public ResponseEntity<RestAPIResponse> verifyOTP(@RequestBody VerifyOtpRequest request) {
+	    try {
+	        boolean isValid = userServiceImpl.verifyOtp(request.getEmail(), request.getOtp());
+
+	        if (isValid) {
+	            return ResponseEntity.ok(new RestAPIResponse("success", "OTP verified successfully", null));
+	        } else {
+	            return ResponseEntity.badRequest()
+	                    .body(new RestAPIResponse("error", "Invalid or expired OTP", null));
+	        }
+
+	    } catch (Exception e) {
+	        return ResponseEntity.badRequest()
+	                .body(new RestAPIResponse("error", e.getMessage(), null));
+	    }
+	}
+	
+	//Bhargav
+	
+	
+	
 	/** Check token validity */
 	@GetMapping("/check-token")
 	public ResponseEntity<RestAPIResponse> checkToken(@RequestParam String token) {

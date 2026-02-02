@@ -26,5 +26,8 @@ public interface UserService {
 	Map<String, Object> getPrivilegesForUser(Long userId);
 
 	UserProfileResponse getUserProfileByEmail(String email);
+	
+	public boolean verifyOtp(String emailInput, String otpInput);
+
 
 }
