@@ -17,7 +17,13 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable()) // disable CSRF for APIs
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // stateless
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**").permitAll()   // public endpoints
+//                .requestMatchers("/auth/**").permitAll() 
+            		.requestMatchers(
+            			    "/auth/login/**",
+            			    "/auth/register/**",
+            			    "/auth/otp/**","/auth/check-email/{email}"
+            			).permitAll()
+
                 .anyRequest().authenticated()              // all others require JWT
             )
             .formLogin(form -> form.disable())           // disable form login
