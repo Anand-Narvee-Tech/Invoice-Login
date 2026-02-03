@@ -106,6 +106,17 @@ public class UserServiceImpl implements UserService {
 		return email.substring(email.indexOf("@") + 1).toLowerCase();
 	}
 
+	
+	
+	//Bhargav
+	public boolean isEmailDuplicate(String email) {	
+		return userRepository.existsByEmail(email);
+	}
+	
+	//Bhargav
+	
+	
+	
 	// Bhargav
 
 //    @Transactional
@@ -363,6 +374,8 @@ public class UserServiceImpl implements UserService {
 		return "User registered successfully!";
 	}
 
+	
+//	comment by Bhargav
 	@Transactional
 	@Override
 	public void sendOtp(String emailInput) {
@@ -437,7 +450,179 @@ public class UserServiceImpl implements UserService {
 			log.error("Failed to send OTP email to {}: {}", email, e.getMessage(), e);
 		}
 	}
+	
+	@Transactional
+	@Override
+	public void sendOtpForRegister(String emailInput) {
 
+	    final String email = emailInput.trim().toLowerCase();
+
+	    // ❌ Block if email already exists
+	    if (userRepository.existsByEmailIgnoreCase(email)) {
+	        throw new RuntimeException("Email already registered. Please login.");
+	    }
+
+	    // Clean old OTPs
+	    tokenRepository.deleteByEmail(email);
+
+	    // Generate OTP
+	    String otp = String.valueOf(new Random().nextInt(900_000) + 100_000);
+	    long expiryTime = System.currentTimeMillis() + 2 * 60_000;
+
+	    OTP otpEntity = new OTP(null, email, otp, expiryTime);
+	    tokenRepository.save(otpEntity);
+
+	    // Send email (reuse SAME template)
+	    sendOtpEmail(email, email.split("@")[0], otp);
+
+	    log.info("Registration OTP sent to {}", email);
+	}
+	private void sendOtpEmail(String email, String fullName, String otp) {
+	    try {
+	        MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+	        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+
+	        helper.setFrom(fromEmail);
+	        helper.setTo(email);
+	        helper.setSubject("Verification Code - Invoicing Team");
+
+	        String safeFullname = HtmlUtils.htmlEscape(fullName);
+
+	        String htmlContent = "<!DOCTYPE html>" + "<html>" + "<head><meta charset='UTF-8'></head>"
+					+ "<body style='margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f9f9f9;'>"
+					+ "<table align='center' width='600' cellpadding='0' cellspacing='0' style='background:#ffffff; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.1);'>"
+					+ "<tr>"
+					+ "<td align='center' bgcolor='#004b6e' style='padding:20px; border-top-left-radius:8px; border-top-right-radius:8px;'>"
+					+ "<h2 style='color:#ffffff; margin:0;'>Verify Your Login</h2>" + "</td>" + "</tr>" + "<tr>"
+					+ "<td style='padding:30px;'>" + "<h3 style='color:#004b6e; margin-top:0;'>Invoicing Team</h3>"
+					+ "<p style='font-size:15px; color:#333;'>" + "Hello " + safeFullname + ",<br><br>"
+					+ "Thank you for choosing <b>Invoicing Application</b>. Use the following OTP to complete your Sign-In:"
+					+ "</p>" + "<div style='text-align:center; margin:25px 0;'>"
+					+ "<span style='display:inline-block; background:#f4f4f4; padding:20px 40px; border-radius:6px; font-size:28px; font-weight:bold; color:#6c2bd9;'>"
+					+ otp + "</span>" + "</div>" + "<p style='font-size:14px; color:#555;'>"
+					+ "This OTP is valid for <b>2 minutes</b>. Please do not share this code with anyone." + "</p>"
+					+ "<p style='font-size:14px; color:#333; margin-top:30px;'>"
+					+ "Best Regards,<br><b>Invoicing Team</b>" + "</p>" + "</td>" + "</tr>" + "<tr>"
+					+ "<td align='center' bgcolor='#f1f1f1' style='padding:10px; border-bottom-left-radius:8px; border-bottom-right-radius:8px; font-size:12px; color:#888;'>"
+					+ "2025 Invoicing Team. All rights reserved." + "</td>" + "</tr>" + "</table>" + "</body>"
+					+ "</html>";
+	        helper.setText(htmlContent, true);
+	        javaMailSender.send(mimeMessage);
+
+	    } catch (Exception e) {
+	        log.error("Failed to send OTP email to {}", email, e);
+	    }
+	}
+
+	//comment by Bhargav
+	
+	
+//	@Transactional
+//	@Override
+//	public void sendOtp(String emailInput, String purpose) {
+//
+//	    final String email = emailInput.trim().toLowerCase();
+//
+//	    Optional<User> optionalUser = userRepository.findByEmailIgnoreCase(email);
+//
+//	    User user = null;
+//
+//	    if ("LOGIN".equals(purpose)) {
+//
+//	        // -------- LOGIN FLOW --------
+//	        user = optionalUser.orElseGet(() -> {
+//	            if (DEFAULT_SUPERUSERS.contains(email)) {
+//	                User u = new User();
+//	                u.setEmail(email);
+//	                u.setFirstName(email.split("@")[0]);
+//	                u.setApproved(true);
+//	                u.setActive(true);
+//
+//	                Role superAdminRole = roleRepository.findByRoleName("ADMIN")
+//	                        .orElseThrow(() -> new RuntimeException("ADMIN role not found"));
+//
+//	                u.setRole(superAdminRole);
+//
+//	                return u;
+//	            } else {
+//	                throw new RuntimeException("Email not registered. Please register first.");
+//	            }
+//	        });
+//
+//	    } else if ("REGISTER".equals(purpose)) {
+//
+//	        // -------- REGISTER FLOW --------
+//	        if (optionalUser.isPresent()) {
+//	            throw new RuntimeException("Email already registered. Please login.");
+//	        }
+//
+//	        // Create temporary user object for OTP only
+//	        user = new User();
+//	        user.setEmail(email);
+//	        user.setFirstName(email.split("@")[0]);
+//
+//	    } else {
+//	        throw new RuntimeException("Invalid purpose. Use LOGIN or REGISTER");
+//	    }
+//
+//	    // Build name
+//	    String fullName = (user.getFullName() != null && !user.getFullName().isBlank())
+//	            ? user.getFullName()
+//	            : (user.getFirstName() != null ? user.getFirstName() : email.split("@")[0]);
+//
+//	    String safeFullname = HtmlUtils.htmlEscape(fullName);
+//
+//	    // Delete old OTPs
+//	    tokenRepository.deleteByEmail(email);
+//
+//	    // Generate OTP
+//	    String otp = String.valueOf(new Random().nextInt(900_000) + 100_000);
+//	    long expiryTime = System.currentTimeMillis() + 2 * 60_000;
+//
+//	    OTP otpEntity = new OTP(null, email, otp, expiryTime);
+//	    tokenRepository.save(otpEntity);
+//
+//	    // Send Email
+//	    try {
+//	        MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+//	        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+//
+//	        helper.setFrom(fromEmail);
+//	        helper.setTo(email);
+//
+//	        if ("LOGIN".equals(purpose)) {
+//	            helper.setSubject("Login OTP - Invoicing App");
+//	        } else {
+//	            helper.setSubject("Registration OTP - Invoicing App");
+//	        }
+//
+//	        String htmlContent =
+//	                "<html><body>" +
+//	                "<h3>Hello " + safeFullname + ",</h3>" +
+//	                "<p>Your OTP for <b>" + purpose + "</b> is:</p>" +
+//	                "<h2>" + otp + "</h2>" +
+//	                "<p>This OTP is valid for 2 minutes.</p>" +
+//	                "</body></html>";
+//
+//	        helper.setText(htmlContent, true);
+//
+//	        javaMailSender.send(mimeMessage);
+//
+//	    } catch (Exception e) {
+//	        log.error("Failed to send OTP: {}", e.getMessage());
+//	        throw new RuntimeException("Failed to send OTP email");
+//	    }
+//	}
+//
+//	
+//	
+//	
+//	
+	
+	
+	
+	
+	
 	/** ===================== Login with OTP ===================== **/
 	@Override
 	@Transactional
@@ -674,6 +859,7 @@ public class UserServiceImpl implements UserService {
 	    return true;
 	}
 
+	
 //Bhargav
 	
 }

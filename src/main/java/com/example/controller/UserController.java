@@ -118,12 +118,72 @@ public class UserController {
 	public ResponseEntity<RestAPIResponse> sendOTP(@RequestBody Map<String, String> body) {
 		try {
 			String email = body.get("email");
-			userServiceImpl.sendOtp(email);
+		userServiceImpl.sendOtp(email);
 			return ResponseEntity.ok(new RestAPIResponse("success", "OTP sent successfully", email));
 		} catch (Exception e) {
 			return ResponseEntity.badRequest().body(new RestAPIResponse("error", e.getMessage(), null));
 		}
 	}
+	@PostMapping("/register/send-otp")
+	public ResponseEntity<RestAPIResponse> sendRegisterOtp(@RequestBody Map<String, String> body) {
+	    try {
+	        String email = body.get("email");
+	        userServiceImpl.sendOtpForRegister(email);
+	        return ResponseEntity.ok(
+	            new RestAPIResponse("success", "OTP sent successfully for registration", email)
+	        );
+	    } catch (Exception e) {
+	        return ResponseEntity.badRequest()
+	                .body(new RestAPIResponse("error", e.getMessage(), null));
+	    }
+	}
+
+	
+	//Bhargav
+	
+//	//@PostMapping("/otp/send")
+//	@PostMapping("/login/send-otp")
+//	public ResponseEntity<RestAPIResponse> sendOTP(@RequestBody Map<String, String> body) {
+//	    try {
+//	        String email = body.get("email");
+//	        String purpose = body.get("purpose");   // LOGIN or REGISTER
+//
+//	        if (email == null || purpose == null) {
+//	            throw new RuntimeException("Email and purpose are required");
+//	        }
+//
+//	        userServiceImpl.sendOtp(email, purpose.toUpperCase());
+//
+//	        return ResponseEntity.ok(
+//	            new RestAPIResponse("success", "OTP sent successfully", email)
+//	        );
+//
+//	    } catch (Exception e) {
+//	        return ResponseEntity.badRequest()
+//	            .body(new RestAPIResponse("error", e.getMessage(), null));
+//	    }
+//	}
+
+	//Bhargav
+	
+	
+	
+	//Bhargav
+	@GetMapping("/check-email/{email}")
+	public ResponseEntity<RestAPIResponse> checkDuplicateEmail(@PathVariable String email) {
+		//logger.info("!!! inside class: CustomersController,!! method: checkDuplicateEmail() ");
+		boolean isDuplicate = userServiceImpl.isEmailDuplicate(email);
+
+		if (isDuplicate) {
+			return new ResponseEntity<RestAPIResponse>(
+					new RestAPIResponse("fail", "Email already exists", isDuplicate), HttpStatus.OK);
+		} else {
+			return new ResponseEntity<RestAPIResponse>(
+					new RestAPIResponse("success", "Email is available", isDuplicate), HttpStatus.OK);
+		}
+	}
+	//Bhargav
+	
 
 	/** Login → OTP & return JWT */
 	@PostMapping("/login")
