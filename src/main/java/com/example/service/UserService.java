@@ -9,7 +9,7 @@ import com.example.entity.Role;
 import com.example.entity.User;
 
 public interface UserService {
-
+	
 	public String register(User user);
 
 	public Map<String, Object> loginWithOtp(LoginRequest request);
@@ -26,5 +26,10 @@ public interface UserService {
 	Map<String, Object> getPrivilegesForUser(Long userId);
 
 	UserProfileResponse getUserProfileByEmail(String email);
+	
+	public boolean verifyOtp(String emailInput, String otpInput);
 
+	//public void sendOtp(String emailInput, String purpose);
+
+	public void sendOtpForRegister(String emailInput);
 }

@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.example.entity.OTP;
+import com.example.entity.Role;
 
 import jakarta.transaction.Transactional;
 
@@ -20,4 +21,9 @@ public interface TokenRepository extends JpaRepository<OTP, Long>{
     @Transactional
     @Query("DELETE FROM OTP t WHERE t.email = :email")
     void deleteByEmail(@Param("email") String email);
+
+	Optional<OTP> findByEmail(String email);
+
+
+
 }
