@@ -47,45 +47,10 @@ public class UserController {
 	@Autowired
 	private ManageUserRepository manageUserRepository;
 
-	/** Register */
-//    @PostMapping("/register")
-//    public ResponseEntity<RestAPIResponse> register(@RequestBody User user) {
-//        try {
-//            String result = userServiceImpl.register(user);
-//            return new ResponseEntity<>(
-//                    new RestAPIResponse("success", "Registered Successfully", result),
-//                    HttpStatus.OK
-//            );
-//        } catch (Exception e) {
-//            return new ResponseEntity<>(
-//                    new RestAPIResponse("error", e.getMessage(), null),
-//                    HttpStatus.BAD_REQUEST
-//            );
-//        }
-//    }
 
-//    @PostMapping("/register")
-//    public ResponseEntity<RestAPIResponse> register(@RequestBody RegisterRequest request) {
-//
-//        ManageUsers manageUsers = new ManageUsers();
-//        manageUsers.setFirstName(request.getFirstName());
-//        manageUsers.setMiddleName(request.getMiddleName());
-//        manageUsers.setLastName(request.getLastName());
-//        manageUsers.setEmail(request.getEmail());
-//        manageUsers.setPrimaryEmail(null);
-//
-//        // fullName handled automatically by @PrePersist
-//        ManageUserDTO response = userServiceImpl.registerCompanyUser(manageUsers);
-//
-//        return ResponseEntity.ok(
-//                new RestAPIResponse(
-//                        "success",
-//                        "Company registered successfully. SUPERADMIN created.",
-//                        response
-//                )
-//        );
-//    }
-
+	
+//Bhargav working
+	
 	@PostMapping("/register")
 	public ResponseEntity<RestAPIResponse> register(@RequestBody RegisterRequest request) {
 
@@ -112,6 +77,13 @@ public class UserController {
 		return ResponseEntity
 				.ok(new RestAPIResponse("success", "Company registered successfully. ADMIN created.", response));
 	}
+	
+//Bhargav working 
+	
+	
+
+	
+	
 
 	/** Send OTP */
 	@PostMapping("/login/send-otp")

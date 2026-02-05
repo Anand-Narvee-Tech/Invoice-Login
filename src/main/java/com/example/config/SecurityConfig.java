@@ -19,13 +19,18 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
 //                .requestMatchers("/auth/**").permitAll() 
             		.requestMatchers(
+            				"/auth/**",
+            				"/auth/login/send-otp/**",
+            				"/auth/updated/save",
             			    "/auth/login/**",
             			    "/auth/register/**",
-            			    "/auth/otp/**","/auth/check-email/{email}"
+            			    "/auth/otp/**","/auth/check-email/{email}",
+            			    "/auth/updated/save/**"
             			).permitAll()
 
                 .anyRequest().authenticated()              // all others require JWT
             )
+            
             .formLogin(form -> form.disable())           // disable form login
             .httpBasic(httpBasic -> httpBasic.disable()); // disable basic auth
         return http.build();

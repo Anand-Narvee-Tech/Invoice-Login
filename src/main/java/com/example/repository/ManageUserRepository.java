@@ -50,7 +50,7 @@ public interface ManageUserRepository extends JpaRepository<ManageUsers, Long>, 
 
 	List<ManageUsers> findByAddedBy_Id(Long addedById);
 
-	Optional<ManageUsers> findByEmail(String email);
+	ManageUsers findByEmail(String email);
 
 	@Query("SELECT COUNT(u) FROM User u WHERE u.role.roleId = :roleId")
 	long countUsersWithRole(@Param("roleId") Long roleId);

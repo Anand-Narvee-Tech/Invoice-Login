@@ -50,22 +50,85 @@ public interface ManageUserService {
     // Upload profile file
     String uploadFile(MultipartFile file, Long userId) throws IOException;
 
+    
+//Bhargav
     // Dynamic profile update
-    public User updateUserProfileDynamic(
-            Long id,
-            String mobileNumber,
-            String alternativeEmail,
-            String alternativeMobileNumber,
-            String companyName,
-            String invoicePrefix,
-            String taxId,
-            String businessId,
-            String preferredCurrency,
-            MultipartFile profileImage);
-    // Map entity to DTO
+//    User updateUserProfileDynamic(
+//    		Long id, 
+//    		String mobileNumber, 
+//    		String companyName, 
+//    		String taxId, 
+//    		String businessId,
+//			String address, 
+//			String state, 
+//			String country, 
+//			String zipCode, 
+//			String preferredCurrency);
+//Bhargav   
+//    
+//    User updateUserProfileDynamic(
+//            Long id,
+//            String mobileNumber,
+//            String alternativeEmail,
+//            String alternativeMobileNumber,
+//            String companyName,
+//            String invoicePrefix,
+//            String taxId,
+//            String businessId,
+//            String preferredCurrency,
+//            String email,
+//            // Newly added fields
+//            String fullName,
+//            String firstName,
+//            String middleName,
+//            String lastName,
+//            String primaryEmail,
+//            String roleName,
+//            String state,
+//            String country,
+//            String pincode,
+//            String telephone,
+//            String ein,
+//            String gstin,
+//            String website,
+//            String address,
+//            MultipartFile profileImage
+//    );
+    
+//    User updateUserProfileDynamic(Long id, String mobileNumber, String alternativeEmail, String alternativeMobileNumber,
+//			String companyName, String invoicePrefix, String taxId, String businessId, String preferredCurrency,
+//			MultipartFile profileImage);
+//    // Map entity to DTO
+//    UserUpdateRequest mapToDto(User user);
+    
+    
+    
+  //Bhagi
+    
+    User updateUserProfileDynamic(UserUpdateRequest request);
+
     UserUpdateRequest mapToDto(User user);
+    
+  //Bhagi
+    
+    
+    
+    
+    
 
 	/** ================= UPDATE USER PROFILE ================= **/
     
 	User updateUserProfile(UserUpdateRequest request, String loggedInEmail);
+
+//	User updateUserProfile(UserUpdateRequest request);
+
+	//ManageUserDTO createNewUser(UserUpdateRequest request);
+
+
+	
+
+
+	
+	
+	
 }
