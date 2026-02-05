@@ -56,8 +56,11 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	@Autowired
 	private UserNameSyncServiceImpl userNameSyncServiceImpl;
 
-	private final ManageUserRepository manageUserRepository;
-	private final UserRepository userRepository;
+	@Autowired
+	private  ManageUserRepository manageUserRepository;
+	
+	@Autowired
+	private  UserRepository userRepository;
 	private final RoleRepository roleRepository;
 	private final AuditLogRepository auditLogRepository;
 
@@ -82,7 +85,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
 			Optional<User> updatedByUser = userRepository.findById(entity.getUpdatedBy());
 			updatedByName = updatedByUser.map(this::buildFullName).orElse(null);
 		}
-		//Bhargav
+		// Bhargav
 		return ManageUserDTO.builder().id(entity.getId()).fullName(fullName).firstName(entity.getFirstName())
 				.middleName(entity.getMiddleName()).lastName(entity.getLastName()).email(entity.getEmail())
 				.primaryEmail(entity.getPrimaryEmail())
@@ -95,8 +98,8 @@ public class ManageUsersServiceImpl implements ManageUserService {
 				.telephone(entity.getTelephone()).ein(entity.getEin()).gstin(entity.getGstin())
 				.website(entity.getWebsite()).address(entity.getAddress()).build();
 	}
-	//Bhargav
-	
+	// Bhargav
+
 //		return ManageUserDTO.builder().id(entity.getId()).fullName(fullName).firstName(entity.getFirstName())
 //				.middleName(entity.getMiddleName()).lastName(entity.getLastName()).email(entity.getEmail())
 //				.primaryEmail(entity.getPrimaryEmail())
@@ -201,7 +204,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
 			user.setLastName(savedManageUser.getLastName());
 			user.setFullName(savedManageUser.getFullName());
 			user.setPrimaryEmail(savedManageUser.getPrimaryEmail());
-			//Bhargav
+			// Bhargav
 			user.setCompanyName(savedManageUser.getCompanyName());
 			user.setMobileNumber(savedManageUser.getMobileNumber());
 			user.setState(savedManageUser.getState());
@@ -211,7 +214,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
 			user.setWebsite(savedManageUser.getWebsite());
 			user.setEin(savedManageUser.getEin());
 			user.setAddress(savedManageUser.getAddress());
-			//Bhargav
+			// Bhargav
 			user.setApproved(true);
 			user.setActive(true);
 			user.setCreatedBy(currentUser);
@@ -270,7 +273,6 @@ public class ManageUsersServiceImpl implements ManageUserService {
 		return updatedUser;
 	}
 
-	
 //Bhargav	
 	/** ================= UPDATE USER ================= **/
 //	@Override
@@ -363,7 +365,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
 //	}
 
 //Bhargav	
-	
+
 	@Override
 	@Transactional
 	public ManageUserDTO updateUser(Long id, ManageUsers manageUsers, String loggedInEmail) {
@@ -485,11 +487,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
 		// ---------------- 1️⃣2️⃣ Return DTO ----------------
 		return convertToDTO(saved);
 	}
-	
-	
-	
-	
-	
+
 	/** ================= DELETE USER ================= **/
 	@Override
 	public void deleteUser(Long id, String loggedInEmail) {
@@ -533,42 +531,37 @@ public class ManageUsersServiceImpl implements ManageUserService {
 //
 //		return users.stream().map(this::convertToDTO).collect(Collectors.toList());
 //	}
-	
+
 	@Override
 	public List<ManageUserDTO> getAllUsers(String loggedInEmail) {
 
-	    User currentUser = getCurrentLoggedInUser(loggedInEmail);
+		User currentUser = getCurrentLoggedInUser(loggedInEmail);
 
-	    String roleName = currentUser.getRole() != null ? currentUser.getRole().getRoleName() : null;
+		String roleName = currentUser.getRole() != null ? currentUser.getRole().getRoleName() : null;
 
-	    String domain = extractDomain(currentUser.getEmail());
+		String domain = extractDomain(currentUser.getEmail());
 
-	    List<ManageUsers> users;
+		List<ManageUsers> users;
 
-	    if ("SUPERADMIN".equalsIgnoreCase(roleName)) {
+		if ("SUPERADMIN".equalsIgnoreCase(roleName)) {
 
-	        // Superadmin can see everything
-	        users = manageUserRepository.findAll();
+			// Superadmin can see everything
+			users = manageUserRepository.findAll();
 
-	    } else if ("ADMIN".equalsIgnoreCase(roleName)) {
+		} else if ("ADMIN".equalsIgnoreCase(roleName)) {
 
-	        // 🔥 ADMIN should see ONLY their domain users
-	        users = manageUserRepository.findByCompanyDomainIgnoreCase(domain);
+			// 🔥 ADMIN should see ONLY their domain users
+			users = manageUserRepository.findByCompanyDomainIgnoreCase(domain);
 
-	    } else {
+		} else {
 
-	        // Normal user can see only himself
-	        users = manageUserRepository
-	                .findByEmailIgnoreCase(currentUser.getEmail())
-	                .map(List::of)
-	                .orElse(Collections.emptyList());
-	    }
+			// Normal user can see only himself
+			users = manageUserRepository.findByEmailIgnoreCase(currentUser.getEmail()).map(List::of)
+					.orElse(Collections.emptyList());
+		}
 
-	    return users.stream()
-	            .map(this::convertToDTO)
-	            .collect(Collectors.toList());
+		return users.stream().map(this::convertToDTO).collect(Collectors.toList());
 	}
-
 
 	/** ================= GET BY ID ================= **/
 	@Override
@@ -685,32 +678,63 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	}
 
 	/** ================= MAP USER TO DTO ================= **/
+	
+//Bhargav	
+//	@Override
+//	public UserUpdateRequest mapToDto(User user) {
+//		Optional<ManageUsers> optionalManageUser = manageUserRepository.findByEmailIgnoreCase(user.getEmail());
+//		String fullName = user.getFullName();
+//		String primaryEmail = user.getPrimaryEmail();
+//
+//		if (optionalManageUser.isPresent()) {
+//			ManageUsers manageUser = optionalManageUser.get();
+//			if (manageUser.getFullName() != null && !manageUser.getFullName().isBlank()) {
+//				fullName = manageUser.getFullName().trim();
+//			}
+//			if (manageUser.getEmail() != null && !manageUser.getEmail().isBlank()) {
+//				primaryEmail = manageUser.getEmail().trim();
+//			}
+//		}
+//
+//		String profileUrl = null;
+//		if (user.getProfilePicPath() != null && !user.getProfilePicPath().isEmpty()) {
+//			profileUrl = "http://localhost:1717/uploads/profile/" + user.getProfilePicPath();
+//		}
+//
+//		return UserUpdateRequest.builder().id(user.getId()).fullName(fullName).primaryEmail(primaryEmail)
+//				.alternativeEmail(user.getAlternativeEmail()).mobileNumber(user.getMobileNumber())
+//				.alternativeMobileNumber(user.getAlternativeMobileNumber()).companyName(user.getCompanyName())
+//				.taxId(user.getTaxId()).businessId(user.getBusinessId()).preferredCurrency(user.getPreferredCurrency())
+//				.invoicePrefix(user.getInvoicePrefix()).profilePicPath(profileUrl).build();
+//	}
+//	
+//Bhargav	
+	
+	
 	@Override
 	public UserUpdateRequest mapToDto(User user) {
-		Optional<ManageUsers> optionalManageUser = manageUserRepository.findByEmailIgnoreCase(user.getEmail());
-		String fullName = user.getFullName();
-		String primaryEmail = user.getPrimaryEmail();
 
-		if (optionalManageUser.isPresent()) {
-			ManageUsers manageUser = optionalManageUser.get();
-			if (manageUser.getFullName() != null && !manageUser.getFullName().isBlank()) {
-				fullName = manageUser.getFullName().trim();
-			}
-			if (manageUser.getEmail() != null && !manageUser.getEmail().isBlank()) {
-				primaryEmail = manageUser.getEmail().trim();
-			}
-		}
-
-		String profileUrl = null;
-		if (user.getProfilePicPath() != null && !user.getProfilePicPath().isEmpty()) {
-			profileUrl = "http://localhost:1717/uploads/profile/" + user.getProfilePicPath();
-		}
-
-		return UserUpdateRequest.builder().id(user.getId()).fullName(fullName).primaryEmail(primaryEmail)
-				.alternativeEmail(user.getAlternativeEmail()).mobileNumber(user.getMobileNumber())
-				.alternativeMobileNumber(user.getAlternativeMobileNumber()).companyName(user.getCompanyName())
-				.taxId(user.getTaxId()).businessId(user.getBusinessId()).preferredCurrency(user.getPreferredCurrency())
-				.invoicePrefix(user.getInvoicePrefix()).profilePicPath(profileUrl).build();
+	    return UserUpdateRequest.builder()
+	            .id(user.getId())
+	            .fullName(user.getFullName())
+	            .primaryEmail(user.getPrimaryEmail())
+	            .alternativeEmail(user.getAlternativeEmail())
+	            .mobileNumber(user.getMobileNumber())
+	            .alternativeMobileNumber(user.getAlternativeMobileNumber())
+	            .taxId(user.getTaxId())
+	            .businessId(user.getBusinessId())
+	            .preferredCurrency(user.getPreferredCurrency())
+	            .invoicePrefix(user.getInvoicePrefix())
+	            .companyName(user.getCompanyName())
+	            .state(user.getState())
+	            .country(user.getCountry())
+	            .pincode(user.getPincode())
+	            .telephone(user.getTelephone())
+	            .ein(user.getEin())
+	            .gstin(user.getGstin())
+	            .website(user.getWebsite())
+	            .address(user.getAddress())
+	            .build();
 	}
 
 	@Override
@@ -734,31 +758,130 @@ public class ManageUsersServiceImpl implements ManageUserService {
 		}
 	}
 
+	
+
+// comment by Bhargav
+//	@Override
+//	public User updateUserProfileDynamic(Long id, String mobileNumber, String alternativeEmail,
+//			String alternativeMobileNumber, String companyName, String invoicePrefix, String taxId, String businessId,
+//			String preferredCurrency, MultipartFile profileImage) {
+//
+//		User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+//
+//		user.setMobileNumber(mobileNumber);
+//		user.setAlternativeEmail(alternativeEmail);
+//		user.setAlternativeMobileNumber(alternativeMobileNumber);
+//		user.setCompanyName(companyName);
+//		user.setInvoicePrefix(invoicePrefix);
+//		user.setTaxId(taxId);
+//		user.setBusinessId(businessId);
+//		user.setPreferredCurrency(preferredCurrency);
+//
+//		if (profileImage != null && !profileImage.isEmpty()) {
+//			try {
+//				String savedFileName = uploadFile(profileImage, user.getId());
+//				user.setProfilePicPath(savedFileName);
+//			} catch (IOException e) {
+//				throw new RuntimeException("Error saving profile image", e);
+//			}
+//		}
+//
+//		return userRepository.save(user);
+//	}
+// comment by Bhargav
+	
 	@Override
-	public User updateUserProfileDynamic(Long id, String mobileNumber, String alternativeEmail,
-			String alternativeMobileNumber, String companyName, String invoicePrefix, String taxId, String businessId,
-			String preferredCurrency, MultipartFile profileImage) {
+	@Transactional
+	public User updateUserProfileDynamic(UserUpdateRequest request) {
 
-		User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+	    // ---------- UPDATE USER TABLE ----------
 
-		user.setMobileNumber(mobileNumber);
-		user.setAlternativeEmail(alternativeEmail);
-		user.setAlternativeMobileNumber(alternativeMobileNumber);
-		user.setCompanyName(companyName);
-		user.setInvoicePrefix(invoicePrefix);
-		user.setTaxId(taxId);
-		user.setBusinessId(businessId);
-		user.setPreferredCurrency(preferredCurrency);
+	    User user = userRepository.findById(request.getId())
+	            .orElseThrow(() -> new RuntimeException("User not found with id: " + request.getId()));
 
-		if (profileImage != null && !profileImage.isEmpty()) {
-			try {
-				String savedFileName = uploadFile(profileImage, user.getId());
-				user.setProfilePicPath(savedFileName);
-			} catch (IOException e) {
-				throw new RuntimeException("Error saving profile image", e);
-			}
-		}
+	    // Get email from the existing user entity
+	    String userEmail = user.getEmail();
 
-		return userRepository.save(user);
+	    if (request.getMobileNumber() != null)
+	        user.setMobileNumber(request.getMobileNumber());
+
+	    if (request.getCompanyName() != null)
+	        user.setCompanyName(request.getCompanyName());
+
+	    if (request.getAddress() != null)
+	        user.setAddress(request.getAddress());
+
+	    if (request.getState() != null)
+	        user.setState(request.getState());
+
+	    if (request.getCountry() != null)
+	        user.setCountry(request.getCountry());
+
+	    if (request.getPincode() != null)
+	        user.setPincode(request.getPincode());
+
+	    if (request.getPreferredCurrency() != null)
+	        user.setPreferredCurrency(request.getPreferredCurrency());
+
+	    if (request.getTaxId() != null)
+	        user.setTaxId(request.getTaxId());
+
+	    if (request.getBusinessId() != null)
+	        user.setBusinessId(request.getBusinessId());
+
+	    userRepository.save(user);
+
+	    // ---------- UPDATE MANAGE_USERS TABLE ----------
+
+	    // Use email from User entity instead of request
+	    ManageUsers manageUser = manageUserRepository.findByEmail(userEmail);
+
+	    if (manageUser == null) {
+	        throw new RuntimeException("Manage user not found with email: " + userEmail);
+	    }
+
+	    if (request.getFullName() != null)
+	        manageUser.setFirstName(request.getFullName());
+
+	    if (request.getPrimaryEmail() != null)
+	        manageUser.setPrimaryEmail(request.getPrimaryEmail());
+
+	    if (request.getMobileNumber() != null)
+	        manageUser.setMobileNumber(request.getMobileNumber());
+
+	    if (request.getCompanyName() != null)
+	        manageUser.setCompanyName(request.getCompanyName());
+
+	    if (request.getAddress() != null)
+	        manageUser.setAddress(request.getAddress());
+
+	    if (request.getState() != null)
+	        manageUser.setState(request.getState());
+
+	    if (request.getCountry() != null)
+	        manageUser.setCountry(request.getCountry());
+
+	    if (request.getPincode() != null)
+	        manageUser.setPincode(request.getPincode());
+
+	    if (request.getTelephone() != null)
+	        manageUser.setTelephone(request.getTelephone());
+
+	    if (request.getEin() != null)
+	        manageUser.setEin(request.getEin());
+
+	    if (request.getGstin() != null)
+	        manageUser.setGstin(request.getGstin());
+
+	    if (request.getWebsite() != null)
+	        manageUser.setWebsite(request.getWebsite());
+
+	    manageUserRepository.save(manageUser);
+
+	    return user;
 	}
+	//Bhagi
+
+	
+
 }

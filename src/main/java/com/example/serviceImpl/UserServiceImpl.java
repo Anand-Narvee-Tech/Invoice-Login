@@ -200,6 +200,8 @@ public class UserServiceImpl implements UserService {
 //        return convertToDTO(saved);
 //    }
 
+	
+//Bhargav working
 	@Transactional
 	public ManageUserDTO registerCompanyUser(ManageUsers manageUsers) {
 
@@ -289,6 +291,11 @@ public class UserServiceImpl implements UserService {
 		return convertToDTO(saved);
 	}
 
+//Bhargav working 
+	
+
+	
+	
 	/**
 	 * ===================== Initialize default super admins =====================
 	 **/
