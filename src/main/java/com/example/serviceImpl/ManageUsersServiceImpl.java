@@ -801,10 +801,21 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 	    // Get email from the existing user entity
 	    String userEmail = user.getEmail();
+	    
+	    
+	    if (request.getFullName() != null)
+	        user.setFullName(request.getFullName());
+	    
+	    if (request.getEmail() != null)
+	        user.setEmail(request.getEmail());
 
 	    if (request.getMobileNumber() != null)
 	        user.setMobileNumber(request.getMobileNumber());
 
+	    
+	    if(request.getInvoicePrefix() !=null)
+	    	user.setInvoicePrefix(request.getInvoicePrefix());
+	    
 	    if (request.getCompanyName() != null)
 	        user.setCompanyName(request.getCompanyName());
 
@@ -828,6 +839,19 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 	    if (request.getBusinessId() != null)
 	        user.setBusinessId(request.getBusinessId());
+	    
+	    if (request.getTelephone() != null)
+	    	user.setTelephone(request.getTelephone());
+
+	    if (request.getEin() != null)
+	    	user.setEin(request.getEin());
+
+	    if (request.getGstin() != null)
+	    	user.setGstin(request.getGstin());
+
+	    if (request.getWebsite() != null)
+	        user.setWebsite(request.getWebsite());
+
 
 	    userRepository.save(user);
 
@@ -841,7 +865,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	    }
 
 	    if (request.getFullName() != null)
-	        manageUser.setFirstName(request.getFullName());
+	        manageUser.setFullName(request.getFullName());
 
 	    if (request.getPrimaryEmail() != null)
 	        manageUser.setPrimaryEmail(request.getPrimaryEmail());
@@ -860,6 +884,14 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 	    if (request.getCountry() != null)
 	        manageUser.setCountry(request.getCountry());
+	    
+	    if(request.getInvoicePrefix() !=null)
+	    	manageUser.setInvoicePrefix(request.getInvoicePrefix());
+	    
+	    
+	    if (request.getTaxId() != null)
+	        user.setTaxId(request.getTaxId());
+
 
 	    if (request.getPincode() != null)
 	        manageUser.setPincode(request.getPincode());

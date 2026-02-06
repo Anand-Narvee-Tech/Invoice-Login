@@ -96,6 +96,9 @@ public class ManageUsers {
 	@Column(name = "active")
 	private Boolean active = true;
 	
+	
+	  private String invoicePrefix;
+	
 	// Bhargav
 	
 		@Column(name = "state")
@@ -121,6 +124,9 @@ public class ManageUsers {
 		
 		@Column(name = "address")
 		private String address;
+		
+		@Column(name = "token")
+		private String token;
 
 		// Bhargav
 

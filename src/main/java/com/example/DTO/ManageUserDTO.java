@@ -1,6 +1,9 @@
 package com.example.DTO;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
@@ -34,6 +37,10 @@ public class ManageUserDTO {
     private String gstin;
     private String website;
 	private String address;
+	private String token;
+	 
+	
+	    
 
 
 	

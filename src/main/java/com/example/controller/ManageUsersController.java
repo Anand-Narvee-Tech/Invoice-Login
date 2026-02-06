@@ -101,11 +101,13 @@ public class ManageUsersController {
 	        );
 	    }
 	//Bhagi    	    
+	 	    
 	    @PutMapping("/updated/save")
 	    public ResponseEntity<?> updateUser(@RequestBody UserUpdateRequest request) {
 	        User updatedUser = manageUsersService.updateUserProfileDynamic(request);
 	        return ResponseEntity.ok(updatedUser);
 	    }  
+	
 	 //Bhagi   
 	    
 	    
