@@ -103,15 +103,17 @@ public interface ManageUserService {
     
     
     
-  //Bhagi
-    
-    User updateUserProfileDynamic(UserUpdateRequest request);
+    //Bhagi
+      
+      User updateUserProfileDynamic(UserUpdateRequest request);
 
-    UserUpdateRequest mapToDto(User user);
-    
-  //Bhagi
-    
-    
+      UserUpdateRequest mapToDto(User user);
+      
+    //Bhagi
+      
+      
+      
+      
     
     
     

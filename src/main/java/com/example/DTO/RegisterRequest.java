@@ -55,5 +55,8 @@ public class RegisterRequest {
 	@JsonProperty("address")
 	private String address;
 	
+	@JsonProperty("token")
+	private String token;
+	
 	//Bhargav
 }
