@@ -31,6 +31,7 @@ public class ManageUserDTO {
 	//Bhargav
     private String state;
     private String country;
+    private String city;
     private String pincode;
     private String telephone;
     private String ein;

@@ -28,6 +28,9 @@ public interface RoleRepository extends JpaRepository<Role, Long>{
 
     @Query("SELECT r FROM Role r LEFT JOIN FETCH r.privileges WHERE r.roleId = :roleId")
     Optional<Role> findByIdWithPrivileges(@Param("roleId") Long roleId);
+    
+    @Query("SELECT m.roleName FROM ManageUsers m WHERE m.id = :id")
+    String getRoleNameById(@Param("id") Long id);
 
 
     

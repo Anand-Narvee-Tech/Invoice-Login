@@ -80,6 +80,9 @@ public class User {
  		@Column(name = "country")
  		private String country;
  		
+ 		@Column(name = "city")
+		private String city;
+ 		
  		@Column(name = "pincode")
  		private String pincode;
  		

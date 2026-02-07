@@ -26,6 +26,7 @@ public class SecurityConfig {
             			    "/auth/register/**",
             			    "/auth/otp/**","/auth/check-email/{email}",
             			    "/auth/updated/save/**"
+//            			    "/auth/getall/privileges"
             			).permitAll()
 
                 .anyRequest().authenticated()              // all others require JWT

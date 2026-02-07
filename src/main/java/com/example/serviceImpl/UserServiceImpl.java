@@ -25,6 +25,7 @@ import org.springframework.web.util.HtmlUtils;
 
 import com.example.DTO.LoginRequest;
 import com.example.DTO.ManageUserDTO;
+import com.example.DTO.RegisterRequest;
 import com.example.DTO.UserProfileResponse;
 import com.example.commons.RestAPIResponse;
 import com.example.config.MailConfig;
@@ -95,7 +96,7 @@ public class UserServiceImpl implements UserService {
 				.addedBy(user.getAddedBy() != null ? user.getAddedBy().getId().toString() : null)
 				.addedByName(user.getAddedByName()).updatedByName(user.getUpdatedByName())
 				// ✅ ADD THESE
-				.state(user.getState()).country(user.getCountry()).pincode(user.getPincode())
+				.state(user.getState()).country(user.getCountry()).pincode(user.getPincode()).city(user.getCity())
 				.telephone(user.getTelephone()).ein(user.getEin()).gstin(user.getGstin()).website(user.getWebsite()).address(user.getAddress())
 				.build();
 	}
@@ -213,12 +214,17 @@ public class UserServiceImpl implements UserService {
 
 		String State = manageUsers.getState();
 		String Country = manageUsers.getCountry();
+		String City = manageUsers.getCity();
 		String Pincode = manageUsers.getPincode();
 		String Telephone = manageUsers.getTelephone();
 		String Ein = manageUsers.getEin();
 		String Gstin = manageUsers.getGstin();
 		String Website = manageUsers.getWebsite();
 		String Address=manageUsers.getAddress();
+		
+		
+		
+		
 		
 		// 1️⃣ Normalize email
 		String email = manageUsers.getEmail().trim().toLowerCase();
@@ -237,7 +243,9 @@ public class UserServiceImpl implements UserService {
 		// 4️⃣ Fetch ADMIN role
 		Role adminRole = roleRepository.findByRoleNameIgnoreCase(ADMIN_ROLE).orElseThrow(() -> new BusinessException(
 				"Required role ADMIN is not configured. Please contact system administrator."));
-
+		
+		
+		
 		// 5️⃣ Create USER
 		User user = userRepository.findByEmailIgnoreCase(email).orElseGet(() -> {
 		    User u = new User();
@@ -248,6 +256,7 @@ public class UserServiceImpl implements UserService {
 		 // 🔽 newly added fields
 		    u.setState(State);
 		    u.setCountry(Country);
+		    u.setCity(City);
 		    u.setPincode(Pincode);
 		    u.setTelephone(Telephone);
 		    u.setEin(Ein);
@@ -266,8 +275,8 @@ public class UserServiceImpl implements UserService {
 		manageUsers.setMobileNumber(mobileNumber);
 		manageUsers.setCompanyName(companyName);
 		manageUsers.setState(State);
-		manageUsers.setState(State);
 		manageUsers.setCountry(Country);
+		manageUsers.setCity(City);
 		manageUsers.setPincode(Pincode);
 		manageUsers.setTelephone(Telephone);
 		manageUsers.setEin(Ein);
@@ -290,6 +299,8 @@ public class UserServiceImpl implements UserService {
 		ManageUsers saved = manageUserRepository.save(manageUsers);
 		return convertToDTO(saved);
 	}
+	
+	
 
 //Bhargav working 
 	
@@ -800,6 +811,7 @@ public class UserServiceImpl implements UserService {
 				// ✅ NEW FIELDS START HERE
 				.state(user != null && hasText(user.getState()) ? user.getState() : "")
 				.country(user != null && hasText(user.getCountry()) ? user.getCountry() : "")
+				.city(user != null && hasText(user.getCity()) ? user.getCity() : "")
 				.pincode(user != null && hasText(user.getPincode()) ? user.getPincode() : "")
 				.telephone(user != null && hasText(user.getTelephone()) ? user.getTelephone() : "")
 				.ein(user != null && hasText(user.getEin()) ? user.getEin() : "")
@@ -865,6 +877,51 @@ public class UserServiceImpl implements UserService {
 
 	    return true;
 	}
+	 public ManageUsers buildManageUsersFromRequest(RegisterRequest request) {
+
+		    ManageUsers manageUsers = new ManageUsers();
+
+		    manageUsers.setFirstName(request.getFirstName());
+		    manageUsers.setMiddleName(request.getMiddleName());
+		    manageUsers.setLastName(request.getLastName());
+
+		    // Build full name if required
+		    String fullName = request.getFirstName() + " " +
+		            (request.getMiddleName() != null ? request.getMiddleName() + " " : "") +
+		            request.getLastName();
+
+		    manageUsers.setFullName(fullName.trim());
+
+		    manageUsers.setEmail(request.getEmail());
+		    manageUsers.setPrimaryEmail(request.getEmail());
+
+		    manageUsers.setMobileNumber(request.getMobileNumber());
+
+		    manageUsers.setCompanyName(request.getCompanyName());
+
+		    manageUsers.setState(request.getState());
+		    manageUsers.setCity(request.getCity());
+		    manageUsers.setCountry(request.getCountry());
+
+		    manageUsers.setPincode(request.getPincode());
+		    manageUsers.setTelephone(request.getTelephone());
+
+		    manageUsers.setEin(request.getEin());
+		    manageUsers.setGstin(request.getGstin());
+
+		    manageUsers.setWebsite(request.getWebsite());
+		    manageUsers.setAddress(request.getAddress());
+
+		    // Optional fields (if available in RegisterRequest)
+//		    manageUsers.setAlternativeEmail(request.getAlternativeEmail());
+//		    manageUsers.setAlternativeMobileNumber(request.getAlternativeMobileNumber());
+
+		    // Default flags
+		    manageUsers.setActive(true);
+		    manageUsers.setApproved(true);
+
+		    return manageUsers;
+		}
 
 	
 //Bhargav
