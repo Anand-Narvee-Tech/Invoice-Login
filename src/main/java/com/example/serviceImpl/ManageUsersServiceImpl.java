@@ -96,7 +96,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
 				// 🔽 Newly added fields
 				.state(entity.getState()).country(entity.getCountry()).pincode(entity.getPincode())
 				.telephone(entity.getTelephone()).ein(entity.getEin()).gstin(entity.getGstin())
-				.website(entity.getWebsite()).address(entity.getAddress()).build();
+				.website(entity.getWebsite()).address(entity.getAddress()).city(entity.getCity()).build();
 	}
 	// Bhargav
 
@@ -209,6 +209,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
 			user.setMobileNumber(savedManageUser.getMobileNumber());
 			user.setState(savedManageUser.getState());
 			user.setCountry(savedManageUser.getCountry());
+			user.setCity(savedManageUser.getCity());
 			user.setPincode(savedManageUser.getPincode());
 			user.setTelephone(savedManageUser.getTelephone());
 			user.setWebsite(savedManageUser.getWebsite());
@@ -423,6 +424,10 @@ public class ManageUsersServiceImpl implements ManageUserService {
 			existing.setCountry(manageUsers.getCountry());
 		if (manageUsers.getPincode() != null)
 			existing.setPincode(manageUsers.getPincode());
+		
+		if (manageUsers.getCity() != null)
+			existing.setCity(manageUsers.getCity());
+		
 		if (manageUsers.getTelephone() != null)
 			existing.setTelephone(manageUsers.getTelephone());
 		if (manageUsers.getEin() != null)
@@ -728,6 +733,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	            .companyName(user.getCompanyName())
 	            .state(user.getState())
 	            .country(user.getCountry())
+	            .city(user.getCity())
 	            .pincode(user.getPincode())
 	            .telephone(user.getTelephone())
 	            .ein(user.getEin())
@@ -827,6 +833,9 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 	    if (request.getCountry() != null)
 	        user.setCountry(request.getCountry());
+	    
+	    if (request.getCity() != null)
+	        user.setCity(request.getCity());
 
 	    if (request.getPincode() != null)
 	        user.setPincode(request.getPincode());
@@ -882,6 +891,9 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	    if (request.getState() != null)
 	        manageUser.setState(request.getState());
 
+	    if (request.getCity() != null)
+	    	manageUser.setCity(request.getCity());
+	    
 	    if (request.getCountry() != null)
 	        manageUser.setCountry(request.getCountry());
 	    

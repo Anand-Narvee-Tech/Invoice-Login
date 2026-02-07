@@ -1,7 +1,11 @@
 package com.example.controller;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -23,9 +27,12 @@ import com.example.DTO.RegisterRequest;
 import com.example.DTO.UserProfileResponse;
 import com.example.commons.RestAPIResponse;
 import com.example.entity.ManageUsers;
+import com.example.entity.Privilege;
+import com.example.entity.Role;
 import com.example.entity.User;
 import com.example.entity.VerifyOtpRequest;
 import com.example.repository.ManageUserRepository;
+import com.example.repository.RoleRepository;
 import com.example.repository.UserRepository;
 import com.example.service.UserService;
 import com.example.serviceImpl.JwtServiceImpl;
@@ -54,6 +61,9 @@ public class UserController {
 	@Autowired
 	private UserService userService;
 	
+	@Autowired
+	private RoleRepository roleRepository;
+	
 	 @Autowired
 	    private JwtUtil jwtUtil;
 
@@ -61,167 +71,99 @@ public class UserController {
 	
 //Bhargav working
 	
-//	@PostMapping("/register")
-//	public ResponseEntity<RestAPIResponse> register(@RequestBody RegisterRequest request) {
-//
-//		ManageUsers manageUsers = new ManageUsers();
-//		manageUsers.setFirstName(request.getFirstName());
-//		manageUsers.setMiddleName(request.getMiddleName());
-//		manageUsers.setLastName(request.getLastName());
-//		manageUsers.setEmail(request.getEmail());
-//		manageUsers.setPrimaryEmail(request.getEmail());
-//		manageUsers.setMobileNumber(request.getMobileNumber());
-//		manageUsers.setCompanyName(request.getCompanyName());
-//		
-//		manageUsers.setState(request.getState());
-//		manageUsers.setCountry(request.getCountry());
-//		manageUsers.setPincode(request.getPincode());
-//		manageUsers.setTelephone(request.getTelephone());
-//		manageUsers.setEin(request.getEin());
-//		manageUsers.setGstin(request.getGstin());
-//		manageUsers.setWebsite(request.getWebsite());
-//		manageUsers.setAddress(request.getAddress());
-//		
-//		ManageUserDTO response = userService.registerCompanyUser(manageUsers);
-//
-//		return ResponseEntity
-//				.ok(new RestAPIResponse("success", "Company registered successfully. ADMIN created.", response));
-//	}
+	 
 	 @PostMapping("/register")
 	 public ResponseEntity<RestAPIResponse> register(
 	         @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
 	         @RequestBody @Valid RegisterRequest request) {
 
 	     try {
-	         // ✅ Step 1: Validate Authorization header
-	         String validationError = validateAuthorizationHeader(authorizationHeader);
-	         if (validationError != null) {
-	             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-	                     .body(new RestAPIResponse("failed", validationError, null));
-	         }
 
-	         // ✅ Step 2: Extract and validate token
-	         String token = authorizationHeader.substring(7).trim();
-	         
-	         if (token.isEmpty()) {
-	             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-	                     .body(new RestAPIResponse("failed", "Bearer token is empty.", null));
-	         }
+	         // Step 1: Build entity from request
+	         ManageUsers manageUsers = userServiceImpl.buildManageUsersFromRequest(request);
 
-	         // ✅ Step 3: Validate token
-	         if (!jwtUtil.validateToken(token)) {
-	             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-	                     .body(new RestAPIResponse("failed", "Invalid or malformed Bearer token.", null));
-	         }
-
-	         // ✅ Step 4: Check token expiration
-	         if (jwtUtil.isTokenExpired(token)) {
-	             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-	                     .body(new RestAPIResponse("failed", "Bearer token has expired.", null));
-	         }
-
-	         // ✅ Step 5: Optional role-based authorization
-	         // Uncomment if you need role verification
-	         /*
-	         String tokenRole = jwtUtil.getRoleFromToken(token);
-	         if (!isAuthorizedRole(tokenRole)) {
-	             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-	                     .body(new RestAPIResponse("failed", "Insufficient permissions for company registration.", null));
-	         }
-	         */
-
-	         // ✅ Step 6: Build ManageUsers entity
-	         ManageUsers manageUsers = buildManageUsersFromRequest(request);
-
-	         // ✅ Step 7: Register company user
+	         // Step 2: Register user
 	         ManageUserDTO response = userServiceImpl.registerCompanyUser(manageUsers);
 
-	         // ✅ Step 8: Generate JWT token for the newly registered user
-	         String newUserToken = jwtUtil.generateToken(response.getEmail(), response.getRoleName());
-	         response.setToken(newUserToken);
+	         // Step 3: Fetch saved user and manageUser
+	         User user = userRepository.findByEmailIgnoreCase(response.getEmail())
+	                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-	         // ✅ Step 9: Return success response with token
+	         ManageUsers savedUser = manageUserRepository.findByEmailIgnoreCase(response.getEmail())
+	                 .orElseThrow(() -> new RuntimeException("ManageUser not found"));
+
+	         // Step 4: Get Role Name
+	         String roleName = savedUser.getRoleName();
+
+	         // Step 5: Fetch Privileges from Role
+	         Set<String> privilegeNames = new HashSet<>();
+
+	         if (roleName != null) {
+	             Role roleEntity = roleRepository.findByRoleNameIgnoreCase(roleName).orElse(null);
+
+	             if (roleEntity != null && roleEntity.getPrivileges() != null) {
+	                 privilegeNames = roleEntity.getPrivileges().stream()
+	                         .map(Privilege::getName)
+	                         .collect(Collectors.toSet());
+	             }
+	         }
+
+	         // Step 6: Generate Token with Role + Privileges
+	         String token = jwtService.generateToken(user, roleName, privilegeNames);
+
+	         // Step 7: Build Final Response (DO NOT REMOVE ANY EXISTING FIELD)
+
+	         Map<String, Object> finalResponse = new LinkedHashMap<>();
+
+	         finalResponse.put("id", savedUser.getId());
+	         finalResponse.put("fullName", savedUser.getFullName());
+	         finalResponse.put("firstName", savedUser.getFirstName());
+	         finalResponse.put("middleName", savedUser.getMiddleName());
+	         finalResponse.put("lastName", savedUser.getLastName());
+	         finalResponse.put("email", savedUser.getEmail());
+	         finalResponse.put("primaryEmail", savedUser.getPrimaryEmail());
+	         finalResponse.put("mobileNumber", savedUser.getMobileNumber());
+	         finalResponse.put("companyName", savedUser.getCompanyName());
+	         finalResponse.put("state", savedUser.getState());
+	         finalResponse.put("city", savedUser.getCity());
+	         finalResponse.put("country", savedUser.getCountry());
+	         finalResponse.put("pincode", savedUser.getPincode());
+	         finalResponse.put("telephone", savedUser.getTelephone());
+	         finalResponse.put("ein", savedUser.getEin());
+	         finalResponse.put("gstin", savedUser.getGstin());
+	         finalResponse.put("website", savedUser.getWebsite());
+	         finalResponse.put("address", savedUser.getAddress());
+
+	         // ---------- ADDED PART (AS YOU REQUESTED) ----------
+	         finalResponse.put("roleName", roleName);
+	         finalResponse.put("privileges", privilegeNames);
+	         finalResponse.put("token", token);
+	         // ---------------------------------------------------
+
 	         return ResponseEntity.status(HttpStatus.CREATED)
-	                 .body(new RestAPIResponse("success", "Company registered successfully. ADMIN created.", response));
+	                 .body(new RestAPIResponse(
+	                         "success",
+	                         "Company registered successfully. ADMIN created.",
+	                         finalResponse
+	                 ));
 
-	     } catch (io.jsonwebtoken.ExpiredJwtException e) {
-	         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-	                 .body(new RestAPIResponse("failed", "Token has expired.", null));
-	                 
-	     } catch (io.jsonwebtoken.MalformedJwtException e) {
-	         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-	                 .body(new RestAPIResponse("failed", "Malformed JWT token.", null));
-	                 
-	     } catch (io.jsonwebtoken.security.SignatureException e) {
-	         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-	                 .body(new RestAPIResponse("failed", "Invalid JWT signature.", null));
-	                 
-	     } catch (IllegalArgumentException e) {
-	         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-	                 .body(new RestAPIResponse("failed", "Invalid request data: " + e.getMessage(), null));
-	                 
 	     } catch (DataIntegrityViolationException e) {
+
 	         return ResponseEntity.status(HttpStatus.CONFLICT)
-	                 .body(new RestAPIResponse("failed", "Email or mobile number already exists.", null));
-	                 
+	                 .body(new RestAPIResponse("failed",
+	                         "Email or mobile number already exists.", null));
+
 	     } catch (Exception e) {
-	         // Log the exception for debugging
 	         e.printStackTrace();
+
 	         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-	                 .body(new RestAPIResponse("failed", "Registration failed: " + e.getMessage(), null));
-	     }
-	 }
-
-	 // ✅ Helper method: Validate Authorization header
-	 private String validateAuthorizationHeader(String authorizationHeader) {
-	     if (authorizationHeader == null || authorizationHeader.trim().isEmpty()) {
-	         return "Authorization header is missing. Bearer token is required.";
+	                 .body(new RestAPIResponse("failed",
+	                         "Registration failed: " + e.getMessage(), null));
 	     }
 	     
-	     if (!authorizationHeader.startsWith("Bearer ")) {
-	         return "Invalid Authorization format. Use 'Bearer <token>'";
-	     }
-	     
-	     return null; // No error
 	 }
-
-	 // ✅ Helper method: Check authorized roles
-	 private boolean isAuthorizedRole(String role) {
-	     return "REGISTRATION".equals(role) || 
-	            "ADMIN".equals(role) || 
-	            "SUPERADMIN".equals(role);
-	 }
-
-	 // ✅ Helper method: Build ManageUsers from request
-	 private ManageUsers buildManageUsersFromRequest(RegisterRequest request) {
-	     ManageUsers manageUsers = new ManageUsers();
-	     manageUsers.setFirstName(request.getFirstName());
-	     manageUsers.setMiddleName(request.getMiddleName());
-	     manageUsers.setLastName(request.getLastName());
-	     manageUsers.setEmail(request.getEmail());
-	     manageUsers.setPrimaryEmail(request.getEmail());
-	     manageUsers.setMobileNumber(request.getMobileNumber());
-	     manageUsers.setCompanyName(request.getCompanyName());
-	     manageUsers.setState(request.getState());
-	     manageUsers.setCountry(request.getCountry());
-	     manageUsers.setPincode(request.getPincode());
-	     manageUsers.setTelephone(request.getTelephone());
-	     manageUsers.setEin(request.getEin());
-	     manageUsers.setGstin(request.getGstin());
-	     manageUsers.setWebsite(request.getWebsite());
-	     manageUsers.setAddress(request.getAddress());
-	     return manageUsers;
-	 }
-
-	 //Bhargav working
-	
-//Bhargav working 
-	
-	
-
-	
-	
-
+  
+	 
 	/** Send OTP */
 	@PostMapping("/login/send-otp")
 	public ResponseEntity<RestAPIResponse> sendOTP(@RequestBody Map<String, String> body) {
