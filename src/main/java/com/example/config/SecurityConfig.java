@@ -25,6 +25,7 @@ public class SecurityConfig {
             			    "/auth/login/**",
             			    "/auth/register/**",
             			    "/auth/otp/**","/auth/check-email/{email}",
+            			    "/manageusers/searchAndsorting/getall/**",
             			    "/auth/updated/save/**"
 //            			    "/auth/getall/privileges"
             			).permitAll()
