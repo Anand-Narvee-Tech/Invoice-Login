@@ -1,12 +1,14 @@
 package com.example.controller;
 
 import java.io.IOException;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.DTO.ManageUserDTO;
+import com.example.DTO.SortingRequestDTO;
 import com.example.DTO.UserUpdateRequest;
 import com.example.commons.RestAPIResponse;
 import com.example.entity.ManageUsers;
@@ -100,7 +103,7 @@ public class ManageUsersController {
 	                new RestAPIResponse("Success", "User updated successfully", updatedUser)
 	        );
 	    }
-	//Bhagi    	    
+	//Bhargav    	    
 	 	    
 	    @PutMapping("/updated/save")
 	    public ResponseEntity<?> updateUser(@RequestBody UserUpdateRequest request) {
@@ -108,7 +111,7 @@ public class ManageUsersController {
 	        return ResponseEntity.ok(updatedUser);
 	    }  
 	
-	 //Bhagi   
+	 //Bhargav   
 	    
 	    
 	    // 🔹 Get available roles for dropdowns (UI helper)
@@ -194,6 +197,25 @@ public class ManageUsersController {
 	                new RestAPIResponse("Success", "User deleted successfully", null)
 	        );
 	    }
+	    
+	    
+	    
+//Bhargav
+	    
+	    @PostMapping("/manageusers/searchAndsorting/getall")
+	    public ResponseEntity<RestAPIResponse> getManageUsersList(@RequestBody SortingRequestDTO sortingRequestDTO ,Authentication authentication) {
+	        Page<ManageUserDTO> manageUsers = manageUsersService.getAllManageUsersWithSorting(sortingRequestDTO);
+	        String loggedInEmail = authentication.getName();
+	        List<ManageUserDTO> users = manageUsersService.getAllUsers(loggedInEmail);
+	        return new ResponseEntity<>(
+	            new RestAPIResponse("success", "Successfully retrieved manage users list", manageUsers),
+	            HttpStatus.OK
+	        );
+	    }
+	    
+	    
+ //Bhargav
+	    
 
 
 	   	}

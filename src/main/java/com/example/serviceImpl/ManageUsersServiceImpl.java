@@ -31,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.DTO.ManageUserDTO;
+import com.example.DTO.SortingRequestDTO;
 import com.example.DTO.UserUpdateRequest;
 import com.example.entity.AuditLog;
 import com.example.entity.ManageUsers;
@@ -924,8 +925,71 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 	    return user;
 	}
-	//Bhagi
 
+	//Bhargav
+	
+	
+
+/* Addedby Bhargav */
+	
+	@Override
+	public Page<ManageUserDTO> getAllManageUsersWithSorting(SortingRequestDTO sortingRequestDTO) {
+//	    logger.info("!!! inside class: UserServiceImpl, !! method: getAllManageUsersWithSorting");
+	    
+	    String sortField = sortingRequestDTO.getSortField();
+	    String sortOrder = sortingRequestDTO.getSortOrder();
+	    String keyword = sortingRequestDTO.getKeyword();
+	    Integer pageNo = sortingRequestDTO.getPageNumber();
+	    Integer pageSize = sortingRequestDTO.getPageSize();
+
+	    // ✅ Map frontend field names to entity field names
+	    if (sortField != null) {
+	        if (sortField.equalsIgnoreCase("Name") || sortField.equalsIgnoreCase("fullName")) {
+	            sortField = "firstName";
+	        } else if (sortField.equalsIgnoreCase("Email")) {
+	            sortField = "email";
+	        } else if (sortField.equalsIgnoreCase("Role")) {
+	            sortField = "roleName";
+	        } else if (sortField.equalsIgnoreCase("AddedBy")) {
+	            sortField = "addedByName";
+	        } else if (sortField.equalsIgnoreCase("UpdatedBy")) {
+	            sortField = "updatedByName";
+	        } else if (sortField.equalsIgnoreCase("CompanyName")) {
+	            sortField = "companyName";
+	        } else if (sortField.equalsIgnoreCase("MobileNumber")) {
+	            sortField = "mobileNumber";
+	        }
+	    } else {
+	        sortField = "id"; // Default sort field
+	    }
+
+	    // ✅ Determine sort direction
+	    Sort.Direction sortDirection = Sort.Direction.ASC;
+	    if (sortOrder != null && sortOrder.equalsIgnoreCase("desc")) {
+	        sortDirection = Sort.Direction.DESC;
+	    }
+
+	    // ✅ Create sort and pageable
+	    Sort sort = Sort.by(sortDirection, sortField);
+	    Pageable pageable = PageRequest.of(pageNo - 1, pageSize, sort);
+
+	    Page<ManageUsers> manageUsersPage;
+
+	    // ✅ Check if keyword is provided
+	    if (keyword == null || keyword.trim().isEmpty() || keyword.equalsIgnoreCase("empty")) {
+	        manageUsersPage = manageUserRepository.getAllManageUsersForSort(pageable);
+	    } else {
+	        manageUsersPage = manageUserRepository.searchManageUsers(keyword.trim(), pageable);
+	    }
+
+	    // ✅ Convert to DTO
+	    return manageUsersPage.map(this::convertToDTO);
+	}
+
+	
+	
+	
+/* Addedby Bhargav */
 	
 
 }

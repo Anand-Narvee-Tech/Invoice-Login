@@ -118,6 +118,23 @@ public interface ManageUserRepository extends JpaRepository<ManageUsers, Long>, 
     @Query("SELECT m.roleName FROM ManageUsers m WHERE m.id = :id")
     String getRoleNameById(@Param("id") Long id);
 
+    
+	//Bhargav
+   
+    // ✅ For sorting without keyword
+    @Query("SELECT m FROM ManageUsers m")
+    Page<ManageUsers> getAllManageUsersForSort(Pageable pageable);
+    
+    // ✅ For searching with keyword
+    @Query("SELECT m FROM ManageUsers m WHERE " +
+           "LOWER(m.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(m.lastName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(m.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(m.roleName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(m.companyName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(m.mobileNumber) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Page<ManageUsers> searchManageUsers(@Param("keyword") String keyword, Pageable pageable);
+    //Bhargav
 
 	
 
