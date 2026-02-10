@@ -1,5 +1,6 @@
 package com.example.serviceImpl;
 
+import java.awt.print.Pageable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -15,6 +16,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -26,6 +30,7 @@ import org.springframework.web.util.HtmlUtils;
 import com.example.DTO.LoginRequest;
 import com.example.DTO.ManageUserDTO;
 import com.example.DTO.RegisterRequest;
+import com.example.DTO.SortingRequestDTO;
 import com.example.DTO.UserProfileResponse;
 import com.example.commons.RestAPIResponse;
 import com.example.config.MailConfig;
@@ -923,7 +928,7 @@ public class UserServiceImpl implements UserService {
 		    return manageUsers;
 		}
 
-	
+		
 //Bhargav
 	
 }
