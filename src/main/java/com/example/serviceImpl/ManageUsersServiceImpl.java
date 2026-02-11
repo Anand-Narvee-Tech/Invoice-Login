@@ -90,6 +90,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
 		return ManageUserDTO.builder().id(entity.getId()).fullName(fullName).firstName(entity.getFirstName())
 				.middleName(entity.getMiddleName()).lastName(entity.getLastName()).email(entity.getEmail())
 				.primaryEmail(entity.getPrimaryEmail())
+				.companyName(entity.getCompanyName())
 				.roleName(entity.getRole() != null ? entity.getRole().getRoleName() : null)
 				.addedBy(entity.getAddedBy() != null ? entity.getAddedBy().getId().toString() : null)
 				.addedByName(addedByName).updatedBy(entity.getUpdatedBy()).updatedByName(updatedByName)
@@ -926,15 +927,71 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	    return user;
 	}
 
+
 	//Bhargav
 	
 	
 
 /* Addedby Bhargav */
 	
+//	@Override
+//	public Page<ManageUserDTO> getAllManageUsersWithSorting(SortingRequestDTO sortingRequestDTO) {
+////	    logger.info("!!! inside class: UserServiceImpl, !! method: getAllManageUsersWithSorting");
+//	    
+//	    String sortField = sortingRequestDTO.getSortField();
+//	    String sortOrder = sortingRequestDTO.getSortOrder();
+//	    String keyword = sortingRequestDTO.getKeyword();
+//	    Integer pageNo = sortingRequestDTO.getPageNumber();
+//	    Integer pageSize = sortingRequestDTO.getPageSize();
+//
+//	    // ✅ Map frontend field names to entity field names
+//	    if (sortField != null) {
+//	        if (sortField.equalsIgnoreCase("Name") || sortField.equalsIgnoreCase("fullName")) {
+//	            sortField = "firstName";
+//	        } else if (sortField.equalsIgnoreCase("Email")) {
+//	            sortField = "email";
+//	        } else if (sortField.equalsIgnoreCase("Role")) {
+//	            sortField = "roleName";
+//	        } else if (sortField.equalsIgnoreCase("AddedBy")) {
+//	            sortField = "addedByName";
+//	        } else if (sortField.equalsIgnoreCase("UpdatedBy")) {
+//	            sortField = "updatedByName";
+//	        } else if (sortField.equalsIgnoreCase("CompanyName")) {
+//	            sortField = "companyName";
+//	        } else if (sortField.equalsIgnoreCase("MobileNumber")) {
+//	            sortField = "mobileNumber";
+//	        }
+//	    } else {
+//	        sortField = "id"; // Default sort field
+//	    }
+//
+//	    // ✅ Determine sort direction
+//	    Sort.Direction sortDirection = Sort.Direction.ASC;
+//	    if (sortOrder != null && sortOrder.equalsIgnoreCase("desc")) {
+//	        sortDirection = Sort.Direction.DESC;
+//	    }
+//
+//	    // ✅ Create sort and pageable
+//	    Sort sort = Sort.by(sortDirection, sortField);
+//	    Pageable pageable = PageRequest.of(pageNo - 1, pageSize, sort);
+//
+//	    Page<ManageUsers> manageUsersPage;
+//
+//	    // ✅ Check if keyword is provided
+//	    if (keyword == null || keyword.trim().isEmpty() || keyword.equalsIgnoreCase("empty")) {
+//	        manageUsersPage = manageUserRepository.getAllManageUsersForSort(pageable);
+//	    } else {
+//	        manageUsersPage = manageUserRepository.searchManageUsers(keyword.trim(), pageable);
+//	    }
+//
+//	    // ✅ Convert to DTO
+//	    return manageUsersPage.map(this::convertToDTO);
+//	}
+
+	
+	
 	@Override
-	public Page<ManageUserDTO> getAllManageUsersWithSorting(SortingRequestDTO sortingRequestDTO) {
-//	    logger.info("!!! inside class: UserServiceImpl, !! method: getAllManageUsersWithSorting");
+	public Page<ManageUserDTO> getAllManageUsersWithSorting(SortingRequestDTO sortingRequestDTO, String loggedInEmail) {
 	    
 	    String sortField = sortingRequestDTO.getSortField();
 	    String sortOrder = sortingRequestDTO.getSortOrder();
@@ -942,25 +999,53 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	    Integer pageNo = sortingRequestDTO.getPageNumber();
 	    Integer pageSize = sortingRequestDTO.getPageSize();
 
+	    // ✅ Get current user and their role
+	    User currentUser = getCurrentLoggedInUser(loggedInEmail);
+	    String roleName = currentUser.getRole() != null ? currentUser.getRole().getRoleName() : null;
+	    String domain = extractDomain(currentUser.getEmail());
+
+	    // ✅ Default values and validation
+	    if (pageNo == null || pageNo < 0) {
+	        pageNo = 0; // Default to first page
+	    }
+	    // ✅ If pageNo is 1 or greater, subtract 1 (convert to 0-based index)
+	    // If pageNo is already 0, keep it as 0
+	    int zeroBasedPageNo = (pageNo > 0) ? pageNo - 1 : pageNo;
+	    
+	    if (pageSize == null || pageSize < 1) {
+	        pageSize = 10; // Default page size
+	    }
+	    if (sortField == null || sortField.isEmpty()) {
+	        sortField = "id";
+	    }
+
 	    // ✅ Map frontend field names to entity field names
-	    if (sortField != null) {
-	        if (sortField.equalsIgnoreCase("Name") || sortField.equalsIgnoreCase("fullName")) {
+	    switch (sortField.toLowerCase()) {
+	        case "name":
+	        case "fullname":
 	            sortField = "firstName";
-	        } else if (sortField.equalsIgnoreCase("Email")) {
+	            break;
+	        case "email":
 	            sortField = "email";
-	        } else if (sortField.equalsIgnoreCase("Role")) {
+	            break;
+	        case "role":
 	            sortField = "roleName";
-	        } else if (sortField.equalsIgnoreCase("AddedBy")) {
+	            break;
+	        case "addedby":
 	            sortField = "addedByName";
-	        } else if (sortField.equalsIgnoreCase("UpdatedBy")) {
+	            break;
+	        case "updatedby":
 	            sortField = "updatedByName";
-	        } else if (sortField.equalsIgnoreCase("CompanyName")) {
+	            break;
+	        case "companyname":
 	            sortField = "companyName";
-	        } else if (sortField.equalsIgnoreCase("MobileNumber")) {
+	            break;
+	        case "mobilenumber":
 	            sortField = "mobileNumber";
-	        }
-	    } else {
-	        sortField = "id"; // Default sort field
+	            break;
+	        default:
+	            sortField = "id";
+	            break;
 	    }
 
 	    // ✅ Determine sort direction
@@ -969,24 +1054,40 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	        sortDirection = Sort.Direction.DESC;
 	    }
 
-	    // ✅ Create sort and pageable
+	    // ✅ Create sort and pageable (using 0-based index)
 	    Sort sort = Sort.by(sortDirection, sortField);
-	    Pageable pageable = PageRequest.of(pageNo - 1, pageSize, sort);
+	    Pageable pageable = PageRequest.of(zeroBasedPageNo, pageSize, sort);
 
 	    Page<ManageUsers> manageUsersPage;
 
 	    // ✅ Check if keyword is provided
-	    if (keyword == null || keyword.trim().isEmpty() || keyword.equalsIgnoreCase("empty")) {
-	        manageUsersPage = manageUserRepository.getAllManageUsersForSort(pageable);
+	    boolean hasKeyword = keyword != null && !keyword.trim().isEmpty() && !keyword.equalsIgnoreCase("empty");
+
+	    // ✅ Filter based on role
+	    if ("SUPERADMIN".equalsIgnoreCase(roleName)) {
+	        // SUPERADMIN sees ALL users
+	        if (hasKeyword) {
+	            manageUsersPage = manageUserRepository.searchManageUsers(keyword.trim(), pageable);
+	        } else {
+	            manageUsersPage = manageUserRepository.findAll(pageable);
+	        }
+	        
+	    } else if ("ADMIN".equalsIgnoreCase(roleName)) {
+	        // ADMIN sees ONLY their domain users
+	        if (hasKeyword) {
+	            manageUsersPage = manageUserRepository.searchManageUsersByDomain(keyword.trim(), domain, pageable);
+	        } else {
+	            manageUsersPage = manageUserRepository.getAllManageUsersByDomain(domain, pageable);
+	        }
+	        
 	    } else {
-	        manageUsersPage = manageUserRepository.searchManageUsers(keyword.trim(), pageable);
+	        // Regular user sees ONLY themselves
+	        manageUsersPage = manageUserRepository.getManageUserByEmail(currentUser.getEmail(), pageable);
 	    }
 
 	    // ✅ Convert to DTO
 	    return manageUsersPage.map(this::convertToDTO);
 	}
-
-	
 	
 	
 /* Addedby Bhargav */

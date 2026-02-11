@@ -69,7 +69,11 @@ public interface ManageUserService {
 
 	//Bhargav
 	
-    Page<ManageUserDTO> getAllManageUsersWithSorting(SortingRequestDTO sortingRequestDTO);
+//    Page<ManageUserDTO> getAllManageUsersWithSorting(SortingRequestDTO sortingRequestDTO);
+	
+	
+    Page<ManageUserDTO> getAllManageUsersWithSorting(SortingRequestDTO sortingRequestDTO, String loggedInEmail);
+
     
 	//Bhargav
 
