@@ -122,18 +122,60 @@ public interface ManageUserRepository extends JpaRepository<ManageUsers, Long>, 
 	//Bhargav
    
     // ✅ For sorting without keyword
-    @Query("SELECT m FROM ManageUsers m")
-    Page<ManageUsers> getAllManageUsersForSort(Pageable pageable);
+//    @Query("SELECT m FROM ManageUsers m")
+//    Page<ManageUsers> getAllManageUsersForSort(Pageable pageable);
+//    
+//    // ✅ For searching with keyword
+//    @Query("SELECT m FROM ManageUsers m WHERE " +
+//           "LOWER(m.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+//           "LOWER(m.lastName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+//           "LOWER(m.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+//           "LOWER(m.roleName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+//           "LOWER(m.companyName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+//           "LOWER(m.mobileNumber) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+//    Page<ManageUsers> searchManageUsers(@Param("keyword") String keyword, Pageable pageable);
+//   
     
-    // ✅ For searching with keyword
+    // ✅ For sorting without keyword - ALL USERS (for SUPERADMIN)
+    Page<ManageUsers> findAll(Pageable pageable);
+    
+    // ✅ For sorting without keyword - FILTERED BY DOMAIN (for ADMIN)
+    @Query("SELECT m FROM ManageUsers m WHERE LOWER(m.companyDomain) = LOWER(:domain)")
+    Page<ManageUsers> getAllManageUsersByDomain(@Param("domain") String domain, Pageable pageable);
+    
+    // ✅ For searching with keyword - ALL USERS (for SUPERADMIN)
     @Query("SELECT m FROM ManageUsers m WHERE " +
-           "LOWER(m.firstName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(m.lastName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(m.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(m.roleName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(m.companyName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(m.mobileNumber) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+           "LOWER(COALESCE(m.firstName, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(COALESCE(m.middleName, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(COALESCE(m.lastName, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(COALESCE(m.fullName, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(COALESCE(m.email, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(COALESCE(m.roleName, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(COALESCE(m.companyName, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(COALESCE(m.mobileNumber, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(COALESCE(m.addedByName, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Page<ManageUsers> searchManageUsers(@Param("keyword") String keyword, Pageable pageable);
+    
+    // ✅ For searching with keyword - FILTERED BY DOMAIN (for ADMIN)
+    @Query("SELECT m FROM ManageUsers m WHERE LOWER(m.companyDomain) = LOWER(:domain) AND (" +
+           "LOWER(COALESCE(m.firstName, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(COALESCE(m.middleName, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(COALESCE(m.lastName, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(COALESCE(m.fullName, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(COALESCE(m.email, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(COALESCE(m.roleName, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(COALESCE(m.companyName, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(COALESCE(m.mobileNumber, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(COALESCE(m.addedByName, '')) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<ManageUsers> searchManageUsersByDomain(@Param("keyword") String keyword, 
+                                                 @Param("domain") String domain, 
+                                                 Pageable pageable);
+    
+    // ✅ For getting single user's data (for regular users)
+    @Query("SELECT m FROM ManageUsers m WHERE LOWER(m.email) = LOWER(:email)")
+    Page<ManageUsers> getManageUserByEmail(@Param("email") String email, Pageable pageable);
+
+    
     //Bhargav
 
 	

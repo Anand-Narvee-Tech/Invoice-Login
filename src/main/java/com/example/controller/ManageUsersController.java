@@ -202,18 +202,36 @@ public class ManageUsersController {
 	    
 //Bhargav
 	    
+//	    @PostMapping("/manageusers/searchAndsorting/getall")
+//	    public ResponseEntity<RestAPIResponse> getManageUsersList(@RequestBody SortingRequestDTO sortingRequestDTO ,Authentication authentication) {
+//	        Page<ManageUserDTO> manageUsers = manageUsersService.getAllManageUsersWithSorting(sortingRequestDTO);
+//	        String loggedInEmail = authentication.getName();
+//	        List<ManageUserDTO> users = manageUsersService.getAllUsers(loggedInEmail);
+//	        return new ResponseEntity<>(
+//	            new RestAPIResponse("success", "Successfully retrieved manage users list", manageUsers),
+//	            HttpStatus.OK
+//	        );
+//	    }
+    
 	    @PostMapping("/manageusers/searchAndsorting/getall")
-	    public ResponseEntity<RestAPIResponse> getManageUsersList(@RequestBody SortingRequestDTO sortingRequestDTO ,Authentication authentication) {
-	        Page<ManageUserDTO> manageUsers = manageUsersService.getAllManageUsersWithSorting(sortingRequestDTO);
+	    public ResponseEntity<RestAPIResponse> getManageUsersList(
+	            @RequestBody SortingRequestDTO sortingRequestDTO, 
+	            Authentication authentication) {
+	        
 	        String loggedInEmail = authentication.getName();
-	        List<ManageUserDTO> users = manageUsersService.getAllUsers(loggedInEmail);
+	        
+	        // ✅ Pass loggedInEmail to service method
+	        Page<ManageUserDTO> manageUsers = manageUsersService.getAllManageUsersWithSorting(
+	                sortingRequestDTO, 
+	                loggedInEmail
+	        );
+	        
 	        return new ResponseEntity<>(
 	            new RestAPIResponse("success", "Successfully retrieved manage users list", manageUsers),
 	            HttpStatus.OK
 	        );
 	    }
-	    
-	    
+	       
  //Bhargav
 	    
 
