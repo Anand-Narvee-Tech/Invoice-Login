@@ -1,6 +1,7 @@
 package com.example.controller;
 
 import java.io.IOException;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,6 +9,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -19,14 +21,17 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.DTO.ManageUserDTO;
+import com.example.DTO.SortingRequestDTO;
 import com.example.DTO.UserUpdateRequest;
 import com.example.commons.RestAPIResponse;
 import com.example.entity.ManageUsers;
 import com.example.entity.User;
+import com.example.repository.ManageUserRepository;
 import com.example.repository.UserRepository;
 import com.example.service.ManageUserService;
 
@@ -37,13 +42,16 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ManageUsersController {
 	
-	    private final ManageUserService manageUsersService;
-	    
-	  
-	    @Autowired
-	    private UserRepository userRepository;
-	    
-	   
+	
+	@Autowired
+	private UserRepository userRepository;
+
+	@Autowired
+	private ManageUserRepository manageuserrepository;
+
+	
+	   @Autowired
+	    private  ManageUserService manageUsersService;
 	    
 	
 	    // 🔹 Create user (accessible by SUPERADMIN or ADMIN)
@@ -95,34 +103,17 @@ public class ManageUsersController {
 	                new RestAPIResponse("Success", "User updated successfully", updatedUser)
 	        );
 	    }
-
+	//Bhargav    	    
+	 	    
 	    @PutMapping("/updated/save")
-	    public ResponseEntity<UserUpdateRequest> updateProfile(
-	            @RequestParam("id") Long id,
-	            @RequestParam("mobileNumber") String mobileNumber,
-	            @RequestParam(value = "alternativeEmail", required = false) String alternativeEmail,
-	            @RequestParam(value = "alternativeMobileNumber", required = false) String alternativeMobileNumber,
-	            @RequestParam("companyName") String companyName,
-	            @RequestParam(value = "invoicePrefix", required = false) String invoicePrefix,
-	            @RequestParam(value = "taxId", required = false) String taxId,
-	            @RequestParam(value = "businessId", required = false) String businessId,
-	            @RequestParam("preferredCurrency") String preferredCurrency,
-	            @RequestParam(value = "profileImage", required = false) MultipartFile profileImage
-	    ) throws IOException {
-
-	        User updatedUser = manageUsersService.updateUserProfileDynamic(
-	                id, mobileNumber, alternativeEmail, alternativeMobileNumber,
-	                companyName, invoicePrefix, taxId, businessId, preferredCurrency, profileImage
-	        );
-
-	        return ResponseEntity.ok(manageUsersService.mapToDto(updatedUser));
-	    }
-
-
-
-
-
-	    	
+	    public ResponseEntity<?> updateUser(@RequestBody UserUpdateRequest request) {
+	        User updatedUser = manageUsersService.updateUserProfileDynamic(request);
+	        return ResponseEntity.ok(updatedUser);
+	    }  
+	
+	 //Bhargav   
+	    
+	    
 	    // 🔹 Get available roles for dropdowns (UI helper)
 	    @GetMapping("/manageusers/roles")
 	    public ResponseEntity<RestAPIResponse> getAllRolesForSelection() {
@@ -206,6 +197,43 @@ public class ManageUsersController {
 	                new RestAPIResponse("Success", "User deleted successfully", null)
 	        );
 	    }
+	    
+	    
+	    
+//Bhargav
+	    
+//	    @PostMapping("/manageusers/searchAndsorting/getall")
+//	    public ResponseEntity<RestAPIResponse> getManageUsersList(@RequestBody SortingRequestDTO sortingRequestDTO ,Authentication authentication) {
+//	        Page<ManageUserDTO> manageUsers = manageUsersService.getAllManageUsersWithSorting(sortingRequestDTO);
+//	        String loggedInEmail = authentication.getName();
+//	        List<ManageUserDTO> users = manageUsersService.getAllUsers(loggedInEmail);
+//	        return new ResponseEntity<>(
+//	            new RestAPIResponse("success", "Successfully retrieved manage users list", manageUsers),
+//	            HttpStatus.OK
+//	        );
+//	    }
+    
+	    @PostMapping("/manageusers/searchAndsorting/getall")
+	    public ResponseEntity<RestAPIResponse> getManageUsersList(
+	            @RequestBody SortingRequestDTO sortingRequestDTO, 
+	            Authentication authentication) {
+	        
+	        String loggedInEmail = authentication.getName();
+	        
+	        // ✅ Pass loggedInEmail to service method
+	        Page<ManageUserDTO> manageUsers = manageUsersService.getAllManageUsersWithSorting(
+	                sortingRequestDTO, 
+	                loggedInEmail
+	        );
+	        
+	        return new ResponseEntity<>(
+	            new RestAPIResponse("success", "Successfully retrieved manage users list", manageUsers),
+	            HttpStatus.OK
+	        );
+	    }
+	       
+ //Bhargav
+	    
 
 
 	   	}

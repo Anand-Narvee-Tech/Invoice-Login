@@ -3,8 +3,13 @@ package com.example.service;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+
 import com.example.DTO.LoginRequest;
+import com.example.DTO.ManageUserDTO;
+import com.example.DTO.SortingRequestDTO;
 import com.example.DTO.UserProfileResponse;
+import com.example.entity.ManageUsers;
 import com.example.entity.Role;
 import com.example.entity.User;
 
@@ -32,4 +37,7 @@ public interface UserService {
 	//public void sendOtp(String emailInput, String purpose);
 
 	public void sendOtpForRegister(String emailInput);
+
+	public  ManageUserDTO registerCompanyUser(ManageUsers manageUsers);
+
 }

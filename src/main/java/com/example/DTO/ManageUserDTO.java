@@ -1,6 +1,9 @@
 package com.example.DTO;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
@@ -28,12 +31,17 @@ public class ManageUserDTO {
 	//Bhargav
     private String state;
     private String country;
+    private String city;
     private String pincode;
     private String telephone;
     private String ein;
     private String gstin;
     private String website;
 	private String address;
+	private String token;
+	 
+	
+	    
 
 
 	

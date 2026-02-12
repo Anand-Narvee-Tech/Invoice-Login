@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.DTO.ManageUserDTO;
+import com.example.DTO.SortingRequestDTO;
 import com.example.DTO.UserUpdateRequest;
 import com.example.entity.ManageUsers;
 import com.example.entity.User;
@@ -50,22 +51,33 @@ public interface ManageUserService {
     // Upload profile file
     String uploadFile(MultipartFile file, Long userId) throws IOException;
 
-    // Dynamic profile update
-    public User updateUserProfileDynamic(
-            Long id,
-            String mobileNumber,
-            String alternativeEmail,
-            String alternativeMobileNumber,
-            String companyName,
-            String invoicePrefix,
-            String taxId,
-            String businessId,
-            String preferredCurrency,
-            MultipartFile profileImage);
-    // Map entity to DTO
-    UserUpdateRequest mapToDto(User user);
+    //Bhagi
+      
+      User updateUserProfileDynamic(UserUpdateRequest request);
+
+      UserUpdateRequest mapToDto(User user);
+      
+    //Bhagi
+      
+
+    
 
 	/** ================= UPDATE USER PROFILE ================= **/
     
 	User updateUserProfile(UserUpdateRequest request, String loggedInEmail);
+
+
+	//Bhargav
+	
+//    Page<ManageUserDTO> getAllManageUsersWithSorting(SortingRequestDTO sortingRequestDTO);
+	
+	
+    Page<ManageUserDTO> getAllManageUsersWithSorting(SortingRequestDTO sortingRequestDTO, String loggedInEmail);
+
+    
+	//Bhargav
+
+	
+	
+	
 }
