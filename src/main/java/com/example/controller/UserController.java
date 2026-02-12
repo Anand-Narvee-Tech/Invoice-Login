@@ -55,6 +55,15 @@ public class UserController {
 
 	@Autowired
 	private ManageUserRepository manageUserRepository;
+	
+	@Autowired
+	private UserService userService;
+	
+	@Autowired
+	private RoleRepository roleRepository;
+	
+	 @Autowired
+	    private JwtUtil jwtUtil;
 
 	@Autowired
 	private UserService userService;
@@ -151,6 +160,102 @@ public class UserController {
 
 	}
 
+	
+//Bhargav working
+	
+	 
+	 @PostMapping("/register")
+	 public ResponseEntity<RestAPIResponse> register(
+	         @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+	         @RequestBody @Valid RegisterRequest request) {
+
+	     try {
+
+	         // Step 1: Build entity from request
+	         ManageUsers manageUsers = userServiceImpl.buildManageUsersFromRequest(request);
+
+	         // Step 2: Register user
+	         ManageUserDTO response = userServiceImpl.registerCompanyUser(manageUsers);
+
+	         // Step 3: Fetch saved user and manageUser
+	         User user = userRepository.findByEmailIgnoreCase(response.getEmail())
+	                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+	         ManageUsers savedUser = manageUserRepository.findByEmailIgnoreCase(response.getEmail())
+	                 .orElseThrow(() -> new RuntimeException("ManageUser not found"));
+
+	         // Step 4: Get Role Name
+	         String roleName = savedUser.getRoleName();
+
+	         // Step 5: Fetch Privileges from Role
+	         Set<String> privilegeNames = new HashSet<>();
+
+	         if (roleName != null) {
+	             Role roleEntity = roleRepository.findByRoleNameIgnoreCase(roleName).orElse(null);
+
+	             if (roleEntity != null && roleEntity.getPrivileges() != null) {
+	                 privilegeNames = roleEntity.getPrivileges().stream()
+	                         .map(Privilege::getName)
+	                         .collect(Collectors.toSet());
+	             }
+	         }
+
+	         // Step 6: Generate Token with Role + Privileges
+	         String token = jwtService.generateToken(user, roleName, privilegeNames);
+
+	         // Step 7: Build Final Response (DO NOT REMOVE ANY EXISTING FIELD)
+
+	         Map<String, Object> finalResponse = new LinkedHashMap<>();
+
+	         finalResponse.put("id", savedUser.getId());
+	         finalResponse.put("fullName", savedUser.getFullName());
+	         finalResponse.put("firstName", savedUser.getFirstName());
+	         finalResponse.put("middleName", savedUser.getMiddleName());
+	         finalResponse.put("lastName", savedUser.getLastName());
+	         finalResponse.put("email", savedUser.getEmail());
+	         finalResponse.put("primaryEmail", savedUser.getPrimaryEmail());
+	         finalResponse.put("mobileNumber", savedUser.getMobileNumber());
+	         finalResponse.put("companyName", savedUser.getCompanyName());
+	         finalResponse.put("state", savedUser.getState());
+	         finalResponse.put("city", savedUser.getCity());
+	         finalResponse.put("country", savedUser.getCountry());
+	         finalResponse.put("pincode", savedUser.getPincode());
+	         finalResponse.put("telephone", savedUser.getTelephone());
+	         finalResponse.put("ein", savedUser.getEin());
+	         finalResponse.put("gstin", savedUser.getGstin());
+	         finalResponse.put("website", savedUser.getWebsite());
+	         finalResponse.put("address", savedUser.getAddress());
+
+	         // ---------- ADDED PART (AS YOU REQUESTED) ----------
+	         finalResponse.put("roleName", roleName);
+	         finalResponse.put("privileges", privilegeNames);
+	         finalResponse.put("token", token);
+	         // ---------------------------------------------------
+
+	         return ResponseEntity.status(HttpStatus.CREATED)
+	                 .body(new RestAPIResponse(
+	                         "success",
+	                         "Company registered successfully. ADMIN created.",
+	                         finalResponse
+	                 ));
+
+	     } catch (DataIntegrityViolationException e) {
+
+	         return ResponseEntity.status(HttpStatus.CONFLICT)
+	                 .body(new RestAPIResponse("failed",
+	                         "Email or mobile number already exists.", null));
+
+	     } catch (Exception e) {
+	         e.printStackTrace();
+
+	         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                 .body(new RestAPIResponse("failed",
+	                         "Registration failed: " + e.getMessage(), null));
+	     }
+	     
+	 }
+  
+	 
 	/** Send OTP */
 	@PostMapping("/login/send-otp")
 	public ResponseEntity<RestAPIResponse> sendOTP(@RequestBody Map<String, String> body) {
