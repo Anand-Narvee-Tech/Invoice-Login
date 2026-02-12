@@ -30,10 +30,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.DTO.BankDetailsRequest;
 import com.example.DTO.ManageUserDTO;
 import com.example.DTO.SortingRequestDTO;
 import com.example.DTO.UserUpdateRequest;
 import com.example.entity.AuditLog;
+import com.example.entity.BankDetails;
 import com.example.entity.ManageUsers;
 import com.example.entity.Role;
 import com.example.entity.User;
