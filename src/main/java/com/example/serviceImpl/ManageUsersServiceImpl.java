@@ -44,6 +44,7 @@ import com.example.repository.AuditLogRepository;
 import com.example.repository.ManageUserRepository;
 import com.example.repository.RoleRepository;
 import com.example.repository.UserRepository;
+import com.example.service.EmailService;
 import com.example.service.ManageUserService;
 
 import lombok.RequiredArgsConstructor;
@@ -55,6 +56,9 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 	@Value("${file.upload-dir}")
 	private String uploadDir;
+
+	@Autowired
+	private EmailService emailService;
 
 	@Autowired
 	private UserNameSyncServiceImpl userNameSyncServiceImpl;
@@ -98,8 +102,9 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 				// 🔽 Newly added fields
 				.state(entity.getState()).country(entity.getCountry()).pincode(entity.getPincode())
-				.telephone(entity.getTelephone()).ein(entity.getEin()).gstin(entity.getGstin())
-				.website(entity.getWebsite()).address(entity.getAddress()).city(entity.getCity()).build();
+				.loginUrl(entity.getLoginUrl()).telephone(entity.getTelephone()).ein(entity.getEin())
+				.gstin(entity.getGstin()).website(entity.getWebsite()).address(entity.getAddress())
+				.city(entity.getCity()).build();
 	}
 	// Bhargav
 
@@ -182,6 +187,9 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 		ManageUsers savedManageUser = manageUserRepository.save(manageUsers);
 
+		emailService.sendRegistrationEmail(savedManageUser.getEmail(), savedManageUser.getFullName(),
+				savedManageUser.getRoleName());
+
 		userRepository.findByEmailIgnoreCase(newUserEmail).ifPresentOrElse(existingUser -> {
 
 			// Update existing user
@@ -218,6 +226,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
 			user.setWebsite(savedManageUser.getWebsite());
 			user.setEin(savedManageUser.getEin());
 			user.setAddress(savedManageUser.getAddress());
+			user.setLoginUrl(savedManageUser.getLoginUrl());
 			// Bhargav
 			user.setApproved(true);
 			user.setActive(true);
@@ -900,49 +909,9 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 		if (request.getWebsite() != null)
 			manageUser.setWebsite(request.getWebsite());
-//vasim addedby
-		if (request.getFid() != null)
-			manageUser.setFid(request.getFid());
 
-		if (request.getEverifyId() != null)
-			manageUser.setEverifyId(request.getEverifyId());
+		manageUserRepository.save(manageUser);
 
-		if (request.getDunsNumber() != null)
-			manageUser.setDunsNumber(request.getDunsNumber());
-
-		if (request.getStateOfIncorporation() != null)
-			manageUser.setStateOfIncorporation(request.getStateOfIncorporation());
-
-		if (request.getNaicsCode() != null)
-			manageUser.setSigningAuthorityName(request.getSigningAuthorityName());
-
-		if (request.getDesignation() != null)
-			manageUser.setDesignation(request.getDesignation());
-
-		if (request.getDateOfIncorporation() != null)
-			manageUser.setDateOfIncorporation(request.getDateOfIncorporation());
-
-		if (request.getBankDetails() != null) {
-
-			List<BankDetails> bankEntities = new ArrayList<>();
-
-			for (BankDetailsRequest dto : request.getBankDetails()) {
-
-				BankDetails bank = new BankDetails();
-				bank.setId(dto.getId());
-				bank.setBankName(dto.getBankName());
-				bank.setBankAccountNumber(dto.getBankAccountNumber());
-				bank.setRoutingNumber(dto.getRoutingNumber());
-
-				bank.setUser(user); // VERY IMPORTANT
-
-				bankEntities.add(bank);
-			}
-
-			user.getBankDetails().clear();
-			user.getBankDetails().addAll(bankEntities);
-		}
-//vasim
 		return user;
 	}
 

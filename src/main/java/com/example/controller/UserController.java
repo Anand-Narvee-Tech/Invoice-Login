@@ -39,6 +39,9 @@ import com.example.serviceImpl.JwtServiceImpl;
 import com.example.serviceImpl.UserServiceImpl;
 import com.example.utils.JwtUtil;
 
+import jakarta.persistence.Column;
+import jakarta.validation.Valid;
+
 //@CrossOrigin("*")
 @RestController
 @RequestMapping("/auth")
@@ -225,6 +228,7 @@ public class UserController {
 	         finalResponse.put("gstin", savedUser.getGstin());
 	         finalResponse.put("website", savedUser.getWebsite());
 	         finalResponse.put("address", savedUser.getAddress());
+	         finalResponse.put("loginurl", savedUser.getLoginUrl());
 
 	         // ---------- ADDED PART (AS YOU REQUESTED) ----------
 	         finalResponse.put("roleName", roleName);
