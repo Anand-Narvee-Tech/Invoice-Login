@@ -39,6 +39,7 @@ public class ManageUserDTO {
     private String website;
 	private String address;
 	private String token;
+	private String loginUrl;
 	 
 	
 	    

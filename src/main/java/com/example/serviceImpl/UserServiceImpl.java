@@ -645,25 +645,46 @@ public class UserServiceImpl implements UserService {
 	        helper.setTo(email);
 	        helper.setSubject("Login Verification Code - Invoicing Team");
 
-	        String htmlContent = "<!DOCTYPE html>" + "<html>" + "<head><meta charset='UTF-8'></head>"
-	                + "<body style='margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f9f9f9;'>"
-	                + "<table align='center' width='600' cellpadding='0' cellspacing='0' style='background:#ffffff; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.1);'>"
-	                + "<tr>"
-	                + "<td align='center' bgcolor='#004b6e' style='padding:20px; border-top-left-radius:8px; border-top-right-radius:8px;'>"
-	                + "<h2 style='color:#ffffff; margin:0;'>Verify Your Login</h2>" + "</td>" + "</tr>" + "<tr>"
-	                + "<td style='padding:30px;'>" + "<h3 style='color:#004b6e; margin-top:0;'>Invoicing Team</h3>"
-	                + "<p style='font-size:15px; color:#333;'>" + "Hello " + safeFullname + ",<br><br>"
-	                + "Thank you for choosing <b>Invoicing Application</b>. Use the following OTP to complete your Sign-In:"
-	                + "</p>" + "<div style='text-align:center; margin:25px 0;'>"
-	                + "<span style='display:inline-block; background:#f4f4f4; padding:20px 40px; border-radius:6px; font-size:28px; font-weight:bold; color:#6c2bd9; letter-spacing:3px;'>"
-	                + otp + "</span>" + "</div>" + "<p style='font-size:14px; color:#555;'>"
-	                + "This OTP is valid for <b>2 minutes</b>. Please do not share this code with anyone." + "</p>"
-	                + "<p style='font-size:14px; color:#333; margin-top:30px;'>"
-	                + "Best Regards,<br><b>Invoicing Team</b>" + "</p>" + "</td>" + "</tr>" + "<tr>"
-	                + "<td align='center' bgcolor='#f1f1f1' style='padding:10px; border-bottom-left-radius:8px; border-bottom-right-radius:8px; font-size:12px; color:#888;'>"
-	                + "2025 Invoicing Team. All rights reserved." + "</td>" + "</tr>" + "</table>" + "</body>"
-	                + "</html>";
+//	        String htmlContent = "<!DOCTYPE html>" + "<html>" + "<head><meta charset='UTF-8'></head>"
+//	                + "<body style='margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f9f9f9;'>"
+//	                + "<table align='center' width='600' cellpadding='0' cellspacing='0' style='background:#ffffff; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.1);'>"
+//	                + "<tr>"
+//	                + "<td align='center' bgcolor='#004b6e' style='padding:20px; border-top-left-radius:8px; border-top-right-radius:8px;'>"
+//	                + "<h2 style='color:#ffffff; margin:0;'>Verify Your Login</h2>" + "</td>" + "</tr>" + "<tr>"
+//	                + "<td style='padding:30px;'>" + "<h3 style='color:#004b6e; margin-top:0;'>Invoicing Team</h3>"
+//	                + "<p style='font-size:15px; color:#333;'>" + "Hello " + safeFullname + ",<br><br>"
+//	                + "Thank you for choosing <b>Invoicing Application</b>. Use the following OTP to complete your Sign-In:"
+//	                + "</p>" + "<div style='text-align:center; margin:25px 0;'>"
+//	                + "<span style='display:inline-block; background:#f4f4f4; padding:20px 40px; border-radius:6px; font-size:28px; font-weight:bold; color:#6c2bd9; letter-spacing:3px;'>"
+//	                + otp + "</span>" + "</div>" + "<p style='font-size:14px; color:#555;'>"
+//	                + "This OTP is valid for <b>2 minutes</b>. Please do not share this code with anyone." + "</p>"
+//	                + "<p style='font-size:14px; color:#333; margin-top:30px;'>"
+//	                + "Best Regards,<br><b>Invoicing Team</b>" + "</p>" + "</td>" + "</tr>" + "<tr>"
+//	                + "<td align='center' bgcolor='#f1f1f1' style='padding:10px; border-bottom-left-radius:8px; border-bottom-right-radius:8px; font-size:12px; color:#888;'>"
+//	                + "2025 Invoicing Team. All rights reserved." + "</td>" + "</tr>" + "</table>" + "</body>"
+//	                + "</html>";
 
+	        
+			String htmlContent = "<!DOCTYPE html>" + "<html>" + "<head><meta charset='UTF-8'></head>"
+					+ "<body style='margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f9f9f9;'>"
+					+ "<table align='center' width='600' cellpadding='0' cellspacing='0' style='background:#ffffff; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.1);'>"
+					+ "<tr>"
+					+ "<td align='center' bgcolor='#2563eb' style='padding:20px; border-top-left-radius:8px; border-top-right-radius:8px;'>"
+					+ "<h2 style='color:#ffffff; margin:0;'> Invoice </h2>" + "</td>" + "</tr>" + "<tr>"
+					+ "<td style='padding:30px;'>" + "<h3 style='color:#004b6e; margin-top:0;'>Invoicing Team</h3>"
+					+ "<p style='font-size:16px; color:#4b5563;'>" + "Hello <strong>" + safeFullname
+					+ "</strong>,<br><br>"
+					+ "Thank you for choosing <b>Invoicing Application</b>. Your verification code is:"
+					+ "</p>" + "<div style='text-align:center; margin:32px 0;'>"
+					+ "<div style='display:inline-block; padding:18px 32px; border-radius:12px; border:2px dashed #2563eb; background:#eff6ff; font-size:36px; font-weight:700; letter-spacing:8px; color:#1e3a8a;'>"
+					+ otp + "</div>" + "</div>" + "<p style='text-align:center; font-size:15px; color:#6b7280;'>"
+					+ "This OTP is valid for <strong>2 minutes</strong>. Please do not share this code with anyone."
+					+ "</p>" + "<p style='font-size:14px; color:#333; margin-top:30px;'>"
+					+ "Best Regards,<br><b>Invoicing Team</b>" + "</p>" + "</td>" + "</tr>" + "<tr>"
+					+ "<td align='center' bgcolor='#f1f1f1' style='padding:10px; border-bottom-left-radius:8px; border-bottom-right-radius:8px; font-size:12px; color:#888;'>"
+					+ "2026 Invoicing Team. All rights reserved." + "</td>" + "</tr>" + "</table>" + "</body>"
+					+ "</html>";
+     
 	        helper.setText(htmlContent, true);
 	        javaMailSender.send(mimeMessage);
 	        log.info("OTP sent successfully to {}", email);
@@ -711,24 +732,26 @@ public class UserServiceImpl implements UserService {
 
 	        String safeFullname = HtmlUtils.htmlEscape(fullName);
 
-	        String htmlContent = "<!DOCTYPE html>" + "<html>" + "<head><meta charset='UTF-8'></head>"
-	                + "<body style='margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f9f9f9;'>"
-	                + "<table align='center' width='600' cellpadding='0' cellspacing='0' style='background:#ffffff; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.1);'>"
-	                + "<tr>"
-	                + "<td align='center' bgcolor='#004b6e' style='padding:20px; border-top-left-radius:8px; border-top-right-radius:8px;'>"
-	                + "<h2 style='color:#ffffff; margin:0;'>Verify Your Registration</h2>" + "</td>" + "</tr>" + "<tr>"
-	                + "<td style='padding:30px;'>" + "<h3 style='color:#004b6e; margin-top:0;'>Invoicing Team</h3>"
-	                + "<p style='font-size:15px; color:#333;'>" + "Hello " + safeFullname + ",<br><br>"
-	                + "Thank you for choosing <b>Invoicing Application</b>. Use the following OTP to complete your Registration:"
-	                + "</p>" + "<div style='text-align:center; margin:25px 0;'>"
-	                + "<span style='display:inline-block; background:#f4f4f4; padding:20px 40px; border-radius:6px; font-size:28px; font-weight:bold; color:#6c2bd9; letter-spacing:3px;'>"
-	                + otp + "</span>" + "</div>" + "<p style='font-size:14px; color:#555;'>"
-	                + "This OTP is valid for <b>2 minutes</b>. Please do not share this code with anyone." + "</p>"
-	                + "<p style='font-size:14px; color:#333; margin-top:30px;'>"
-	                + "Best Regards,<br><b>Invoicing Team</b>" + "</p>" + "</td>" + "</tr>" + "<tr>"
-	                + "<td align='center' bgcolor='#f1f1f1' style='padding:10px; border-bottom-left-radius:8px; border-bottom-right-radius:8px; font-size:12px; color:#888;'>"
-	                + "2025 Invoicing Team. All rights reserved." + "</td>" + "</tr>" + "</table>" + "</body>"
-	                + "</html>";
+			String htmlContent = "<!DOCTYPE html>" + "<html>" + "<head><meta charset='UTF-8'></head>"
+					+ "<body style='margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f9f9f9;'>"
+					+ "<table align='center' width='600' cellpadding='0' cellspacing='0' style='background:#ffffff; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.1);'>"
+					+ "<tr>"
+					+ "<td align='center' bgcolor='#2563eb' style='padding:20px; border-top-left-radius:8px; border-top-right-radius:8px;'>"
+					+ "<h2 style='color:#ffffff; margin:0;'>Verify Your Registration</h2>" + "</td>" + "</tr>" + "<tr>"
+					+ "<td style='padding:30px;'>" + "<h3 style='color:#004b6e; margin-top:0;'>Invoicing Team</h3>"
+					+ "<p style='font-size:16px; color:#4b5563;'>" + "Hello <strong>" + safeFullname
+					+ "</strong>,<br><br>"
+					+ "Thank you for choosing <b>Invoicing Application</b>. Use the following OTP to complete your Registration:"
+					+ "</p>" + "<div style='text-align:center; margin:32px 0;'>"
+					+ "<div style='display:inline-block; padding:18px 32px; border-radius:12px; border:2px dashed #2563eb; background:#eff6ff; font-size:36px; font-weight:700; letter-spacing:8px; color:#1e3a8a;'>"
+					+ otp + "</div>" + "</div>" + "<p style='text-align:center; font-size:15px; color:#6b7280;'>"
+					+ "This OTP is valid for <strong>2 minutes</strong>. Please do not share this code with anyone."
+					+ "</p>" + "<p style='font-size:14px; color:#333; margin-top:30px;'>"
+					+ "Best Regards,<br><b>Invoicing Team</b>" + "</p>" + "</td>" + "</tr>" + "<tr>"
+					+ "<td align='center' bgcolor='#f1f1f1' style='padding:10px; border-bottom-left-radius:8px; border-bottom-right-radius:8px; font-size:12px; color:#888;'>"
+					+ "2026 Invoicing Team. All rights reserved." + "</td>" + "</tr>" + "</table>" + "</body>"
+					+ "</html>";
+
 	        helper.setText(htmlContent, true);
 	        javaMailSender.send(mimeMessage);
 
@@ -740,12 +763,7 @@ public class UserServiceImpl implements UserService {
 	//Added by Bhargav Generate alphanumeric OTP 11-02-26 new 
 
 	
-	
-	
-	
-	
 
-	
 	
 //comment by Bhargav 	
 //	@Transactional

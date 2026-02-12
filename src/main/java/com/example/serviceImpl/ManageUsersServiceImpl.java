@@ -42,6 +42,7 @@ import com.example.repository.AuditLogRepository;
 import com.example.repository.ManageUserRepository;
 import com.example.repository.RoleRepository;
 import com.example.repository.UserRepository;
+import com.example.service.EmailService;
 import com.example.service.ManageUserService;
 
 import lombok.RequiredArgsConstructor;
@@ -55,13 +56,16 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	private String uploadDir;
 
 	@Autowired
+	private EmailService emailService;
+
+	@Autowired
 	private UserNameSyncServiceImpl userNameSyncServiceImpl;
 
 	@Autowired
-	private  ManageUserRepository manageUserRepository;
-	
+	private ManageUserRepository manageUserRepository;
+
 	@Autowired
-	private  UserRepository userRepository;
+	private UserRepository userRepository;
 	private final RoleRepository roleRepository;
 	private final AuditLogRepository auditLogRepository;
 
@@ -89,16 +93,16 @@ public class ManageUsersServiceImpl implements ManageUserService {
 		// Bhargav
 		return ManageUserDTO.builder().id(entity.getId()).fullName(fullName).firstName(entity.getFirstName())
 				.middleName(entity.getMiddleName()).lastName(entity.getLastName()).email(entity.getEmail())
-				.primaryEmail(entity.getPrimaryEmail())
-				.companyName(entity.getCompanyName())
+				.primaryEmail(entity.getPrimaryEmail()).companyName(entity.getCompanyName())
 				.roleName(entity.getRole() != null ? entity.getRole().getRoleName() : null)
 				.addedBy(entity.getAddedBy() != null ? entity.getAddedBy().getId().toString() : null)
 				.addedByName(addedByName).updatedBy(entity.getUpdatedBy()).updatedByName(updatedByName)
 
 				// 🔽 Newly added fields
 				.state(entity.getState()).country(entity.getCountry()).pincode(entity.getPincode())
-				.telephone(entity.getTelephone()).ein(entity.getEin()).gstin(entity.getGstin())
-				.website(entity.getWebsite()).address(entity.getAddress()).city(entity.getCity()).build();
+				.loginUrl(entity.getLoginUrl()).telephone(entity.getTelephone()).ein(entity.getEin())
+				.gstin(entity.getGstin()).website(entity.getWebsite()).address(entity.getAddress())
+				.city(entity.getCity()).build();
 	}
 	// Bhargav
 
@@ -181,6 +185,9 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 		ManageUsers savedManageUser = manageUserRepository.save(manageUsers);
 
+		emailService.sendRegistrationEmail(savedManageUser.getEmail(), savedManageUser.getFullName(),
+				savedManageUser.getRoleName());
+
 		userRepository.findByEmailIgnoreCase(newUserEmail).ifPresentOrElse(existingUser -> {
 
 			// Update existing user
@@ -217,6 +224,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
 			user.setWebsite(savedManageUser.getWebsite());
 			user.setEin(savedManageUser.getEin());
 			user.setAddress(savedManageUser.getAddress());
+			user.setLoginUrl(savedManageUser.getLoginUrl());
 			// Bhargav
 			user.setApproved(true);
 			user.setActive(true);
@@ -426,10 +434,10 @@ public class ManageUsersServiceImpl implements ManageUserService {
 			existing.setCountry(manageUsers.getCountry());
 		if (manageUsers.getPincode() != null)
 			existing.setPincode(manageUsers.getPincode());
-		
+
 		if (manageUsers.getCity() != null)
 			existing.setCity(manageUsers.getCity());
-		
+
 		if (manageUsers.getTelephone() != null)
 			existing.setTelephone(manageUsers.getTelephone());
 		if (manageUsers.getEin() != null)
@@ -685,7 +693,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	}
 
 	/** ================= MAP USER TO DTO ================= **/
-	
+
 //Bhargav	
 //	@Override
 //	public UserUpdateRequest mapToDto(User user) {
@@ -716,33 +724,18 @@ public class ManageUsersServiceImpl implements ManageUserService {
 //	}
 //	
 //Bhargav	
-	
-	
+
 	@Override
 	public UserUpdateRequest mapToDto(User user) {
 
-	    return UserUpdateRequest.builder()
-	            .id(user.getId())
-	            .fullName(user.getFullName())
-	            .primaryEmail(user.getPrimaryEmail())
-	            .alternativeEmail(user.getAlternativeEmail())
-	            .mobileNumber(user.getMobileNumber())
-	            .alternativeMobileNumber(user.getAlternativeMobileNumber())
-	            .taxId(user.getTaxId())
-	            .businessId(user.getBusinessId())
-	            .preferredCurrency(user.getPreferredCurrency())
-	            .invoicePrefix(user.getInvoicePrefix())
-	            .companyName(user.getCompanyName())
-	            .state(user.getState())
-	            .country(user.getCountry())
-	            .city(user.getCity())
-	            .pincode(user.getPincode())
-	            .telephone(user.getTelephone())
-	            .ein(user.getEin())
-	            .gstin(user.getGstin())
-	            .website(user.getWebsite())
-	            .address(user.getAddress())
-	            .build();
+		return UserUpdateRequest.builder().id(user.getId()).fullName(user.getFullName())
+				.primaryEmail(user.getPrimaryEmail()).alternativeEmail(user.getAlternativeEmail())
+				.mobileNumber(user.getMobileNumber()).alternativeMobileNumber(user.getAlternativeMobileNumber())
+				.taxId(user.getTaxId()).businessId(user.getBusinessId()).preferredCurrency(user.getPreferredCurrency())
+				.invoicePrefix(user.getInvoicePrefix()).companyName(user.getCompanyName()).state(user.getState())
+				.country(user.getCountry()).city(user.getCity()).pincode(user.getPincode())
+				.telephone(user.getTelephone()).ein(user.getEin()).gstin(user.getGstin()).website(user.getWebsite())
+				.address(user.getAddress()).build();
 	}
 
 	@Override
@@ -765,8 +758,6 @@ public class ManageUsersServiceImpl implements ManageUserService {
 			throw new RuntimeException("You can only view your own data");
 		}
 	}
-
-	
 
 // comment by Bhargav
 //	@Override
@@ -797,143 +788,135 @@ public class ManageUsersServiceImpl implements ManageUserService {
 //		return userRepository.save(user);
 //	}
 // comment by Bhargav
-	
+
 	@Override
 	@Transactional
 	public User updateUserProfileDynamic(UserUpdateRequest request) {
 
-	    // ---------- UPDATE USER TABLE ----------
+		// ---------- UPDATE USER TABLE ----------
 
-	    User user = userRepository.findById(request.getId())
-	            .orElseThrow(() -> new RuntimeException("User not found with id: " + request.getId()));
+		User user = userRepository.findById(request.getId())
+				.orElseThrow(() -> new RuntimeException("User not found with id: " + request.getId()));
 
-	    // Get email from the existing user entity
-	    String userEmail = user.getEmail();
-	    
-	    
-	    if (request.getFullName() != null)
-	        user.setFullName(request.getFullName());
-	    
-	    if (request.getEmail() != null)
-	        user.setEmail(request.getEmail());
+		// Get email from the existing user entity
+		String userEmail = user.getEmail();
 
-	    if (request.getMobileNumber() != null)
-	        user.setMobileNumber(request.getMobileNumber());
+		if (request.getFullName() != null)
+			user.setFullName(request.getFullName());
 
-	    
-	    if(request.getInvoicePrefix() !=null)
-	    	user.setInvoicePrefix(request.getInvoicePrefix());
-	    
-	    if (request.getCompanyName() != null)
-	        user.setCompanyName(request.getCompanyName());
+		if (request.getEmail() != null)
+			user.setEmail(request.getEmail());
 
-	    if (request.getAddress() != null)
-	        user.setAddress(request.getAddress());
+		if (request.getMobileNumber() != null)
+			user.setMobileNumber(request.getMobileNumber());
 
-	    if (request.getState() != null)
-	        user.setState(request.getState());
+		if (request.getInvoicePrefix() != null)
+			user.setInvoicePrefix(request.getInvoicePrefix());
 
-	    if (request.getCountry() != null)
-	        user.setCountry(request.getCountry());
-	    
-	    if (request.getCity() != null)
-	        user.setCity(request.getCity());
+		if (request.getCompanyName() != null)
+			user.setCompanyName(request.getCompanyName());
 
-	    if (request.getPincode() != null)
-	        user.setPincode(request.getPincode());
+		if (request.getAddress() != null)
+			user.setAddress(request.getAddress());
 
-	    if (request.getPreferredCurrency() != null)
-	        user.setPreferredCurrency(request.getPreferredCurrency());
+		if (request.getState() != null)
+			user.setState(request.getState());
 
-	    if (request.getTaxId() != null)
-	        user.setTaxId(request.getTaxId());
+		if (request.getCountry() != null)
+			user.setCountry(request.getCountry());
 
-	    if (request.getBusinessId() != null)
-	        user.setBusinessId(request.getBusinessId());
-	    
-	    if (request.getTelephone() != null)
-	    	user.setTelephone(request.getTelephone());
+		if (request.getCity() != null)
+			user.setCity(request.getCity());
 
-	    if (request.getEin() != null)
-	    	user.setEin(request.getEin());
+		if (request.getPincode() != null)
+			user.setPincode(request.getPincode());
 
-	    if (request.getGstin() != null)
-	    	user.setGstin(request.getGstin());
+		if (request.getPreferredCurrency() != null)
+			user.setPreferredCurrency(request.getPreferredCurrency());
 
-	    if (request.getWebsite() != null)
-	        user.setWebsite(request.getWebsite());
+		if (request.getTaxId() != null)
+			user.setTaxId(request.getTaxId());
 
+		if (request.getBusinessId() != null)
+			user.setBusinessId(request.getBusinessId());
 
-	    userRepository.save(user);
+		if (request.getTelephone() != null)
+			user.setTelephone(request.getTelephone());
 
-	    // ---------- UPDATE MANAGE_USERS TABLE ----------
+		if (request.getEin() != null)
+			user.setEin(request.getEin());
 
-	    // Use email from User entity instead of request
-	    ManageUsers manageUser = manageUserRepository.findByEmail(userEmail);
+		if (request.getGstin() != null)
+			user.setGstin(request.getGstin());
 
-	    if (manageUser == null) {
-	        throw new RuntimeException("Manage user not found with email: " + userEmail);
-	    }
+		if (request.getWebsite() != null)
+			user.setWebsite(request.getWebsite());
 
-	    if (request.getFullName() != null)
-	        manageUser.setFullName(request.getFullName());
+		userRepository.save(user);
 
-	    if (request.getPrimaryEmail() != null)
-	        manageUser.setPrimaryEmail(request.getPrimaryEmail());
+		// ---------- UPDATE MANAGE_USERS TABLE ----------
 
-	    if (request.getMobileNumber() != null)
-	        manageUser.setMobileNumber(request.getMobileNumber());
+		// Use email from User entity instead of request
+		ManageUsers manageUser = manageUserRepository.findByEmail(userEmail);
 
-	    if (request.getCompanyName() != null)
-	        manageUser.setCompanyName(request.getCompanyName());
+		if (manageUser == null) {
+			throw new RuntimeException("Manage user not found with email: " + userEmail);
+		}
 
-	    if (request.getAddress() != null)
-	        manageUser.setAddress(request.getAddress());
+		if (request.getFullName() != null)
+			manageUser.setFullName(request.getFullName());
 
-	    if (request.getState() != null)
-	        manageUser.setState(request.getState());
+		if (request.getPrimaryEmail() != null)
+			manageUser.setPrimaryEmail(request.getPrimaryEmail());
 
-	    if (request.getCity() != null)
-	    	manageUser.setCity(request.getCity());
-	    
-	    if (request.getCountry() != null)
-	        manageUser.setCountry(request.getCountry());
-	    
-	    if(request.getInvoicePrefix() !=null)
-	    	manageUser.setInvoicePrefix(request.getInvoicePrefix());
-	    
-	    
-	    if (request.getTaxId() != null)
-	        user.setTaxId(request.getTaxId());
+		if (request.getMobileNumber() != null)
+			manageUser.setMobileNumber(request.getMobileNumber());
 
+		if (request.getCompanyName() != null)
+			manageUser.setCompanyName(request.getCompanyName());
 
-	    if (request.getPincode() != null)
-	        manageUser.setPincode(request.getPincode());
+		if (request.getAddress() != null)
+			manageUser.setAddress(request.getAddress());
 
-	    if (request.getTelephone() != null)
-	        manageUser.setTelephone(request.getTelephone());
+		if (request.getState() != null)
+			manageUser.setState(request.getState());
 
-	    if (request.getEin() != null)
-	        manageUser.setEin(request.getEin());
+		if (request.getCity() != null)
+			manageUser.setCity(request.getCity());
 
-	    if (request.getGstin() != null)
-	        manageUser.setGstin(request.getGstin());
+		if (request.getCountry() != null)
+			manageUser.setCountry(request.getCountry());
 
-	    if (request.getWebsite() != null)
-	        manageUser.setWebsite(request.getWebsite());
+		if (request.getInvoicePrefix() != null)
+			manageUser.setInvoicePrefix(request.getInvoicePrefix());
 
-	    manageUserRepository.save(manageUser);
+		if (request.getTaxId() != null)
+			user.setTaxId(request.getTaxId());
 
-	    return user;
+		if (request.getPincode() != null)
+			manageUser.setPincode(request.getPincode());
+
+		if (request.getTelephone() != null)
+			manageUser.setTelephone(request.getTelephone());
+
+		if (request.getEin() != null)
+			manageUser.setEin(request.getEin());
+
+		if (request.getGstin() != null)
+			manageUser.setGstin(request.getGstin());
+
+		if (request.getWebsite() != null)
+			manageUser.setWebsite(request.getWebsite());
+
+		manageUserRepository.save(manageUser);
+
+		return user;
 	}
 
+	// Bhargav
 
-	//Bhargav
-	
-	
+	/* Addedby Bhargav */
 
-/* Addedby Bhargav */
-	
 //	@Override
 //	public Page<ManageUserDTO> getAllManageUsersWithSorting(SortingRequestDTO sortingRequestDTO) {
 ////	    logger.info("!!! inside class: UserServiceImpl, !! method: getAllManageUsersWithSorting");
@@ -988,109 +971,105 @@ public class ManageUsersServiceImpl implements ManageUserService {
 //	    return manageUsersPage.map(this::convertToDTO);
 //	}
 
-	
-	
 	@Override
 	public Page<ManageUserDTO> getAllManageUsersWithSorting(SortingRequestDTO sortingRequestDTO, String loggedInEmail) {
-	    
-	    String sortField = sortingRequestDTO.getSortField();
-	    String sortOrder = sortingRequestDTO.getSortOrder();
-	    String keyword = sortingRequestDTO.getKeyword();
-	    Integer pageNo = sortingRequestDTO.getPageNumber();
-	    Integer pageSize = sortingRequestDTO.getPageSize();
 
-	    // ✅ Get current user and their role
-	    User currentUser = getCurrentLoggedInUser(loggedInEmail);
-	    String roleName = currentUser.getRole() != null ? currentUser.getRole().getRoleName() : null;
-	    String domain = extractDomain(currentUser.getEmail());
+		String sortField = sortingRequestDTO.getSortField();
+		String sortOrder = sortingRequestDTO.getSortOrder();
+		String keyword = sortingRequestDTO.getKeyword();
+		Integer pageNo = sortingRequestDTO.getPageNumber();
+		Integer pageSize = sortingRequestDTO.getPageSize();
 
-	    // ✅ Default values and validation
-	    if (pageNo == null || pageNo < 0) {
-	        pageNo = 0; // Default to first page
-	    }
-	    // ✅ If pageNo is 1 or greater, subtract 1 (convert to 0-based index)
-	    // If pageNo is already 0, keep it as 0
-	    int zeroBasedPageNo = (pageNo > 0) ? pageNo - 1 : pageNo;
-	    
-	    if (pageSize == null || pageSize < 1) {
-	        pageSize = 10; // Default page size
-	    }
-	    if (sortField == null || sortField.isEmpty()) {
-	        sortField = "id";
-	    }
+		// ✅ Get current user and their role
+		User currentUser = getCurrentLoggedInUser(loggedInEmail);
+		String roleName = currentUser.getRole() != null ? currentUser.getRole().getRoleName() : null;
+		String domain = extractDomain(currentUser.getEmail());
 
-	    // ✅ Map frontend field names to entity field names
-	    switch (sortField.toLowerCase()) {
-	        case "name":
-	        case "fullname":
-	            sortField = "firstName";
-	            break;
-	        case "email":
-	            sortField = "email";
-	            break;
-	        case "role":
-	            sortField = "roleName";
-	            break;
-	        case "addedby":
-	            sortField = "addedByName";
-	            break;
-	        case "updatedby":
-	            sortField = "updatedByName";
-	            break;
-	        case "companyname":
-	            sortField = "companyName";
-	            break;
-	        case "mobilenumber":
-	            sortField = "mobileNumber";
-	            break;
-	        default:
-	            sortField = "id";
-	            break;
-	    }
+		// ✅ Default values and validation
+		if (pageNo == null || pageNo < 0) {
+			pageNo = 0; // Default to first page
+		}
+		// ✅ If pageNo is 1 or greater, subtract 1 (convert to 0-based index)
+		// If pageNo is already 0, keep it as 0
+		int zeroBasedPageNo = (pageNo > 0) ? pageNo - 1 : pageNo;
 
-	    // ✅ Determine sort direction
-	    Sort.Direction sortDirection = Sort.Direction.ASC;
-	    if (sortOrder != null && sortOrder.equalsIgnoreCase("desc")) {
-	        sortDirection = Sort.Direction.DESC;
-	    }
+		if (pageSize == null || pageSize < 1) {
+			pageSize = 10; // Default page size
+		}
+		if (sortField == null || sortField.isEmpty()) {
+			sortField = "id";
+		}
 
-	    // ✅ Create sort and pageable (using 0-based index)
-	    Sort sort = Sort.by(sortDirection, sortField);
-	    Pageable pageable = PageRequest.of(zeroBasedPageNo, pageSize, sort);
+		// ✅ Map frontend field names to entity field names
+		switch (sortField.toLowerCase()) {
+		case "name":
+		case "fullname":
+			sortField = "firstName";
+			break;
+		case "email":
+			sortField = "email";
+			break;
+		case "role":
+			sortField = "roleName";
+			break;
+		case "addedby":
+			sortField = "addedByName";
+			break;
+		case "updatedby":
+			sortField = "updatedByName";
+			break;
+		case "companyname":
+			sortField = "companyName";
+			break;
+		case "mobilenumber":
+			sortField = "mobileNumber";
+			break;
+		default:
+			sortField = "id";
+			break;
+		}
 
-	    Page<ManageUsers> manageUsersPage;
+		// ✅ Determine sort direction
+		Sort.Direction sortDirection = Sort.Direction.ASC;
+		if (sortOrder != null && sortOrder.equalsIgnoreCase("desc")) {
+			sortDirection = Sort.Direction.DESC;
+		}
 
-	    // ✅ Check if keyword is provided
-	    boolean hasKeyword = keyword != null && !keyword.trim().isEmpty() && !keyword.equalsIgnoreCase("empty");
+		// ✅ Create sort and pageable (using 0-based index)
+		Sort sort = Sort.by(sortDirection, sortField);
+		Pageable pageable = PageRequest.of(zeroBasedPageNo, pageSize, sort);
 
-	    // ✅ Filter based on role
-	    if ("SUPERADMIN".equalsIgnoreCase(roleName)) {
-	        // SUPERADMIN sees ALL users
-	        if (hasKeyword) {
-	            manageUsersPage = manageUserRepository.searchManageUsers(keyword.trim(), pageable);
-	        } else {
-	            manageUsersPage = manageUserRepository.findAll(pageable);
-	        }
-	        
-	    } else if ("ADMIN".equalsIgnoreCase(roleName)) {
-	        // ADMIN sees ONLY their domain users
-	        if (hasKeyword) {
-	            manageUsersPage = manageUserRepository.searchManageUsersByDomain(keyword.trim(), domain, pageable);
-	        } else {
-	            manageUsersPage = manageUserRepository.getAllManageUsersByDomain(domain, pageable);
-	        }
-	        
-	    } else {
-	        // Regular user sees ONLY themselves
-	        manageUsersPage = manageUserRepository.getManageUserByEmail(currentUser.getEmail(), pageable);
-	    }
+		Page<ManageUsers> manageUsersPage;
 
-	    // ✅ Convert to DTO
-	    return manageUsersPage.map(this::convertToDTO);
+		// ✅ Check if keyword is provided
+		boolean hasKeyword = keyword != null && !keyword.trim().isEmpty() && !keyword.equalsIgnoreCase("empty");
+
+		// ✅ Filter based on role
+		if ("SUPERADMIN".equalsIgnoreCase(roleName)) {
+			// SUPERADMIN sees ALL users
+			if (hasKeyword) {
+				manageUsersPage = manageUserRepository.searchManageUsers(keyword.trim(), pageable);
+			} else {
+				manageUsersPage = manageUserRepository.findAll(pageable);
+			}
+
+		} else if ("ADMIN".equalsIgnoreCase(roleName)) {
+			// ADMIN sees ONLY their domain users
+			if (hasKeyword) {
+				manageUsersPage = manageUserRepository.searchManageUsersByDomain(keyword.trim(), domain, pageable);
+			} else {
+				manageUsersPage = manageUserRepository.getAllManageUsersByDomain(domain, pageable);
+			}
+
+		} else {
+			// Regular user sees ONLY themselves
+			manageUsersPage = manageUserRepository.getManageUserByEmail(currentUser.getEmail(), pageable);
+		}
+
+		// ✅ Convert to DTO
+		return manageUsersPage.map(this::convertToDTO);
 	}
-	
-	
-/* Addedby Bhargav */
-	
+
+	/* Addedby Bhargav */
 
 }
