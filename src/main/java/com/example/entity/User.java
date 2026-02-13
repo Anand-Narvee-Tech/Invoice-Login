@@ -108,9 +108,6 @@ public class User {
 	private String designation;
 	private String dateOfIncorporation;
 
-//	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-//	private List<BankDetails> bankDetails;
-
 	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<BankDetails> bankDetails;
 
