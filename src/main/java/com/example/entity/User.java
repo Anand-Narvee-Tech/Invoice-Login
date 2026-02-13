@@ -105,7 +105,18 @@ public class User {
 	@Column(name = "loginurl") 
 	private String loginUrl;
 
-	// Bhargav
+	// vasim
+	private String fid;
+	private String everifyId;
+	private String dunsNumber;
+	private String stateOfIncorporation;
+	private String naicsCode;
+	private String signingAuthorityName;
+	private String designation;
+	private String dateOfIncorporation;
+
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<BankDetails> bankDetails;
 
 	@PrePersist
 	public void prePersist() {

@@ -976,9 +976,7 @@ public class UserServiceImpl implements UserService {
 				Optional.ofNullable(user.getLastName()).orElse("")).trim();
 		return name.isEmpty() ? user.getEmail().split("@")[0] : name;
 	}
-
-	@Transactional
-	@Override
+    
 	public UserProfileResponse getUserProfileByEmail(String email) {
 
 	    String normalizedEmail = email.trim().toLowerCase();
