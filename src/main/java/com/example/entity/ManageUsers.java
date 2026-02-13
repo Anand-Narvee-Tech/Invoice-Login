@@ -5,8 +5,12 @@ import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+
+import com.example.DTO.BankDetailsRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
@@ -16,11 +20,11 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -49,18 +53,15 @@ public class ManageUsers {
 	private String lastName;
 
 	@Column(name = "full_name", nullable = false)
-	@NotBlank(message = "Full name is mandatory")
 	private String fullName;
 
 	@Column(name = "company_domain", nullable = false)
-	@NotBlank(message = "Company domain is mandatory")
 	private String companyDomain;
 
 	@Column(name = "company_name")
 	private String companyName;
 
 	@Column(name = "email", nullable = false, unique = true)
-	@NotBlank(message = "Email is mandatory")
 	private String email;
 
 	@Column(name = "primary_email")
@@ -161,6 +162,16 @@ public class ManageUsers {
 	@UpdateTimestamp
 	@Column(name = "updated_at")
 	private LocalDateTime updatedAt;
+
+	// vasim addedby
+	private String fid;
+	private String everifyId;
+	private String dunsNumber;
+	private String stateOfIncorporation;
+	private String naicsCode;
+	private String signingAuthorityName;
+	private String designation;
+	private String dateOfIncorporation;
 
 	@PrePersist
 	@PreUpdate

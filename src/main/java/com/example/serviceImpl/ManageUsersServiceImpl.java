@@ -853,64 +853,64 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	@Transactional
 	public User updateUserProfileDynamic(UserUpdateRequest request) {
 
-		// ---------- UPDATE USER TABLE ----------
+	    User user = userRepository.findById(request.getId())
+	            .orElseThrow(() -> new RuntimeException("User not found with id: " + request.getId()));
 
-		User user = userRepository.findById(request.getId())
-				.orElseThrow(() -> new RuntimeException("User not found with id: " + request.getId()));
+	    String userEmail = user.getEmail();
 
-		// Get email from the existing user entity
-		String userEmail = user.getEmail();
+	    // ================= UPDATE USER TABLE =================
 
-		if (request.getFullName() != null)
-			user.setFullName(request.getFullName());
+	    if (request.getFullName() != null)
+	        user.setFullName(request.getFullName());
 
-		if (request.getEmail() != null)
-			user.setEmail(request.getEmail());
+	    if (request.getEmail() != null)
+	        user.setEmail(request.getEmail());
 
-		if (request.getMobileNumber() != null)
-			user.setMobileNumber(request.getMobileNumber());
+	    if (request.getMobileNumber() != null)
+	        user.setMobileNumber(request.getMobileNumber());
 
-		if (request.getInvoicePrefix() != null)
-			user.setInvoicePrefix(request.getInvoicePrefix());
+	    if (request.getInvoicePrefix() != null)
+	        user.setInvoicePrefix(request.getInvoicePrefix());
 
-		if (request.getCompanyName() != null)
-			user.setCompanyName(request.getCompanyName());
+	    if (request.getCompanyName() != null)
+	        user.setCompanyName(request.getCompanyName());
 
-		if (request.getAddress() != null)
-			user.setAddress(request.getAddress());
+	    if (request.getAddress() != null)
+	        user.setAddress(request.getAddress());
 
-		if (request.getState() != null)
-			user.setState(request.getState());
+	    if (request.getState() != null)
+	        user.setState(request.getState());
 
-		if (request.getCountry() != null)
-			user.setCountry(request.getCountry());
+	    if (request.getCountry() != null)
+	        user.setCountry(request.getCountry());
 
-		if (request.getCity() != null)
-			user.setCity(request.getCity());
+	    if (request.getCity() != null)
+	        user.setCity(request.getCity());
 
-		if (request.getPincode() != null)
-			user.setPincode(request.getPincode());
+	    if (request.getPincode() != null)
+	        user.setPincode(request.getPincode());
 
-		if (request.getPreferredCurrency() != null)
-			user.setPreferredCurrency(request.getPreferredCurrency());
+	    if (request.getPreferredCurrency() != null)
+	        user.setPreferredCurrency(request.getPreferredCurrency());
 
-		if (request.getTaxId() != null)
-			user.setTaxId(request.getTaxId());
+	    if (request.getTaxId() != null)
+	        user.setTaxId(request.getTaxId());
 
-		if (request.getBusinessId() != null)
-			user.setBusinessId(request.getBusinessId());
+	    if (request.getBusinessId() != null)
+	        user.setBusinessId(request.getBusinessId());
 
-		if (request.getTelephone() != null)
-			user.setTelephone(request.getTelephone());
+	    if (request.getTelephone() != null)
+	        user.setTelephone(request.getTelephone());
 
-		if (request.getEin() != null)
-			user.setEin(request.getEin());
+	    if (request.getEin() != null)
+	        user.setEin(request.getEin());
 
-		if (request.getGstin() != null)
-			user.setGstin(request.getGstin());
+	    if (request.getGstin() != null)
+	        user.setGstin(request.getGstin());
 
-		if (request.getWebsite() != null)
-			user.setWebsite(request.getWebsite());
+	    // 🔥 IMPORTANT — These were missing before
+	    if (request.getFid() != null)
+	        user.setFid(request.getFid());
 
 		if (request.getFid() != null)
 			user.setFid(request.getFid());
