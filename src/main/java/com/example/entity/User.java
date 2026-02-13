@@ -29,99 +29,96 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class User {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-	private String firstName;
-	private String middleName;
-	private String lastName;
+    private String firstName;
+    private String middleName;
+    private String lastName;
 
-	@Column(unique = true, nullable = false)
-	private String email;
-	private String mobileNumber;
-	private String companyName;
-	private String fullName;
-	private Boolean active;
-	private Boolean approved;
+    @Column(unique = true, nullable = false)
+    private String email;
+    
+//    private Long companyId;
 
-	@ManyToOne(fetch = FetchType.EAGER)
-	@JoinColumn(name = "roleid")
-	private Role role;
+    private String mobileNumber;
+    private String companyName;
 
-	private String position;
+    private String fullName;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "created_by_id")
-	private User createdBy;
+    private Boolean active;
+    private Boolean approved;
 
-	@Column(nullable = false)
-	private String primaryEmail;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "roleid")
+    private Role role;
 
-	@Column(name = "profile_pic_path")
-	private String profilePicPath;
-	private String alternativeEmail;
-	private String alternativeMobileNumber;
-	private String taxId;
-	private String businessId;
-	private String preferredCurrency;
-	private String invoicePrefix;
+    private String position;
 
-	// Bhargav
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_id")
+    private User createdBy;
 
-	@Column(name = "state")
-	private String state;
+    @Column(nullable = false)
+    private String primaryEmail;
+    
+    @Column(name = "profile_pic_path")
+    private String profilePicPath;
 
-	@Column(name = "country")
-	private String country;
 
-	@Column(name = "city")
-	private String city;
-
-	@Column(name = "pincode")
-	private String pincode;
-
-	@Column(name = "telephone")
-	private String telephone;
-
-	@Column(name = "ein")
-	private String ein;
-
-	@Column(name = "gstin")
-	private String gstin;
-
-	@Column(name = "website")
-	private String website;
-
-	@Column(name = "address")
-	private String address;
-
-	// Bhargav
-
-	// vasim
-	private String fid;
-	private String everifyId;
-	private String dunsNumber;
-	private String stateOfIncorporation;
-	private String naicsCode;
-	private String signingAuthorityName;
-	private String designation;
-	private String dateOfIncorporation;
-
-//	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-//	private List<BankDetails> bankDetails;
-
-	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<BankDetails> bankDetails;
-
-	@PrePersist
-	public void prePersist() {
-		if (this.primaryEmail == null && this.email != null) {
-			this.primaryEmail = this.email;
-		}
-		if (this.fullName == null) {
-			this.fullName = String.join(" ", firstName != null ? firstName : "", middleName != null ? middleName : "",
-					lastName != null ? lastName : "").trim();
-		}
-	}
+    private String alternativeEmail;
+    private String alternativeMobileNumber;
+    private String taxId;
+    private String businessId;
+    private String preferredCurrency;
+    private String invoicePrefix;
+    
+ // Bhargav
+	
+ 		@Column(name = "state")
+ 		private String state;
+ 		
+ 		@Column(name = "country")
+ 		private String country;
+ 		
+ 		@Column(name = "city")
+		private String city;
+ 		
+ 		@Column(name = "pincode")
+ 		private String pincode;
+ 		
+ 		@Column(name = "telephone")
+ 		private String telephone;
+ 		
+ 		@Column(name = "ein")
+ 		private String ein;
+ 		
+ 		@Column(name = "gstin")
+ 		private String gstin;
+ 		
+ 		@Column(name = "website")
+		private String website;
+ 		
+ 		@Column(name = "address")
+		private String address;
+ 		
+ 		@Column(name = "loginurl")
+		private String loginUrl;
+ 		
+ 		// Bhargav
+ 		
+    @PrePersist
+    public void prePersist() {
+        if (this.primaryEmail == null && this.email != null) {
+            this.primaryEmail = this.email;
+        }
+        if (this.fullName == null) {
+            this.fullName = String.join(" ",
+                    firstName != null ? firstName : "",
+                    middleName != null ? middleName : "",
+                    lastName != null ? lastName : ""
+            ).trim();
+        }
+    }
 }
