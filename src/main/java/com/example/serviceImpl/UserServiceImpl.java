@@ -616,6 +616,25 @@ public class UserServiceImpl implements UserService {
 			helper.setTo(email);
 			helper.setSubject("Login Verification Code - Invoicing Team");
 
+//	        String htmlContent = "<!DOCTYPE html>" + "<html>" + "<head><meta charset='UTF-8'></head>"
+//	                + "<body style='margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f9f9f9;'>"
+//	                + "<table align='center' width='600' cellpadding='0' cellspacing='0' style='background:#ffffff; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.1);'>"
+//	                + "<tr>"
+//	                + "<td align='center' bgcolor='#004b6e' style='padding:20px; border-top-left-radius:8px; border-top-right-radius:8px;'>"
+//	                + "<h2 style='color:#ffffff; margin:0;'>Verify Your Login</h2>" + "</td>" + "</tr>" + "<tr>"
+//	                + "<td style='padding:30px;'>" + "<h3 style='color:#004b6e; margin-top:0;'>Invoicing Team</h3>"
+//	                + "<p style='font-size:15px; color:#333;'>" + "Hello " + safeFullname + ",<br><br>"
+//	                + "Thank you for choosing <b>Invoicing Application</b>. Use the following OTP to complete your Sign-In:"
+//	                + "</p>" + "<div style='text-align:center; margin:25px 0;'>"
+//	                + "<span style='display:inline-block; background:#f4f4f4; padding:20px 40px; border-radius:6px; font-size:28px; font-weight:bold; color:#6c2bd9; letter-spacing:3px;'>"
+//	                + otp + "</span>" + "</div>" + "<p style='font-size:14px; color:#555;'>"
+//	                + "This OTP is valid for <b>2 minutes</b>. Please do not share this code with anyone." + "</p>"
+//	                + "<p style='font-size:14px; color:#333; margin-top:30px;'>"
+//	                + "Best Regards,<br><b>Invoicing Team</b>" + "</p>" + "</td>" + "</tr>" + "<tr>"
+//	                + "<td align='center' bgcolor='#f1f1f1' style='padding:10px; border-bottom-left-radius:8px; border-bottom-right-radius:8px; font-size:12px; color:#888;'>"
+//	                + "2025 Invoicing Team. All rights reserved." + "</td>" + "</tr>" + "</table>" + "</body>"
+//	                + "</html>";
+
 			String htmlContent = "<!DOCTYPE html>" + "<html>" + "<head><meta charset='UTF-8'></head>"
 					+ "<body style='margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f9f9f9;'>"
 					+ "<table align='center' width='600' cellpadding='0' cellspacing='0' style='background:#ffffff; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.1);'>"
@@ -623,13 +642,15 @@ public class UserServiceImpl implements UserService {
 					+ "<td align='center' bgcolor='#004b6e' style='padding:20px; border-top-left-radius:8px; border-top-right-radius:8px;'>"
 					+ "<h2 style='color:#ffffff; margin:0;'>Verify Your Login</h2>" + "</td>" + "</tr>" + "<tr>"
 					+ "<td style='padding:30px;'>" + "<h3 style='color:#004b6e; margin-top:0;'>Invoicing Team</h3>"
-					+ "<p style='font-size:15px; color:#333;'>" + "Hello " + safeFullname + ",<br><br>"
-					+ "Thank you for choosing <b>Invoicing Application</b>. Use the following OTP to complete your Sign-In:"
-					+ "</p>" + "<div style='text-align:center; margin:25px 0;'>"
-					+ "<span style='display:inline-block; background:#f4f4f4; padding:20px 40px; border-radius:6px; font-size:28px; font-weight:bold; color:#6c2bd9; letter-spacing:3px;'>"
-					+ otp + "</span>" + "</div>" + "<p style='font-size:14px; color:#555;'>"
-					+ "This OTP is valid for <b>2 minutes</b>. Please do not share this code with anyone." + "</p>"
-					+ "<p style='font-size:14px; color:#333; margin-top:30px;'>"
+					+ "<p style='font-size:16px; color:#4b5563;'>" + "Hello <strong>" + safeFullname
+					+ "</strong>,<br><br>"
+
+					+ "Thank you for choosing <b>Invoicing Application</b>. Your verification code is:" + "</p>"
+					+ "<div style='text-align:center; margin:32px 0;'>"
+					+ "<div style='display:inline-block; padding:18px 32px; border-radius:12px; border:2px dashed #2563eb; background:#eff6ff; font-size:36px; font-weight:700; letter-spacing:8px; color:#1e3a8a;'>"
+					+ otp + "</div>" + "</div>" + "<p style='text-align:center; font-size:15px; color:#6b7280;'>"
+					+ "This OTP is valid for <strong>2 minutes</strong>. Please do not share this code with anyone."
+					+ "</p>" + "<p style='font-size:14px; color:#333; margin-top:30px;'>"
 					+ "Best Regards,<br><b>Invoicing Team</b>" + "</p>" + "</td>" + "</tr>" + "<tr>"
 					+ "<td align='center' bgcolor='#f1f1f1' style='padding:10px; border-bottom-left-radius:8px; border-bottom-right-radius:8px; font-size:12px; color:#888;'>"
 					+ "2025 Invoicing Team. All rights reserved." + "</td>" + "</tr>" + "</table>" + "</body>"
@@ -685,20 +706,27 @@ public class UserServiceImpl implements UserService {
 					+ "<body style='margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f9f9f9;'>"
 					+ "<table align='center' width='600' cellpadding='0' cellspacing='0' style='background:#ffffff; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.1);'>"
 					+ "<tr>"
-					+ "<td align='center' bgcolor='#004b6e' style='padding:20px; border-top-left-radius:8px; border-top-right-radius:8px;'>"
+
+					+ "<td align='center' bgcolor='#2563eb' style='padding:20px; border-top-left-radius:8px; border-top-right-radius:8px;'>"
 					+ "<h2 style='color:#ffffff; margin:0;'>Verify Your Registration</h2>" + "</td>" + "</tr>" + "<tr>"
 					+ "<td style='padding:30px;'>" + "<h3 style='color:#004b6e; margin-top:0;'>Invoicing Team</h3>"
-					+ "<p style='font-size:15px; color:#333;'>" + "Hello " + safeFullname + ",<br><br>"
+					+ "<p style='font-size:16px; color:#4b5563;'>" + "Hello <strong>" + safeFullname
+					+ "</strong>,<br><br>"
+
 					+ "Thank you for choosing <b>Invoicing Application</b>. Use the following OTP to complete your Registration:"
-					+ "</p>" + "<div style='text-align:center; margin:25px 0;'>"
-					+ "<span style='display:inline-block; background:#f4f4f4; padding:20px 40px; border-radius:6px; font-size:28px; font-weight:bold; color:#6c2bd9; letter-spacing:3px;'>"
-					+ otp + "</span>" + "</div>" + "<p style='font-size:14px; color:#555;'>"
-					+ "This OTP is valid for <b>2 minutes</b>. Please do not share this code with anyone." + "</p>"
-					+ "<p style='font-size:14px; color:#333; margin-top:30px;'>"
+					+ "</p>" + "<div style='text-align:center; margin:32px 0;'>"
+					+ "<div style='display:inline-block; padding:18px 32px; border-radius:12px; border:2px dashed #2563eb; background:#eff6ff; font-size:36px; font-weight:700; letter-spacing:8px; color:#1e3a8a;'>"
+					+ otp + "</div>" + "</div>" + "<p style='text-align:center; font-size:15px; color:#6b7280;'>"
+					+ "This OTP is valid for <strong>2 minutes</strong>. Please do not share this code with anyone."
+
+					+ "</p>" + "<p style='font-size:14px; color:#333; margin-top:30px;'>"
 					+ "Best Regards,<br><b>Invoicing Team</b>" + "</p>" + "</td>" + "</tr>" + "<tr>"
 					+ "<td align='center' bgcolor='#f1f1f1' style='padding:10px; border-bottom-left-radius:8px; border-bottom-right-radius:8px; font-size:12px; color:#888;'>"
 					+ "2025 Invoicing Team. All rights reserved." + "</td>" + "</tr>" + "</table>" + "</body>"
 					+ "</html>";
+			helper.setText(htmlContent, true);
+			javaMailSender.send(mimeMessage);
+
 			helper.setText(htmlContent, true);
 			javaMailSender.send(mimeMessage);
 
@@ -962,109 +990,41 @@ public class UserServiceImpl implements UserService {
 	        return null;
 	    }
 
-	    User user = userOpt.orElse(null);
-	    ManageUsers mu = muOpt.orElse(null);
+		User user = userOpt.orElse(null);
+		ManageUsers mu = muOpt.orElse(null);
 
-	    // ✅ Bank Details Mapping (Updated As Per Your DTO)
-	    List<BankDetailsRequest> bankDetailsList = new ArrayList<>();
+		return UserProfileResponse.builder().id(user != null ? user.getId() : 0L).fullName(resolveFullName(user, mu))
+				.primaryEmail(user != null && hasText(user.getPrimaryEmail()) ? user.getPrimaryEmail()
+						: mu != null ? safe(mu.getEmail()) : normalizedEmail)
+				.mobileNumber(user != null && hasText(user.getMobileNumber()) ? user.getMobileNumber()
+						: mu != null ? safe(mu.getMobileNumber()) : "")
+				.alternativeEmail(user != null && hasText(user.getAlternativeEmail()) ? user.getAlternativeEmail() : "")
+				.alternativeMobileNumber(
+						user != null && hasText(user.getAlternativeMobileNumber()) ? user.getAlternativeMobileNumber()
+								: "")
+				.companyName(user != null && hasText(user.getCompanyName()) ? user.getCompanyName()
+						: mu != null ? safe(mu.getCompanyName()) : "")
+				// ✅ NEW FIELDS START HERE
+				.state(user != null && hasText(user.getState()) ? user.getState() : "")
+				.country(user != null && hasText(user.getCountry()) ? user.getCountry() : "")
+				.city(user != null && hasText(user.getCity()) ? user.getCity() : "")
+				.pincode(user != null && hasText(user.getPincode()) ? user.getPincode() : "")
+				.telephone(user != null && hasText(user.getTelephone()) ? user.getTelephone() : "")
+				.ein(user != null && hasText(user.getEin()) ? user.getEin() : "")
+				.gstin(user != null && hasText(user.getGstin()) ? user.getGstin() : "")
+				.website(user != null && hasText(user.getWebsite()) ? user.getWebsite() : "")
+				.address(user != null && hasText(user.getAddress()) ? user.getAddress() : "")
+				// ✅ NEW FIELDS END HERE
 
-	    if (user != null && user.getBankDetails() != null) {
-	        bankDetailsList = user.getBankDetails().stream()
-	                .map(bank -> BankDetailsRequest.builder()
-	                        .id(bank.getId())
-	                        .bankName(bank.getBankName())
-	                        .bankAccountNumber(bank.getBankAccountNumber())
-	                        .routingNumber(bank.getRoutingNumber())
-	                        .build())
-	                .toList();
-	    }
-
-	    return UserProfileResponse.builder()
-
-	            .id(user != null ? user.getId() : 0L)
-	            .fullName(resolveFullName(user, mu))
-
-	            .primaryEmail(user != null && hasText(user.getPrimaryEmail())
-	                    ? user.getPrimaryEmail()
-	                    : mu != null ? safe(mu.getEmail()) : normalizedEmail)
-
-	            .mobileNumber(user != null && hasText(user.getMobileNumber())
-	                    ? user.getMobileNumber()
-	                    : mu != null ? safe(mu.getMobileNumber()) : "")
-
-	            .alternativeEmail(user != null && hasText(user.getAlternativeEmail())
-	                    ? user.getAlternativeEmail() : "")
-
-	            .alternativeMobileNumber(user != null && hasText(user.getAlternativeMobileNumber())
-	                    ? user.getAlternativeMobileNumber() : "")
-
-	            .companyName(user != null && hasText(user.getCompanyName())
-	                    ? user.getCompanyName()
-	                    : mu != null ? safe(mu.getCompanyName()) : "")
-
-	            // ADDRESS
-	            .state(user != null && hasText(user.getState())
-	                    ? user.getState()
-	                    : mu != null ? safe(mu.getState()) : "")
-
-	            .country(user != null && hasText(user.getCountry())
-	                    ? user.getCountry()
-	                    : mu != null ? safe(mu.getCountry()) : "")
-
-	            .city(user != null && hasText(user.getCity())
-	                    ? user.getCity()
-	                    : mu != null ? safe(mu.getCity()) : "")
-
-	            .pincode(user != null && hasText(user.getPincode())
-	                    ? user.getPincode()
-	                    : mu != null ? safe(mu.getPincode()) : "")
-
-	            .telephone(user != null && hasText(user.getTelephone())
-	                    ? user.getTelephone()
-	                    : mu != null ? safe(mu.getTelephone()) : "")
-
-	            .ein(user != null && hasText(user.getEin())
-	                    ? user.getEin()
-	                    : mu != null ? safe(mu.getEin()) : "")
-
-	            .gstin(user != null && hasText(user.getGstin())
-	                    ? user.getGstin()
-	                    : mu != null ? safe(mu.getGstin()) : "")
-
-	            .website(user != null && hasText(user.getWebsite())
-	                    ? user.getWebsite()
-	                    : mu != null ? safe(mu.getWebsite()) : "")
-
-	            .address(user != null && hasText(user.getAddress())
-	                    ? user.getAddress()
-	                    : mu != null ? safe(mu.getAddress()) : "")
-
-	            // BUSINESS
-	            .taxId(user != null && hasText(user.getTaxId())
-	                    ? user.getTaxId() : "")
-
-	            .businessId(user != null && hasText(user.getBusinessId())
-	                    ? user.getBusinessId() : "")
-
-	            .preferredCurrency(user != null && hasText(user.getPreferredCurrency())
-	                    ? user.getPreferredCurrency() : "")
-
-	            .invoicePrefix(user != null && hasText(user.getInvoicePrefix())
-	                    ? user.getInvoicePrefix()
-	                    : mu != null ? safe(mu.getInvoicePrefix()) : "")
-
-	            // CORPORATE
-	            .fid(user != null && hasText(user.getFid())
-	                    ? user.getFid()
-	                    : mu != null ? safe(mu.getFid()) : "")
-
-	            .everifyId(user != null && hasText(user.getEverifyId())
-	                    ? user.getEverifyId()
-	                    : mu != null ? safe(mu.getEverifyId()) : "")
-
-	            .dunsNumber(user != null && hasText(user.getDunsNumber())
-	                    ? user.getDunsNumber()
-	                    : mu != null ? safe(mu.getDunsNumber()) : "")
+				.taxId(user != null && hasText(user.getTaxId()) ? user.getTaxId() : "")
+				.businessId(user != null && hasText(user.getBusinessId()) ? user.getBusinessId() : "")
+				.preferredCurrency(
+						user != null && hasText(user.getPreferredCurrency()) ? user.getPreferredCurrency() : "")
+				.invoicePrefix(user != null && hasText(user.getInvoicePrefix()) ? user.getInvoicePrefix() : "")
+				.profilePicPath(user != null && hasText(user.getProfilePicPath()) ? user.getProfilePicPath() : "")
+				.role(mu != null && mu.getRole() != null ? mu.getRole().getRoleName()
+						: user != null && user.getRole() != null ? user.getRole().getRoleName() : "")
+				.build();
 
 	            .stateOfIncorporation(user != null && hasText(user.getStateOfIncorporation())
 	                    ? user.getStateOfIncorporation()
