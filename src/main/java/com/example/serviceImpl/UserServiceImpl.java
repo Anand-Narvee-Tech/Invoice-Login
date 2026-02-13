@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.util.HtmlUtils;
 
+import com.example.DTO.BankDetailsRequest;
 import com.example.DTO.LoginRequest;
 import com.example.DTO.ManageUserDTO;
 import com.example.DTO.RegisterRequest;
@@ -638,8 +639,8 @@ public class UserServiceImpl implements UserService {
 					+ "<body style='margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f9f9f9;'>"
 					+ "<table align='center' width='600' cellpadding='0' cellspacing='0' style='background:#ffffff; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.1);'>"
 					+ "<tr>"
-					+ "<td align='center' bgcolor='#2563eb' style='padding:20px; border-top-left-radius:8px; border-top-right-radius:8px;'>"
-					+ "<h2 style='color:#ffffff; margin:0;'> Invoice </h2>" + "</td>" + "</tr>" + "<tr>"
+					+ "<td align='center' bgcolor='#004b6e' style='padding:20px; border-top-left-radius:8px; border-top-right-radius:8px;'>"
+					+ "<h2 style='color:#ffffff; margin:0;'>Verify Your Login</h2>" + "</td>" + "</tr>" + "<tr>"
 					+ "<td style='padding:30px;'>" + "<h3 style='color:#004b6e; margin-top:0;'>Invoicing Team</h3>"
 					+ "<p style='font-size:16px; color:#4b5563;'>" + "Hello <strong>" + safeFullname
 					+ "</strong>,<br><br>"
@@ -652,7 +653,7 @@ public class UserServiceImpl implements UserService {
 					+ "</p>" + "<p style='font-size:14px; color:#333; margin-top:30px;'>"
 					+ "Best Regards,<br><b>Invoicing Team</b>" + "</p>" + "</td>" + "</tr>" + "<tr>"
 					+ "<td align='center' bgcolor='#f1f1f1' style='padding:10px; border-bottom-left-radius:8px; border-bottom-right-radius:8px; font-size:12px; color:#888;'>"
-					+ "2026 Invoicing Team. All rights reserved." + "</td>" + "</tr>" + "</table>" + "</body>"
+					+ "2025 Invoicing Team. All rights reserved." + "</td>" + "</tr>" + "</table>" + "</body>"
 					+ "</html>";
 
 			helper.setText(htmlContent, true);
@@ -721,8 +722,10 @@ public class UserServiceImpl implements UserService {
 					+ "</p>" + "<p style='font-size:14px; color:#333; margin-top:30px;'>"
 					+ "Best Regards,<br><b>Invoicing Team</b>" + "</p>" + "</td>" + "</tr>" + "<tr>"
 					+ "<td align='center' bgcolor='#f1f1f1' style='padding:10px; border-bottom-left-radius:8px; border-bottom-right-radius:8px; font-size:12px; color:#888;'>"
-					+ "2026 Invoicing Team. All rights reserved." + "</td>" + "</tr>" + "</table>" + "</body>"
+					+ "2025 Invoicing Team. All rights reserved." + "</td>" + "</tr>" + "</table>" + "</body>"
 					+ "</html>";
+			helper.setText(htmlContent, true);
+			javaMailSender.send(mimeMessage);
 
 			helper.setText(htmlContent, true);
 			javaMailSender.send(mimeMessage);
@@ -974,17 +977,18 @@ public class UserServiceImpl implements UserService {
 		return name.isEmpty() ? user.getEmail().split("@")[0] : name;
 	}
 
+	@Transactional
 	@Override
 	public UserProfileResponse getUserProfileByEmail(String email) {
 
-		String normalizedEmail = email.trim().toLowerCase();
+	    String normalizedEmail = email.trim().toLowerCase();
 
-		Optional<User> userOpt = userRepository.findByEmailIgnoreCase(normalizedEmail);
-		Optional<ManageUsers> muOpt = manageUserRepository.findByEmailIgnoreCase(normalizedEmail);
+	    Optional<User> userOpt = userRepository.findByEmailIgnoreCase(normalizedEmail);
+	    Optional<ManageUsers> muOpt = manageUserRepository.findByEmailIgnoreCase(normalizedEmail);
 
-		if (userOpt.isEmpty() && muOpt.isEmpty()) {
-			return null;
-		}
+	    if (userOpt.isEmpty() && muOpt.isEmpty()) {
+	        return null;
+	    }
 
 		User user = userOpt.orElse(null);
 		ManageUsers mu = muOpt.orElse(null);
@@ -1022,6 +1026,39 @@ public class UserServiceImpl implements UserService {
 						: user != null && user.getRole() != null ? user.getRole().getRoleName() : "")
 				.build();
 
+	            .stateOfIncorporation(user != null && hasText(user.getStateOfIncorporation())
+	                    ? user.getStateOfIncorporation()
+	                    : mu != null ? safe(mu.getStateOfIncorporation()) : "")
+
+	            .naicsCode(user != null && hasText(user.getNaicsCode())
+	                    ? user.getNaicsCode()
+	                    : mu != null ? safe(mu.getNaicsCode()) : "")
+
+	            .signingAuthorityName(user != null && hasText(user.getSigningAuthorityName())
+	                    ? user.getSigningAuthorityName()
+	                    : mu != null ? safe(mu.getSigningAuthorityName()) : "")
+
+	            .designation(user != null && hasText(user.getDesignation())
+	                    ? user.getDesignation()
+	                    : mu != null ? safe(mu.getDesignation()) : "")
+
+	            .dateOfIncorporation(user != null && hasText(user.getDateOfIncorporation())
+	                    ? user.getDateOfIncorporation()
+	                    : mu != null ? safe(mu.getDateOfIncorporation()) : "")
+
+	            .profilePicPath(user != null && hasText(user.getProfilePicPath())
+	                    ? user.getProfilePicPath() : "")
+
+	            .role(mu != null && mu.getRole() != null
+	                    ? mu.getRole().getRoleName()
+	                    : user != null && user.getRole() != null
+	                            ? user.getRole().getRoleName()
+	                            : "")
+
+	            // ✅ Bank Details Added Here
+	            .bankDeatils(bankDetailsList)
+
+	            .build();
 	}
 
 	private String resolveFullName(User user, ManageUsers mu) {
