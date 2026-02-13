@@ -44,6 +44,7 @@ import com.example.repository.AuditLogRepository;
 import com.example.repository.ManageUserRepository;
 import com.example.repository.RoleRepository;
 import com.example.repository.UserRepository;
+import com.example.service.EmailService;
 import com.example.service.ManageUserService;
 
 import lombok.RequiredArgsConstructor;
@@ -55,6 +56,9 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 	@Value("${file.upload-dir}")
 	private String uploadDir;
+
+	@Autowired
+	private EmailService emailService;
 
 	@Autowired
 	private UserNameSyncServiceImpl userNameSyncServiceImpl;
@@ -98,8 +102,9 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 				// 🔽 Newly added fields
 				.state(entity.getState()).country(entity.getCountry()).pincode(entity.getPincode())
-				.telephone(entity.getTelephone()).ein(entity.getEin()).gstin(entity.getGstin())
-				.website(entity.getWebsite()).address(entity.getAddress()).city(entity.getCity()).build();
+				.loginUrl(entity.getLoginUrl()).telephone(entity.getTelephone()).ein(entity.getEin())
+				.gstin(entity.getGstin()).website(entity.getWebsite()).address(entity.getAddress())
+				.city(entity.getCity()).build();
 	}
 	// Bhargav
 
@@ -182,6 +187,9 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 		ManageUsers savedManageUser = manageUserRepository.save(manageUsers);
 
+		emailService.sendRegistrationEmail(savedManageUser.getEmail(), savedManageUser.getFullName(),
+				savedManageUser.getRoleName());
+
 		userRepository.findByEmailIgnoreCase(newUserEmail).ifPresentOrElse(existingUser -> {
 
 			// Update existing user
@@ -218,6 +226,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
 			user.setWebsite(savedManageUser.getWebsite());
 			user.setEin(savedManageUser.getEin());
 			user.setAddress(savedManageUser.getAddress());
+			user.setLoginUrl(savedManageUser.getLoginUrl());
 			// Bhargav
 			user.setApproved(true);
 			user.setActive(true);

@@ -39,9 +39,14 @@ public class User {
 
 	@Column(unique = true, nullable = false)
 	private String email;
+
+//    private Long companyId;
+
 	private String mobileNumber;
 	private String companyName;
+
 	private String fullName;
+
 	private Boolean active;
 	private Boolean approved;
 
@@ -60,6 +65,7 @@ public class User {
 
 	@Column(name = "profile_pic_path")
 	private String profilePicPath;
+
 	private String alternativeEmail;
 	private String alternativeMobileNumber;
 	private String taxId;
@@ -96,7 +102,8 @@ public class User {
 	@Column(name = "address")
 	private String address;
 
-	// Bhargav
+	@Column(name = "loginurl") 
+	private String loginUrl;
 
 	// vasim
 	private String fid;

@@ -134,6 +134,9 @@ public class ManageUsers {
 	@Column(name = "token")
 	private String token;
 
+	@Column(name = "loginurl")
+	private String loginUrl;
+
 	// Bhargav
 
 	@CreationTimestamp
