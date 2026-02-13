@@ -41,167 +41,137 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 public class ManageUsersController {
-	
-	
+
 	@Autowired
 	private UserRepository userRepository;
 
 	@Autowired
 	private ManageUserRepository manageuserrepository;
 
-	
-	   @Autowired
-	    private  ManageUserService manageUsersService;
-	    
-	
-	    // 🔹 Create user (accessible by SUPERADMIN or ADMIN)
-	    @PreAuthorize("hasAnyAuthority('SUPERADMIN','ADMIN')")
-	    @PostMapping("/manageusers/save")
-	    public ResponseEntity<RestAPIResponse> createUser(
-	            @RequestBody ManageUsers manageUsers,
-	            Authentication authentication) {
-	
-	        String loggedInEmail = authentication.getName(); // auto from JWT
-	        ManageUserDTO savedUser = manageUsersService.createUser(manageUsers, loggedInEmail);
-	
-	        return ResponseEntity.ok(
-	                new RestAPIResponse("Success", "User created successfully", savedUser)
-	        );
-	    }
-	
-	//    @PreAuthorize("isAuthenticated()") // any logged-in user can update their profile
-	//    @PostMapping("/updated/save")
-	//    public ResponseEntity<RestAPIResponse> updateUserProfile(
-	//            @RequestBody UserUpdateRequest request,
-	//            Authentication authentication) {
+	@Autowired
+	private ManageUserService manageUsersService;
+
+	// 🔹 Create user (accessible by SUPERADMIN or ADMIN)
+	@PreAuthorize("hasAnyAuthority('SUPERADMIN','ADMIN')")
+	@PostMapping("/manageusers/save")
+	public ResponseEntity<RestAPIResponse> createUser(@RequestBody ManageUsers manageUsers,
+			Authentication authentication) {
+
+		String loggedInEmail = authentication.getName(); // auto from JWT
+		ManageUserDTO savedUser = manageUsersService.createUser(manageUsers, loggedInEmail);
+
+		return ResponseEntity.ok(new RestAPIResponse("Success", "User created successfully", savedUser));
+	}
+
+	// @PreAuthorize("isAuthenticated()") // any logged-in user can update their
+	// profile
+	// @PostMapping("/updated/save")
+	// public ResponseEntity<RestAPIResponse> updateUserProfile(
+	// @RequestBody UserUpdateRequest request,
+	// Authentication authentication) {
 	//
-	//        String loggedInEmail = authentication.getName(); // Extract from JWT
+	// String loggedInEmail = authentication.getName(); // Extract from JWT
 	//
-	//        try {
-	//            User updatedUser = manageUsersService.updateUserProfile(request, loggedInEmail);
+	// try {
+	// User updatedUser = manageUsersService.updateUserProfile(request,
+	// loggedInEmail);
 	//
-	//            return ResponseEntity.ok(
-	//                    new RestAPIResponse("Success", "Profile updated successfully", updatedUser)
-	//            );
-	//        } catch (RuntimeException e) {
-	//            return ResponseEntity
-	//                    .status(HttpStatus.BAD_REQUEST)
-	//                    .body(new RestAPIResponse("Error", e.getMessage(), null));
-	//        }
-	//    }
-	
-	    @PutMapping("/manageusers/{id}")
-	    public ResponseEntity<RestAPIResponse> updateUser(
-	            @PathVariable Long id,
-	            @RequestBody ManageUsers manageUsers,
-	            Authentication authentication) {
+	// return ResponseEntity.ok(
+	// new RestAPIResponse("Success", "Profile updated successfully", updatedUser)
+	// );
+	// } catch (RuntimeException e) {
+	// return ResponseEntity
+	// .status(HttpStatus.BAD_REQUEST)
+	// .body(new RestAPIResponse("Error", e.getMessage(), null));
+	// }
+	// }
 
-	        String loggedInEmail = authentication.getName();
-	        ManageUserDTO updatedUser = manageUsersService.updateUser(id, manageUsers, loggedInEmail);
+	@PutMapping("/manageusers/{id}")
+	public ResponseEntity<RestAPIResponse> updateUser(@PathVariable Long id, @RequestBody ManageUsers manageUsers,
+			Authentication authentication) {
 
-	        return ResponseEntity.ok(
-	                new RestAPIResponse("Success", "User updated successfully", updatedUser)
-	        );
-	    }
-	//Bhargav    	    
-	 	    
-	    @PutMapping("/updated/save")
-	    public ResponseEntity<?> updateUser(@RequestBody UserUpdateRequest request) {
-	        User updatedUser = manageUsersService.updateUserProfileDynamic(request);
-	        return ResponseEntity.ok(updatedUser);
-	    }  
-	
-	 //Bhargav   
-	    
-	    
-	    // 🔹 Get available roles for dropdowns (UI helper)
-	    @GetMapping("/manageusers/roles")
-	    public ResponseEntity<RestAPIResponse> getAllRolesForSelection() {
-	        List<String> roles = List.of("SUPERADMIN", "ADMIN", "ACCOUNTANT", "DEVELOPER");
-	        return ResponseEntity.ok(
-	                new RestAPIResponse("Success", "Roles fetched successfully", roles)
-	        );
-	    }
-	    
-	    @GetMapping("/manageusers/searchAndsorting")
-	    public ResponseEntity<RestAPIResponse> getAllUsersWithPaginationAndSearch(
-	            @RequestParam(defaultValue = "0") int page,
-	            @RequestParam(defaultValue = "10") int size,
-	            @RequestParam(defaultValue = "id") String sortField,
-	            @RequestParam(defaultValue = "asc") String sortDir,
-	            @RequestParam(required = false) String keyword
-	    ) {
+		String loggedInEmail = authentication.getName();
+		ManageUserDTO updatedUser = manageUsersService.updateUser(id, manageUsers, loggedInEmail);
 
-	        Page<ManageUserDTO> userPage = manageUsersService
-	                .getAllUsersWithPaginationAndSearch(page, size, sortField, sortDir, keyword);
+		return ResponseEntity.ok(new RestAPIResponse("Success", "User updated successfully", updatedUser));
+	}
+	// Bhargav
 
-	        Map<String, Object> response = new HashMap<>();
-	        response.put("users", userPage.getContent());
-	        response.put("currentPage", userPage.getNumber());
-	        response.put("totalItems", userPage.getTotalElements());
-	        response.put("totalPages", userPage.getTotalPages());
-	        response.put("sortField", sortField);
-	        response.put("sortDir", sortDir);
-	        response.put("keyword", keyword);
+	@PutMapping("/updated/save")
+	public ResponseEntity<?> updateUser(@RequestBody UserUpdateRequest request) {
+		User updatedUser = manageUsersService.updateUserProfileDynamic(request);
+		return ResponseEntity.ok(updatedUser);
+	}
 
-	        return ResponseEntity.ok(
-	                new RestAPIResponse("Success", "Users fetched successfully with pagination", response)
-	        );
-	    }
+	// Bhargav
 
-	    
-	    @GetMapping("/manageusers/getall")
-	    public ResponseEntity<RestAPIResponse> getAllUsers(Authentication authentication) {
-	        String loggedInEmail = authentication.getName();
-	        List<ManageUserDTO> users = manageUsersService.getAllUsers(loggedInEmail);
+	// 🔹 Get available roles for dropdowns (UI helper)
+	@GetMapping("/manageusers/roles")
+	public ResponseEntity<RestAPIResponse> getAllRolesForSelection() {
+		List<String> roles = List.of("SUPERADMIN", "ADMIN", "ACCOUNTANT", "DEVELOPER");
+		return ResponseEntity.ok(new RestAPIResponse("Success", "Roles fetched successfully", roles));
+	}
 
-	        return ResponseEntity.ok(
-	                new RestAPIResponse("Success", "Users fetched successfully", users)
-	        );
-	    }
+	@GetMapping("/manageusers/searchAndsorting")
+	public ResponseEntity<RestAPIResponse> getAllUsersWithPaginationAndSearch(
+			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
+			@RequestParam(defaultValue = "id") String sortField, @RequestParam(defaultValue = "asc") String sortDir,
+			@RequestParam(required = false) String keyword) {
 
-	    // 🔹 Get logged-in user’s own data
-	    @GetMapping("/manageusers/me")
-	    public ResponseEntity<RestAPIResponse> getMyProfile(Authentication authentication) {
-	        String loggedInEmail = authentication.getName();
-	        ManageUserDTO user = manageUsersService.getByEmail(loggedInEmail);
+		Page<ManageUserDTO> userPage = manageUsersService.getAllUsersWithPaginationAndSearch(page, size, sortField,
+				sortDir, keyword);
 
-	        return ResponseEntity.ok(
-	                new RestAPIResponse("Success", "Your profile fetched successfully", user)
-	        );
-	    }
+		Map<String, Object> response = new HashMap<>();
+		response.put("users", userPage.getContent());
+		response.put("currentPage", userPage.getNumber());
+		response.put("totalItems", userPage.getTotalElements());
+		response.put("totalPages", userPage.getTotalPages());
+		response.put("sortField", sortField);
+		response.put("sortDir", sortDir);
+		response.put("keyword", keyword);
 
-	    // 🔹 Get specific user by ID (visible based on access rules)
-	    @GetMapping("/manageusers/{id}")
-	    public ResponseEntity<RestAPIResponse> getUserById(
-	            @PathVariable Long id,
-	            Authentication authentication) {
+		return ResponseEntity
+				.ok(new RestAPIResponse("Success", "Users fetched successfully with pagination", response));
+	}
 
-	        String loggedInEmail = authentication.getName();
-	        ManageUserDTO user = manageUsersService.getByIdAndLoggedInUser(id, loggedInEmail);
+	@GetMapping("/manageusers/getall")
+	public ResponseEntity<RestAPIResponse> getAllUsers(Authentication authentication) {
+		String loggedInEmail = authentication.getName();
+		List<ManageUserDTO> users = manageUsersService.getAllUsers(loggedInEmail);
 
-	        return ResponseEntity.ok(
-	                new RestAPIResponse("Success", "User retrieved successfully", user)
-	        );
-	    }
-	    
-	    @DeleteMapping("/manageusers/{id}")
-	    public ResponseEntity<RestAPIResponse> deleteUser(
-	            @PathVariable Long id,
-	            Authentication authentication) {
+		return ResponseEntity.ok(new RestAPIResponse("Success", "Users fetched successfully", users));
+	}
 
-	        String loggedInEmail = authentication.getName();
-	        manageUsersService.deleteUser(id, loggedInEmail);
+	// 🔹 Get logged-in user’s own data
+	@GetMapping("/manageusers/me")
+	public ResponseEntity<RestAPIResponse> getMyProfile(Authentication authentication) {
+		String loggedInEmail = authentication.getName();
+		ManageUserDTO user = manageUsersService.getByEmail(loggedInEmail);
 
-	        return ResponseEntity.ok(
-	                new RestAPIResponse("Success", "User deleted successfully", null)
-	        );
-	    }
-	    
-	    
-	    
+		return ResponseEntity.ok(new RestAPIResponse("Success", "Your profile fetched successfully", user));
+	}
+
+	// 🔹 Get specific user by ID (visible based on access rules)
+	@GetMapping("/manageusers/{id}")
+	public ResponseEntity<RestAPIResponse> getUserById(@PathVariable Long id, Authentication authentication) {
+
+		String loggedInEmail = authentication.getName();
+		ManageUserDTO user = manageUsersService.getByIdAndLoggedInUser(id, loggedInEmail);
+
+		return ResponseEntity.ok(new RestAPIResponse("Success", "User retrieved successfully", user));
+	}
+
+	@DeleteMapping("/manageusers/{id}")
+	public ResponseEntity<RestAPIResponse> deleteUser(@PathVariable Long id, Authentication authentication) {
+
+		String loggedInEmail = authentication.getName();
+		manageUsersService.deleteUser(id, loggedInEmail);
+
+		return ResponseEntity.ok(new RestAPIResponse("Success", "User deleted successfully", null));
+	}
+
 //Bhargav
-	    
+
 //	    @PostMapping("/manageusers/searchAndsorting/getall")
 //	    public ResponseEntity<RestAPIResponse> getManageUsersList(@RequestBody SortingRequestDTO sortingRequestDTO ,Authentication authentication) {
 //	        Page<ManageUserDTO> manageUsers = manageUsersService.getAllManageUsersWithSorting(sortingRequestDTO);
@@ -212,28 +182,21 @@ public class ManageUsersController {
 //	            HttpStatus.OK
 //	        );
 //	    }
-    
-	    @PostMapping("/manageusers/searchAndsorting/getall")
-	    public ResponseEntity<RestAPIResponse> getManageUsersList(
-	            @RequestBody SortingRequestDTO sortingRequestDTO, 
-	            Authentication authentication) {
-	        
-	        String loggedInEmail = authentication.getName();
-	        
-	        // ✅ Pass loggedInEmail to service method
-	        Page<ManageUserDTO> manageUsers = manageUsersService.getAllManageUsersWithSorting(
-	                sortingRequestDTO, 
-	                loggedInEmail
-	        );
-	        
-	        return new ResponseEntity<>(
-	            new RestAPIResponse("success", "Successfully retrieved manage users list", manageUsers),
-	            HttpStatus.OK
-	        );
-	    }
-	       
- //Bhargav
-	    
 
+	@PostMapping("/manageusers/searchAndsorting/getall")
+	public ResponseEntity<RestAPIResponse> getManageUsersList(@RequestBody SortingRequestDTO sortingRequestDTO,
+			Authentication authentication) {
 
-	   	}
+		String loggedInEmail = authentication.getName();
+
+		// ✅ Pass loggedInEmail to service method
+		Page<ManageUserDTO> manageUsers = manageUsersService.getAllManageUsersWithSorting(sortingRequestDTO,
+				loggedInEmail);
+
+		return new ResponseEntity<>(
+				new RestAPIResponse("success", "Successfully retrieved manage users list", manageUsers), HttpStatus.OK);
+	}
+
+	// Bhargav
+
+}

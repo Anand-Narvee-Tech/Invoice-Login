@@ -1,4 +1,5 @@
 package com.example.entity;
+
 import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -95,48 +96,46 @@ public class ManageUsers {
 
 	@Column(name = "active")
 	private Boolean active = true;
-	
-	
-	  private String invoicePrefix;
-	
+
+	private String invoicePrefix;
+
 	// Bhargav
-	
-		@Column(name = "state")
-		private String state;
-		
-		@Column(name = "country")
-		private String country;
-		
-		@Column(name = "city")
-		private String city;
-		
-		@Column(name = "pincode")
-		private String pincode;
-		
-		@Column(name = "telephone")
-		private String telephone;
-		
-		@Column(name = "ein")
-		private String ein;
-		
-		@Column(name = "gstin")
-		private String gstin;
-		
-		@Column(name = "website")
-		private String website;
-		
-		@Column(name = "address")
-		private String address;
-		
-		@Column(name = "token")
-		private String token;
-		
-		@Column(name = "loginurl")
-		private String loginUrl;
 
-		// Bhargav
+	@Column(name = "state")
+	private String state;
 
-	
+	@Column(name = "country")
+	private String country;
+
+	@Column(name = "city")
+	private String city;
+
+	@Column(name = "pincode")
+	private String pincode;
+
+	@Column(name = "telephone")
+	private String telephone;
+
+	@Column(name = "ein")
+	private String ein;
+
+	@Column(name = "gstin")
+	private String gstin;
+
+	@Column(name = "website")
+	private String website;
+
+	@Column(name = "address")
+	private String address;
+
+	@Column(name = "token")
+	private String token;
+
+	@Column(name = "loginurl")
+	private String loginUrl;
+
+	// Bhargav
+
 	@CreationTimestamp
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private LocalDateTime createdAt;

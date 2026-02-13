@@ -64,7 +64,6 @@ public class UserServiceImpl implements UserService {
 	private static final Set<String> DEFAULT_SUPERUSERS = Set.of("japhanya@narveetech.com", "wasim@narveetech.com");
 
 	private final MailConfig mailConfig;
-	
 
 	@Autowired
 	private UserRepository userRepository;
@@ -83,9 +82,6 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	private ManageUserRepository manageUserRepository;
-
-
-
 
 	@Autowired
 	private JavaMailSender javaMailSender;
@@ -106,8 +102,8 @@ public class UserServiceImpl implements UserService {
 				.addedByName(user.getAddedByName()).updatedByName(user.getUpdatedByName())
 				// ✅ ADD THESE
 				.state(user.getState()).country(user.getCountry()).pincode(user.getPincode()).city(user.getCity())
-				.telephone(user.getTelephone()).ein(user.getEin()).gstin(user.getGstin()).website(user.getWebsite()).address(user.getAddress())
-				.build();
+				.telephone(user.getTelephone()).ein(user.getEin()).gstin(user.getGstin()).website(user.getWebsite())
+				.address(user.getAddress()).build();
 	}
 
 	//
@@ -116,17 +112,13 @@ public class UserServiceImpl implements UserService {
 		return email.substring(email.indexOf("@") + 1).toLowerCase();
 	}
 
-	
-	
-	//Bhargav
-	public boolean isEmailDuplicate(String email) {	
+	// Bhargav
+	public boolean isEmailDuplicate(String email) {
 		return userRepository.existsByEmail(email);
 	}
-	
-	//Bhargav
-	
-	
-	
+
+	// Bhargav
+
 	// Bhargav
 
 //    @Transactional
@@ -210,7 +202,6 @@ public class UserServiceImpl implements UserService {
 //        return convertToDTO(saved);
 //    }
 
-	
 //Bhargav working
 	@Transactional
 	public ManageUserDTO registerCompanyUser(ManageUsers manageUsers) {
@@ -229,12 +220,8 @@ public class UserServiceImpl implements UserService {
 		String Ein = manageUsers.getEin();
 		String Gstin = manageUsers.getGstin();
 		String Website = manageUsers.getWebsite();
-		String Address=manageUsers.getAddress();
-		
-		
-		
-		
-		
+		String Address = manageUsers.getAddress();
+
 		// 1️⃣ Normalize email
 		String email = manageUsers.getEmail().trim().toLowerCase();
 		manageUsers.setEmail(email);
@@ -252,33 +239,30 @@ public class UserServiceImpl implements UserService {
 		// 4️⃣ Fetch ADMIN role
 		Role adminRole = roleRepository.findByRoleNameIgnoreCase(ADMIN_ROLE).orElseThrow(() -> new BusinessException(
 				"Required role ADMIN is not configured. Please contact system administrator."));
-		
-		
-		
+
 		// 5️⃣ Create USER
 		User user = userRepository.findByEmailIgnoreCase(email).orElseGet(() -> {
-		    User u = new User();
-		    u.setEmail(email);
-		    u.setFirstName(manageUsers.getFirstName());
-		    u.setCompanyName(companyName);
-		    u.setMobileNumber(mobileNumber);
-		 // 🔽 newly added fields
-		    u.setState(State);
-		    u.setCountry(Country);
-		    u.setCity(City);
-		    u.setPincode(Pincode);
-		    u.setTelephone(Telephone);
-		    u.setEin(Ein);
-		    u.setGstin(Gstin);
-		    u.setWebsite(Website);
-		    u.setAddress(Address);
-		    u.setApproved(true);
-		    u.setActive(true);
-		    u.setRole(adminRole);
-		    
-		    return userRepository.save(u);
-		});
+			User u = new User();
+			u.setEmail(email);
+			u.setFirstName(manageUsers.getFirstName());
+			u.setCompanyName(companyName);
+			u.setMobileNumber(mobileNumber);
+			// 🔽 newly added fields
+			u.setState(State);
+			u.setCountry(Country);
+			u.setCity(City);
+			u.setPincode(Pincode);
+			u.setTelephone(Telephone);
+			u.setEin(Ein);
+			u.setGstin(Gstin);
+			u.setWebsite(Website);
+			u.setAddress(Address);
+			u.setApproved(true);
+			u.setActive(true);
+			u.setRole(adminRole);
 
+			return userRepository.save(u);
+		});
 
 		// 6️⃣ Restore preserved fields 🔥
 		manageUsers.setMobileNumber(mobileNumber);
@@ -295,8 +279,7 @@ public class UserServiceImpl implements UserService {
 		manageUsers.setApproved(true);
 		manageUsers.setActive(true);
 		manageUsers.setRole(adminRole);
-		
-		
+
 		// 7️⃣ Create ManageUsers
 		manageUsers.setRole(adminRole);
 		manageUsers.setRoleName(adminRole.getRoleName());
@@ -308,14 +291,9 @@ public class UserServiceImpl implements UserService {
 		ManageUsers saved = manageUserRepository.save(manageUsers);
 		return convertToDTO(saved);
 	}
-	
-	
 
 //Bhargav working 
-	
 
-	
-	
 	/**
 	 * ===================== Initialize default super admins =====================
 	 **/
@@ -401,10 +379,9 @@ public class UserServiceImpl implements UserService {
 		return "User registered successfully!";
 	}
 
-	
 //	comment by Bhargav 
 //it working fine Generate integer OTP
-	
+
 //	@Transactional
 //	@Override
 //	public void sendOtp(String emailInput) {
@@ -543,107 +520,100 @@ public class UserServiceImpl implements UserService {
 //	    }
 //	}
 //comment by Bhargav 	
-	
-	
-	
-	
-	
-	
-	
-	
+
 //Added by Bhargav Generate alphanumeric OTP 11-02-26 new 
-	
+
 	/**
 	 * Generate alphanumeric OTP
+	 * 
 	 * @param length - length of OTP (default: 6)
 	 * @return alphanumeric OTP string
 	 */
 	private String generateAlphanumericOTP(int length) {
-		    if (length != 6) {
-		        throw new IllegalArgumentException("OTP length must be 6 for this pattern");
-		    }
-
-		    String alphabets = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-		    String numbers = "0123456789";
-
-		    Random random = new Random();
-
-		    StringBuilder otp = new StringBuilder();
-
-		    // Generate 3 random alphabets
-		    for (int i = 0; i < 3; i++) {
-		        otp.append(alphabets.charAt(random.nextInt(alphabets.length())));
-		    }
-
-		    // Generate 3 random numbers
-		    for (int i = 0; i < 3; i++) {
-		        otp.append(numbers.charAt(random.nextInt(numbers.length())));
-		    }
-
-		    // Now shuffle them so pattern is mixed like A7K9M2
-		    List<Character> otpChars = new ArrayList<>();
-		    for (char c : otp.toString().toCharArray()) {
-		        otpChars.add(c);
-		    }
-
-		    Collections.shuffle(otpChars);
-
-		    StringBuilder finalOtp = new StringBuilder();
-		    for (char c : otpChars) {
-		        finalOtp.append(c);
-		    }
-
-		    return finalOtp.toString();
+		if (length != 6) {
+			throw new IllegalArgumentException("OTP length must be 6 for this pattern");
 		}
 
-	
+		String alphabets = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+		String numbers = "0123456789";
+
+		Random random = new Random();
+
+		StringBuilder otp = new StringBuilder();
+
+		// Generate 3 random alphabets
+		for (int i = 0; i < 3; i++) {
+			otp.append(alphabets.charAt(random.nextInt(alphabets.length())));
+		}
+
+		// Generate 3 random numbers
+		for (int i = 0; i < 3; i++) {
+			otp.append(numbers.charAt(random.nextInt(numbers.length())));
+		}
+
+		// Now shuffle them so pattern is mixed like A7K9M2
+		List<Character> otpChars = new ArrayList<>();
+		for (char c : otp.toString().toCharArray()) {
+			otpChars.add(c);
+		}
+
+		Collections.shuffle(otpChars);
+
+		StringBuilder finalOtp = new StringBuilder();
+		for (char c : otpChars) {
+			finalOtp.append(c);
+		}
+
+		return finalOtp.toString();
+	}
+
 	@Transactional
 	@Override
 	public void sendOtp(String emailInput) {
-	    final String email = emailInput.trim().toLowerCase();
+		final String email = emailInput.trim().toLowerCase();
 
-	    // Fetch user or allow default super admin
-	    User user = userRepository.findByEmailIgnoreCase(email).orElseGet(() -> {
-	        if (DEFAULT_SUPERUSERS.contains(email)) {
-	            User u = new User();
-	            u.setEmail(email);
-	            u.setFirstName(email.split("@")[0]);
-	            u.setApproved(true);
-	            u.setActive(true);
+		// Fetch user or allow default super admin
+		User user = userRepository.findByEmailIgnoreCase(email).orElseGet(() -> {
+			if (DEFAULT_SUPERUSERS.contains(email)) {
+				User u = new User();
+				u.setEmail(email);
+				u.setFirstName(email.split("@")[0]);
+				u.setApproved(true);
+				u.setActive(true);
 
-	            // Unwrap Optional<Role>
-	            Role superAdminRole = roleRepository.findByRoleName("ADMIN")
-	                    .orElseThrow(() -> new RuntimeException("ADMIN role not found"));
-	            u.setRole(superAdminRole);
+				// Unwrap Optional<Role>
+				Role superAdminRole = roleRepository.findByRoleName("ADMIN")
+						.orElseThrow(() -> new RuntimeException("ADMIN role not found"));
+				u.setRole(superAdminRole);
 
-	            return u;
-	        } else {
-	            throw new RuntimeException("Invalid credentials: email not registered");
-	        }
-	    });
+				return u;
+			} else {
+				throw new RuntimeException("Invalid credentials: email not registered");
+			}
+		});
 
-	    // Build full name
-	    String fullName = (user.getFullName() != null && !user.getFullName().isBlank()) ? user.getFullName()
-	            : (user.getFirstName() != null ? user.getFirstName() : email.split("@")[0]);
-	    String safeFullname = HtmlUtils.htmlEscape(fullName);
+		// Build full name
+		String fullName = (user.getFullName() != null && !user.getFullName().isBlank()) ? user.getFullName()
+				: (user.getFirstName() != null ? user.getFirstName() : email.split("@")[0]);
+		String safeFullname = HtmlUtils.htmlEscape(fullName);
 
-	    // Remove old OTPs
-	    tokenRepository.deleteByEmail(email);
+		// Remove old OTPs
+		tokenRepository.deleteByEmail(email);
 
-	    // ✅ Generate new ALPHANUMERIC OTP
-	    String otp = generateAlphanumericOTP(6); // 6-character alphanumeric OTP
-	    long expiryTime = System.currentTimeMillis() + 2 * 60_000; // 2 minutes
+		// ✅ Generate new ALPHANUMERIC OTP
+		String otp = generateAlphanumericOTP(6); // 6-character alphanumeric OTP
+		long expiryTime = System.currentTimeMillis() + 2 * 60_000; // 2 minutes
 
-	    OTP otpEntity = new OTP(null, email, otp, expiryTime);
-	    tokenRepository.save(otpEntity);
+		OTP otpEntity = new OTP(null, email, otp, expiryTime);
+		tokenRepository.save(otpEntity);
 
-	    // Send email with designed HTML
-	    try {
-	        MimeMessage mimeMessage = javaMailSender.createMimeMessage();
-	        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
-	        helper.setFrom(fromEmail);
-	        helper.setTo(email);
-	        helper.setSubject("Login Verification Code - Invoicing Team");
+		// Send email with designed HTML
+		try {
+			MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+			MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+			helper.setFrom(fromEmail);
+			helper.setTo(email);
+			helper.setSubject("Login Verification Code - Invoicing Team");
 
 //	        String htmlContent = "<!DOCTYPE html>" + "<html>" + "<head><meta charset='UTF-8'></head>"
 //	                + "<body style='margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f9f9f9;'>"
@@ -664,7 +634,6 @@ public class UserServiceImpl implements UserService {
 //	                + "2025 Invoicing Team. All rights reserved." + "</td>" + "</tr>" + "</table>" + "</body>"
 //	                + "</html>";
 
-	        
 			String htmlContent = "<!DOCTYPE html>" + "<html>" + "<head><meta charset='UTF-8'></head>"
 					+ "<body style='margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f9f9f9;'>"
 					+ "<table align='center' width='600' cellpadding='0' cellspacing='0' style='background:#ffffff; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.1);'>"
@@ -674,8 +643,9 @@ public class UserServiceImpl implements UserService {
 					+ "<td style='padding:30px;'>" + "<h3 style='color:#004b6e; margin-top:0;'>Invoicing Team</h3>"
 					+ "<p style='font-size:16px; color:#4b5563;'>" + "Hello <strong>" + safeFullname
 					+ "</strong>,<br><br>"
-					+ "Thank you for choosing <b>Invoicing Application</b>. Your verification code is:"
-					+ "</p>" + "<div style='text-align:center; margin:32px 0;'>"
+
+					+ "Thank you for choosing <b>Invoicing Application</b>. Your verification code is:" + "</p>"
+					+ "<div style='text-align:center; margin:32px 0;'>"
 					+ "<div style='display:inline-block; padding:18px 32px; border-radius:12px; border:2px dashed #2563eb; background:#eff6ff; font-size:36px; font-weight:700; letter-spacing:8px; color:#1e3a8a;'>"
 					+ otp + "</div>" + "</div>" + "<p style='text-align:center; font-size:15px; color:#6b7280;'>"
 					+ "This OTP is valid for <strong>2 minutes</strong>. Please do not share this code with anyone."
@@ -684,87 +654,86 @@ public class UserServiceImpl implements UserService {
 					+ "<td align='center' bgcolor='#f1f1f1' style='padding:10px; border-bottom-left-radius:8px; border-bottom-right-radius:8px; font-size:12px; color:#888;'>"
 					+ "2026 Invoicing Team. All rights reserved." + "</td>" + "</tr>" + "</table>" + "</body>"
 					+ "</html>";
-     
-	        helper.setText(htmlContent, true);
-	        javaMailSender.send(mimeMessage);
-	        log.info("OTP sent successfully to {}", email);
-	    } catch (Exception e) {
-	        log.error("Failed to send OTP email to {}: {}", email, e.getMessage(), e);
-	    }
+
+			helper.setText(htmlContent, true);
+			javaMailSender.send(mimeMessage);
+			log.info("OTP sent successfully to {}", email);
+		} catch (Exception e) {
+			log.error("Failed to send OTP email to {}: {}", email, e.getMessage(), e);
+		}
 	}
-	
-	
+
 	@Transactional
 	@Override
 	public void sendOtpForRegister(String emailInput) {
 
-	    final String email = emailInput.trim().toLowerCase();
+		final String email = emailInput.trim().toLowerCase();
 
-	    // ❌ Block if email already exists
-	    if (userRepository.existsByEmailIgnoreCase(email)) {
-	        throw new RuntimeException("Email already registered. Please login.");
-	    }
+		// ❌ Block if email already exists
+		if (userRepository.existsByEmailIgnoreCase(email)) {
+			throw new RuntimeException("Email already registered. Please login.");
+		}
 
-	    // Clean old OTPs
-	    tokenRepository.deleteByEmail(email);
+		// Clean old OTPs
+		tokenRepository.deleteByEmail(email);
 
-	    // ✅ Generate ALPHANUMERIC OTP
-	    String otp = generateAlphanumericOTP(6); // 6-character alphanumeric OTP
-	    long expiryTime = System.currentTimeMillis() + 2 * 60_000;
+		// ✅ Generate ALPHANUMERIC OTP
+		String otp = generateAlphanumericOTP(6); // 6-character alphanumeric OTP
+		long expiryTime = System.currentTimeMillis() + 2 * 60_000;
 
-	    OTP otpEntity = new OTP(null, email, otp, expiryTime);
-	    tokenRepository.save(otpEntity);
+		OTP otpEntity = new OTP(null, email, otp, expiryTime);
+		tokenRepository.save(otpEntity);
 
-	    // Send email (reuse SAME template)
-	    sendOtpEmail(email, email.split("@")[0], otp);
+		// Send email (reuse SAME template)
+		sendOtpEmail(email, email.split("@")[0], otp);
 
-	    log.info("Registration OTP sent to {}", email);
+		log.info("Registration OTP sent to {}", email);
 	}
-	
+
 	private void sendOtpEmail(String email, String fullName, String otp) {
-	    try {
-	        MimeMessage mimeMessage = javaMailSender.createMimeMessage();
-	        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+		try {
+			MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+			MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
 
-	        helper.setFrom(fromEmail);
-	        helper.setTo(email);
-	        helper.setSubject("Verification Code - Invoicing Team");
+			helper.setFrom(fromEmail);
+			helper.setTo(email);
+			helper.setSubject("Verification Code - Invoicing Team");
 
-	        String safeFullname = HtmlUtils.htmlEscape(fullName);
+			String safeFullname = HtmlUtils.htmlEscape(fullName);
 
 			String htmlContent = "<!DOCTYPE html>" + "<html>" + "<head><meta charset='UTF-8'></head>"
 					+ "<body style='margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f9f9f9;'>"
 					+ "<table align='center' width='600' cellpadding='0' cellspacing='0' style='background:#ffffff; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.1);'>"
 					+ "<tr>"
+
 					+ "<td align='center' bgcolor='#2563eb' style='padding:20px; border-top-left-radius:8px; border-top-right-radius:8px;'>"
 					+ "<h2 style='color:#ffffff; margin:0;'>Verify Your Registration</h2>" + "</td>" + "</tr>" + "<tr>"
 					+ "<td style='padding:30px;'>" + "<h3 style='color:#004b6e; margin-top:0;'>Invoicing Team</h3>"
 					+ "<p style='font-size:16px; color:#4b5563;'>" + "Hello <strong>" + safeFullname
 					+ "</strong>,<br><br>"
+
 					+ "Thank you for choosing <b>Invoicing Application</b>. Use the following OTP to complete your Registration:"
 					+ "</p>" + "<div style='text-align:center; margin:32px 0;'>"
 					+ "<div style='display:inline-block; padding:18px 32px; border-radius:12px; border:2px dashed #2563eb; background:#eff6ff; font-size:36px; font-weight:700; letter-spacing:8px; color:#1e3a8a;'>"
 					+ otp + "</div>" + "</div>" + "<p style='text-align:center; font-size:15px; color:#6b7280;'>"
 					+ "This OTP is valid for <strong>2 minutes</strong>. Please do not share this code with anyone."
+
 					+ "</p>" + "<p style='font-size:14px; color:#333; margin-top:30px;'>"
 					+ "Best Regards,<br><b>Invoicing Team</b>" + "</p>" + "</td>" + "</tr>" + "<tr>"
 					+ "<td align='center' bgcolor='#f1f1f1' style='padding:10px; border-bottom-left-radius:8px; border-bottom-right-radius:8px; font-size:12px; color:#888;'>"
 					+ "2026 Invoicing Team. All rights reserved." + "</td>" + "</tr>" + "</table>" + "</body>"
 					+ "</html>";
 
-	        helper.setText(htmlContent, true);
-	        javaMailSender.send(mimeMessage);
+			helper.setText(htmlContent, true);
+			javaMailSender.send(mimeMessage);
 
-	    } catch (Exception e) {
-	        log.error("Failed to send OTP email to {}", email, e);
-	    }
+		} catch (Exception e) {
+			log.error("Failed to send OTP email to {}", email, e);
+		}
 	}
-	
-	//Added by Bhargav Generate alphanumeric OTP 11-02-26 new 
 
-	
+	// Added by Bhargav Generate alphanumeric OTP 11-02-26 new
 
-	
 //comment by Bhargav 	
 //	@Transactional
 //	@Override
@@ -864,11 +833,7 @@ public class UserServiceImpl implements UserService {
 //	}
 //
 //comment by Bhargav 
-	
-	
-	
-	
-	
+
 	/** ===================== Login with OTP ===================== **/
 	@Override
 	@Transactional
@@ -1024,8 +989,7 @@ public class UserServiceImpl implements UserService {
 		User user = userOpt.orElse(null);
 		ManageUsers mu = muOpt.orElse(null);
 
-		return UserProfileResponse.builder().id(user != null ? user.getId() : 0L)
-				.fullName(resolveFullName(user, mu))
+		return UserProfileResponse.builder().id(user != null ? user.getId() : 0L).fullName(resolveFullName(user, mu))
 				.primaryEmail(user != null && hasText(user.getPrimaryEmail()) ? user.getPrimaryEmail()
 						: mu != null ? safe(mu.getEmail()) : normalizedEmail)
 				.mobileNumber(user != null && hasText(user.getMobileNumber()) ? user.getMobileNumber()
@@ -1047,6 +1011,7 @@ public class UserServiceImpl implements UserService {
 				.website(user != null && hasText(user.getWebsite()) ? user.getWebsite() : "")
 				.address(user != null && hasText(user.getAddress()) ? user.getAddress() : "")
 				// ✅ NEW FIELDS END HERE
+
 				.taxId(user != null && hasText(user.getTaxId()) ? user.getTaxId() : "")
 				.businessId(user != null && hasText(user.getBusinessId()) ? user.getBusinessId() : "")
 				.preferredCurrency(
@@ -1078,80 +1043,79 @@ public class UserServiceImpl implements UserService {
 	}
 
 //Bhargav
-	
+
 	@Override
 	@Transactional
 	public boolean verifyOtp(String emailInput, String otpInput) {
 
-	    final String email = emailInput.trim().toLowerCase();
+		final String email = emailInput.trim().toLowerCase();
 
-	    // Fetch OTP record
-	    OTP otpEntity = tokenRepository.findByEmail(email)
-	            .orElseThrow(() -> new RuntimeException("OTP not found for this email"));
+		// Fetch OTP record
+		OTP otpEntity = tokenRepository.findByEmail(email)
+				.orElseThrow(() -> new RuntimeException("OTP not found for this email"));
 
-	    // Check expiry
-	    if (System.currentTimeMillis() > otpEntity.getExpiryTime()) {
-	        tokenRepository.deleteByEmail(email);  // remove expired OTP
-	        throw new RuntimeException("OTP has expired");
-	    }
+		// Check expiry
+		if (System.currentTimeMillis() > otpEntity.getExpiryTime()) {
+			tokenRepository.deleteByEmail(email); // remove expired OTP
+			throw new RuntimeException("OTP has expired");
+		}
 
-	    // Validate OTP
-	    if (!otpEntity.getOtp().equals(otpInput)) {
-	        throw new RuntimeException("Invalid OTP");
-	    }
+		// Validate OTP
+		if (!otpEntity.getOtp().equals(otpInput)) {
+			throw new RuntimeException("Invalid OTP");
+		}
 
-	    // OTP is valid → delete it after successful verification
-	    tokenRepository.deleteByEmail(email);
+		// OTP is valid → delete it after successful verification
+		tokenRepository.deleteByEmail(email);
 
-	    return true;
+		return true;
 	}
-	 public ManageUsers buildManageUsersFromRequest(RegisterRequest request) {
 
-		    ManageUsers manageUsers = new ManageUsers();
+	public ManageUsers buildManageUsersFromRequest(RegisterRequest request) {
 
-		    manageUsers.setFirstName(request.getFirstName());
-		    manageUsers.setMiddleName(request.getMiddleName());
-		    manageUsers.setLastName(request.getLastName());
+		ManageUsers manageUsers = new ManageUsers();
 
-		    // Build full name if required
-		    String fullName = request.getFirstName() + " " +
-		            (request.getMiddleName() != null ? request.getMiddleName() + " " : "") +
-		            request.getLastName();
+		manageUsers.setFirstName(request.getFirstName());
+		manageUsers.setMiddleName(request.getMiddleName());
+		manageUsers.setLastName(request.getLastName());
 
-		    manageUsers.setFullName(fullName.trim());
+		// Build full name if required
+		String fullName = request.getFirstName() + " "
+				+ (request.getMiddleName() != null ? request.getMiddleName() + " " : "") + request.getLastName();
 
-		    manageUsers.setEmail(request.getEmail());
-		    manageUsers.setPrimaryEmail(request.getEmail());
+		manageUsers.setFullName(fullName.trim());
 
-		    manageUsers.setMobileNumber(request.getMobileNumber());
+		manageUsers.setEmail(request.getEmail());
+		manageUsers.setPrimaryEmail(request.getEmail());
 
-		    manageUsers.setCompanyName(request.getCompanyName());
+		manageUsers.setMobileNumber(request.getMobileNumber());
 
-		    manageUsers.setState(request.getState());
-		    manageUsers.setCity(request.getCity());
-		    manageUsers.setCountry(request.getCountry());
+		manageUsers.setCompanyName(request.getCompanyName());
 
-		    manageUsers.setPincode(request.getPincode());
-		    manageUsers.setTelephone(request.getTelephone());
+		manageUsers.setState(request.getState());
+		manageUsers.setCity(request.getCity());
+		manageUsers.setCountry(request.getCountry());
 
-		    manageUsers.setEin(request.getEin());
-		    manageUsers.setGstin(request.getGstin());
+		manageUsers.setPincode(request.getPincode());
+		manageUsers.setTelephone(request.getTelephone());
 
-		    manageUsers.setWebsite(request.getWebsite());
-		    manageUsers.setAddress(request.getAddress());
+		manageUsers.setEin(request.getEin());
+		manageUsers.setGstin(request.getGstin());
 
-		    // Optional fields (if available in RegisterRequest)
+		manageUsers.setWebsite(request.getWebsite());
+		manageUsers.setAddress(request.getAddress());
+
+		// Optional fields (if available in RegisterRequest)
 //		    manageUsers.setAlternativeEmail(request.getAlternativeEmail());
 //		    manageUsers.setAlternativeMobileNumber(request.getAlternativeMobileNumber());
 
-		    // Default flags
-		    manageUsers.setActive(true);
-		    manageUsers.setApproved(true);
+		// Default flags
+		manageUsers.setActive(true);
+		manageUsers.setApproved(true);
 
-		    return manageUsers;
-		}
+		return manageUsers;
+	}
 
-		
 //Bhargav
-	
+
 }
