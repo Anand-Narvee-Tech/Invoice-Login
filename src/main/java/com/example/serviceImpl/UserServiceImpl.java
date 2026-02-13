@@ -988,41 +988,109 @@ public class UserServiceImpl implements UserService {
 	        return null;
 	    }
 
-		User user = userOpt.orElse(null);
-		ManageUsers mu = muOpt.orElse(null);
+	    User user = userOpt.orElse(null);
+	    ManageUsers mu = muOpt.orElse(null);
 
-		return UserProfileResponse.builder().id(user != null ? user.getId() : 0L).fullName(resolveFullName(user, mu))
-				.primaryEmail(user != null && hasText(user.getPrimaryEmail()) ? user.getPrimaryEmail()
-						: mu != null ? safe(mu.getEmail()) : normalizedEmail)
-				.mobileNumber(user != null && hasText(user.getMobileNumber()) ? user.getMobileNumber()
-						: mu != null ? safe(mu.getMobileNumber()) : "")
-				.alternativeEmail(user != null && hasText(user.getAlternativeEmail()) ? user.getAlternativeEmail() : "")
-				.alternativeMobileNumber(
-						user != null && hasText(user.getAlternativeMobileNumber()) ? user.getAlternativeMobileNumber()
-								: "")
-				.companyName(user != null && hasText(user.getCompanyName()) ? user.getCompanyName()
-						: mu != null ? safe(mu.getCompanyName()) : "")
-				// ✅ NEW FIELDS START HERE
-				.state(user != null && hasText(user.getState()) ? user.getState() : "")
-				.country(user != null && hasText(user.getCountry()) ? user.getCountry() : "")
-				.city(user != null && hasText(user.getCity()) ? user.getCity() : "")
-				.pincode(user != null && hasText(user.getPincode()) ? user.getPincode() : "")
-				.telephone(user != null && hasText(user.getTelephone()) ? user.getTelephone() : "")
-				.ein(user != null && hasText(user.getEin()) ? user.getEin() : "")
-				.gstin(user != null && hasText(user.getGstin()) ? user.getGstin() : "")
-				.website(user != null && hasText(user.getWebsite()) ? user.getWebsite() : "")
-				.address(user != null && hasText(user.getAddress()) ? user.getAddress() : "")
-				// ✅ NEW FIELDS END HERE
+	    // ✅ Bank Details Mapping (Updated As Per Your DTO)
+	    List<BankDetailsRequest> bankDetailsList = new ArrayList<>();
 
-				.taxId(user != null && hasText(user.getTaxId()) ? user.getTaxId() : "")
-				.businessId(user != null && hasText(user.getBusinessId()) ? user.getBusinessId() : "")
-				.preferredCurrency(
-						user != null && hasText(user.getPreferredCurrency()) ? user.getPreferredCurrency() : "")
-				.invoicePrefix(user != null && hasText(user.getInvoicePrefix()) ? user.getInvoicePrefix() : "")
-				.profilePicPath(user != null && hasText(user.getProfilePicPath()) ? user.getProfilePicPath() : "")
-				.role(mu != null && mu.getRole() != null ? mu.getRole().getRoleName()
-						: user != null && user.getRole() != null ? user.getRole().getRoleName() : "")
-				.build();
+	    if (user != null && user.getBankDetails() != null) {
+	        bankDetailsList = user.getBankDetails().stream()
+	                .map(bank -> BankDetailsRequest.builder()
+	                        .id(bank.getId())
+	                        .bankName(bank.getBankName())
+	                        .bankAccountNumber(bank.getBankAccountNumber())
+	                        .routingNumber(bank.getRoutingNumber())
+	                        .build())
+	                .toList();
+	    }
+
+	    return UserProfileResponse.builder()
+
+	            .id(user != null ? user.getId() : 0L)
+	            .fullName(resolveFullName(user, mu))
+
+	            .primaryEmail(user != null && hasText(user.getPrimaryEmail())
+	                    ? user.getPrimaryEmail()
+	                    : mu != null ? safe(mu.getEmail()) : normalizedEmail)
+
+	            .mobileNumber(user != null && hasText(user.getMobileNumber())
+	                    ? user.getMobileNumber()
+	                    : mu != null ? safe(mu.getMobileNumber()) : "")
+
+	            .alternativeEmail(user != null && hasText(user.getAlternativeEmail())
+	                    ? user.getAlternativeEmail() : "")
+
+	            .alternativeMobileNumber(user != null && hasText(user.getAlternativeMobileNumber())
+	                    ? user.getAlternativeMobileNumber() : "")
+
+	            .companyName(user != null && hasText(user.getCompanyName())
+	                    ? user.getCompanyName()
+	                    : mu != null ? safe(mu.getCompanyName()) : "")
+
+	            // ADDRESS
+	            .state(user != null && hasText(user.getState())
+	                    ? user.getState()
+	                    : mu != null ? safe(mu.getState()) : "")
+
+	            .country(user != null && hasText(user.getCountry())
+	                    ? user.getCountry()
+	                    : mu != null ? safe(mu.getCountry()) : "")
+
+	            .city(user != null && hasText(user.getCity())
+	                    ? user.getCity()
+	                    : mu != null ? safe(mu.getCity()) : "")
+
+	            .pincode(user != null && hasText(user.getPincode())
+	                    ? user.getPincode()
+	                    : mu != null ? safe(mu.getPincode()) : "")
+
+	            .telephone(user != null && hasText(user.getTelephone())
+	                    ? user.getTelephone()
+	                    : mu != null ? safe(mu.getTelephone()) : "")
+
+	            .ein(user != null && hasText(user.getEin())
+	                    ? user.getEin()
+	                    : mu != null ? safe(mu.getEin()) : "")
+
+	            .gstin(user != null && hasText(user.getGstin())
+	                    ? user.getGstin()
+	                    : mu != null ? safe(mu.getGstin()) : "")
+
+	            .website(user != null && hasText(user.getWebsite())
+	                    ? user.getWebsite()
+	                    : mu != null ? safe(mu.getWebsite()) : "")
+
+	            .address(user != null && hasText(user.getAddress())
+	                    ? user.getAddress()
+	                    : mu != null ? safe(mu.getAddress()) : "")
+
+	            // BUSINESS
+	            .taxId(user != null && hasText(user.getTaxId())
+	                    ? user.getTaxId() : "")
+
+	            .businessId(user != null && hasText(user.getBusinessId())
+	                    ? user.getBusinessId() : "")
+
+	            .preferredCurrency(user != null && hasText(user.getPreferredCurrency())
+	                    ? user.getPreferredCurrency() : "")
+
+	            .invoicePrefix(user != null && hasText(user.getInvoicePrefix())
+	                    ? user.getInvoicePrefix()
+	                    : mu != null ? safe(mu.getInvoicePrefix()) : "")
+
+	            // CORPORATE
+	            .fid(user != null && hasText(user.getFid())
+	                    ? user.getFid()
+	                    : mu != null ? safe(mu.getFid()) : "")
+
+	            .everifyId(user != null && hasText(user.getEverifyId())
+	                    ? user.getEverifyId()
+	                    : mu != null ? safe(mu.getEverifyId()) : "")
+
+	            .dunsNumber(user != null && hasText(user.getDunsNumber())
+	                    ? user.getDunsNumber()
+	                    : mu != null ? safe(mu.getDunsNumber()) : "")
 
 	            .stateOfIncorporation(user != null && hasText(user.getStateOfIncorporation())
 	                    ? user.getStateOfIncorporation()
