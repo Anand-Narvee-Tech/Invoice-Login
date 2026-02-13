@@ -28,7 +28,6 @@ public class EmailServiceImpl implements EmailService {
 			MimeMessage message = mailSender.createMimeMessage();
 			MimeMessageHelper helper = new MimeMessageHelper(message, true);
 
-			
 			helper.setFrom(fromEmail);
 			helper.setTo(toEmail);
 			helper.setSubject("Registration Successful - Invoicing Application");

@@ -1,8 +1,10 @@
 package com.example.entity;
 
+import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -10,6 +12,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -36,14 +39,9 @@ public class User {
 
 	@Column(unique = true, nullable = false)
 	private String email;
-
-//    private Long companyId;
-
 	private String mobileNumber;
 	private String companyName;
-
 	private String fullName;
-
 	private Boolean active;
 	private Boolean approved;
 
@@ -62,7 +60,6 @@ public class User {
 
 	@Column(name = "profile_pic_path")
 	private String profilePicPath;
-
 	private String alternativeEmail;
 	private String alternativeMobileNumber;
 	private String taxId;
@@ -98,11 +95,26 @@ public class User {
 
 	@Column(name = "address")
 	private String address;
-
-	@Column(name = "loginurl") 
+	
+	@Column(name = "loginurl")
 	private String loginUrl;
 
+
 	// Bhargav
+
+	// vasim
+	private String fid;
+	private String everifyId;
+	private String dunsNumber;
+	private String stateOfIncorporation;
+	private String naicsCode;
+	private String signingAuthorityName;
+	private String designation;
+	private String dateOfIncorporation;
+
+	
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<BankDetails> bankDetails;
 
 	@PrePersist
 	public void prePersist() {

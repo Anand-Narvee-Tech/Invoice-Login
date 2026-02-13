@@ -1,5 +1,9 @@
 package com.example.DTO;
 
+import java.util.List;
+
+import com.example.entity.BankDetails;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -34,4 +38,16 @@ public class UserProfileResponse {
     private String gstin;
     private String website;
 	private String address;
+	
+	
+	private String fid;
+	private String everifyId;
+	private String dunsNumber;
+	private String stateOfIncorporation;
+	private String naicsCode;
+	private String signingAuthorityName;
+	private String designation;
+	private String dateOfIncorporation;
+	private List<BankDetails> bankDetails;
+
 }

@@ -1,11 +1,14 @@
 package com.example.entity;
 
 import java.time.LocalDateTime;
+import java.util.List;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -136,6 +139,21 @@ public class ManageUsers {
 
 	// Bhargav
 
+	// vasim
+	private String fid;
+	private String everifyId;
+	private String dunsNumber;
+	private String stateOfIncorporation;
+	private String naicsCode;
+	private String signingAuthorityName;
+	private String designation;
+	private String dateOfIncorporation;
+	
+	@ElementCollection
+	private List<BankDetails> bankDetails;
+
+
+
 	@CreationTimestamp
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private LocalDateTime createdAt;
@@ -205,4 +223,6 @@ public class ManageUsers {
 	private boolean hasText(String value) {
 		return value != null && !value.isBlank();
 	}
+
+
 }
