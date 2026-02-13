@@ -100,11 +100,20 @@ public class ManageUsersServiceImpl implements ManageUserService {
 				.addedBy(entity.getAddedBy() != null ? entity.getAddedBy().getId().toString() : null)
 				.addedByName(addedByName).updatedBy(entity.getUpdatedBy()).updatedByName(updatedByName)
 
-				// 🔽 Newly added fields
+				// 🔽 Previously Added Fields
 				.state(entity.getState()).country(entity.getCountry()).pincode(entity.getPincode())
 				.loginUrl(entity.getLoginUrl()).telephone(entity.getTelephone()).ein(entity.getEin())
 				.gstin(entity.getGstin()).website(entity.getWebsite()).address(entity.getAddress())
-				.city(entity.getCity()).build();
+				.city(entity.getCity())
+
+				// 🔽 Newly Added Fields
+				.fid(entity.getFid()).everifyId(entity.getEverifyId()).dunsNumber(entity.getDunsNumber())
+				.stateOfIncorporation(entity.getStateOfIncorporation()).naicsCode(entity.getNaicsCode())
+				.signingAuthorityName(entity.getSigningAuthorityName()).designation(entity.getDesignation())
+				.dateOfIncorporation(entity.getDateOfIncorporation()).BankDetails(entity.getBankDetails()) // Make sure
+																											// getter
+																											// exists
+				.build();
 	}
 	// Bhargav
 
@@ -228,6 +237,20 @@ public class ManageUsersServiceImpl implements ManageUserService {
 			user.setAddress(savedManageUser.getAddress());
 			user.setLoginUrl(savedManageUser.getLoginUrl());
 			// Bhargav
+
+			// ✅ Newly Added Fields
+			user.setFid(savedManageUser.getFid());
+			user.setEverifyId(savedManageUser.getEverifyId());
+			user.setDunsNumber(savedManageUser.getDunsNumber());
+			user.setStateOfIncorporation(savedManageUser.getStateOfIncorporation());
+			user.setNaicsCode(savedManageUser.getNaicsCode());
+			user.setSigningAuthorityName(savedManageUser.getSigningAuthorityName());
+			user.setDesignation(savedManageUser.getDesignation());
+			user.setDateOfIncorporation(savedManageUser.getDateOfIncorporation());
+
+			// ✅ Bank Details
+			user.setBankDetails(savedManageUser.getBankDetails());
+
 			user.setApproved(true);
 			user.setActive(true);
 			user.setCreatedBy(currentUser);
@@ -450,6 +473,36 @@ public class ManageUsersServiceImpl implements ManageUserService {
 			existing.setWebsite(manageUsers.getWebsite());
 		if (manageUsers.getAddress() != null)
 			existing.setAddress(manageUsers.getAddress());
+
+		// ---------------- 6️⃣ Newly Added Additional Fields ----------------
+
+		if (manageUsers.getFid() != null)
+			existing.setFid(manageUsers.getFid());
+
+		if (manageUsers.getEverifyId() != null)
+			existing.setEverifyId(manageUsers.getEverifyId());
+
+		if (manageUsers.getDunsNumber() != null)
+			existing.setDunsNumber(manageUsers.getDunsNumber());
+
+		if (manageUsers.getStateOfIncorporation() != null)
+			existing.setStateOfIncorporation(manageUsers.getStateOfIncorporation());
+
+		if (manageUsers.getNaicsCode() != null)
+			existing.setNaicsCode(manageUsers.getNaicsCode());
+
+		if (manageUsers.getSigningAuthorityName() != null)
+			existing.setSigningAuthorityName(manageUsers.getSigningAuthorityName());
+
+		if (manageUsers.getDesignation() != null)
+			existing.setDesignation(manageUsers.getDesignation());
+
+		if (manageUsers.getDateOfIncorporation() != null)
+			existing.setDateOfIncorporation(manageUsers.getDateOfIncorporation());
+
+		// ✅ Bank Details (Only if not null & not empty)
+		if (manageUsers.getBankDetails() != null && !manageUsers.getBankDetails().isEmpty())
+			existing.setBankDetails(manageUsers.getBankDetails());
 
 		// ---------------- 6️⃣ Handle role updates safely ----------------
 		Role role = null;
@@ -737,7 +790,12 @@ public class ManageUsersServiceImpl implements ManageUserService {
 				.invoicePrefix(user.getInvoicePrefix()).companyName(user.getCompanyName()).state(user.getState())
 				.country(user.getCountry()).city(user.getCity()).pincode(user.getPincode())
 				.telephone(user.getTelephone()).ein(user.getEin()).gstin(user.getGstin()).website(user.getWebsite())
-				.address(user.getAddress()).build();
+				.address(user.getAddress()).fid(user.getFid()).everifyId(user.getEverifyId())
+				.dunsNumber(user.getDunsNumber()).stateOfIncorporation(user.getStateOfIncorporation())
+				.naicsCode(user.getNaicsCode()).signingAuthorityName(user.getSigningAuthorityName())
+				.designation(user.getDesignation()).dateOfIncorporation(user.getDateOfIncorporation())
+				.bankDetails(user.getBankDetails()) // Make sure
+				.build();
 	}
 
 	@Override
@@ -854,144 +912,133 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	    if (request.getFid() != null)
 	        user.setFid(request.getFid());
 
-	    if (request.getEverifyId() != null)
-	        user.setEverifyId(request.getEverifyId());
+		if (request.getFid() != null)
+			user.setFid(request.getFid());
 
-	    if (request.getDunsNumber() != null)
-	        user.setDunsNumber(request.getDunsNumber());
+		if (request.getEverifyId() != null)
+			user.setEverifyId(request.getEverifyId());
 
-	    if (request.getStateOfIncorporation() != null)
-	        user.setStateOfIncorporation(request.getStateOfIncorporation());
+		if (request.getDunsNumber() != null)
+			user.setDunsNumber(request.getDunsNumber());
 
-	    if (request.getNaicsCode() != null)
-	        user.setNaicsCode(request.getNaicsCode());
+		if (request.getStateOfIncorporation() != null)
+			user.setStateOfIncorporation(request.getStateOfIncorporation());
 
-	    if (request.getSigningAuthorityName() != null)
-	        user.setSigningAuthorityName(request.getSigningAuthorityName());
+		if (request.getNaicsCode() != null)
+			user.setNaicsCode(request.getNaicsCode());
 
-	    if (request.getDesignation() != null)
-	        user.setDesignation(request.getDesignation());
+		if (request.getDesignation() != null)
+			user.setDesignation(request.getDesignation());
 
-	    if (request.getDateOfIncorporation() != null)
-	        user.setDateOfIncorporation(request.getDateOfIncorporation());
+		if (request.getDateOfIncorporation() != null)
+			user.setDateOfIncorporation(request.getDateOfIncorporation());
 
+		if (request.getBankDetails() != null) {
 
-	    // ================= UPDATE MANAGE_USERS =================
+			userRepository.save(user);
 
-	    ManageUsers manageUser = manageUserRepository.findByEmail(userEmail);
+			// ---------- UPDATE MANAGE_USERS TABLE ----------
 
-	    if (manageUser == null)
-	        throw new RuntimeException("Manage user not found with email: " + userEmail);
+			// Use email from User entity instead of request
+			ManageUsers manageUser = manageUserRepository.findByEmail(userEmail);
 
-	    if (request.getFullName() != null)
-	        manageUser.setFullName(request.getFullName());
+			if (manageUser == null) {
+				throw new RuntimeException("Manage user not found with email: " + userEmail);
+			}
 
-	    if (request.getPrimaryEmail() != null)
-	        manageUser.setPrimaryEmail(request.getPrimaryEmail());
+			if (request.getFullName() != null)
+				manageUser.setFullName(request.getFullName());
 
-	    if (request.getMobileNumber() != null)
-	        manageUser.setMobileNumber(request.getMobileNumber());
+			if (request.getPrimaryEmail() != null)
+				manageUser.setPrimaryEmail(request.getPrimaryEmail());
 
-	    if (request.getCompanyName() != null)
-	        manageUser.setCompanyName(request.getCompanyName());
+			if (request.getMobileNumber() != null)
+				manageUser.setMobileNumber(request.getMobileNumber());
 
-	    if (request.getAddress() != null)
-	        manageUser.setAddress(request.getAddress());
+			if (request.getCompanyName() != null)
+				manageUser.setCompanyName(request.getCompanyName());
 
-	    if (request.getState() != null)
-	        manageUser.setState(request.getState());
+			if (request.getAddress() != null)
+				manageUser.setAddress(request.getAddress());
 
-	    if (request.getCity() != null)
-	        manageUser.setCity(request.getCity());
+			if (request.getState() != null)
+				manageUser.setState(request.getState());
 
-	    if (request.getCountry() != null)
-	        manageUser.setCountry(request.getCountry());
+			if (request.getCity() != null)
+				manageUser.setCity(request.getCity());
 
-	    if (request.getInvoicePrefix() != null)
-	        manageUser.setInvoicePrefix(request.getInvoicePrefix());
+			if (request.getCountry() != null)
+				manageUser.setCountry(request.getCountry());
 
-	    if (request.getPincode() != null)
-	        manageUser.setPincode(request.getPincode());
+			if (request.getInvoicePrefix() != null)
+				manageUser.setInvoicePrefix(request.getInvoicePrefix());
 
-	    if (request.getTelephone() != null)
-	        manageUser.setTelephone(request.getTelephone());
+			if (request.getTaxId() != null)
+				user.setTaxId(request.getTaxId());
 
-	    if (request.getEin() != null)
-	        manageUser.setEin(request.getEin());
+			if (request.getPincode() != null)
+				manageUser.setPincode(request.getPincode());
 
-	    if (request.getGstin() != null)
-	        manageUser.setGstin(request.getGstin());
+			if (request.getTelephone() != null)
+				manageUser.setTelephone(request.getTelephone());
 
-	    if (request.getWebsite() != null)
-	        manageUser.setWebsite(request.getWebsite());
+			if (request.getEin() != null)
+				manageUser.setEin(request.getEin());
 
-	    if (request.getFid() != null)
-	        manageUser.setFid(request.getFid());
+			if (request.getGstin() != null)
+				manageUser.setGstin(request.getGstin());
 
-	    if (request.getEverifyId() != null)
-	        manageUser.setEverifyId(request.getEverifyId());
+			if (request.getWebsite() != null)
+				manageUser.setWebsite(request.getWebsite());
 
-	    if (request.getDunsNumber() != null)
-	        manageUser.setDunsNumber(request.getDunsNumber());
+			// vasim
 
-	    if (request.getStateOfIncorporation() != null)
-	        manageUser.setStateOfIncorporation(request.getStateOfIncorporation());
+			if (request.getFid() != null)
+				manageUser.setFid(request.getFid());
 
-	    if (request.getNaicsCode() != null)
-	        manageUser.setNaicsCode(request.getNaicsCode());
+			if (request.getEverifyId() != null)
+				manageUser.setEverifyId(request.getEverifyId());
 
-	    if (request.getSigningAuthorityName() != null)
-	        manageUser.setSigningAuthorityName(request.getSigningAuthorityName());
+			if (request.getDunsNumber() != null)
+				manageUser.setDunsNumber(request.getDunsNumber());
 
-	    if (request.getDesignation() != null)
-	        manageUser.setDesignation(request.getDesignation());
+			if (request.getStateOfIncorporation() != null)
+				manageUser.setStateOfIncorporation(request.getStateOfIncorporation());
 
-	    if (request.getDateOfIncorporation() != null)
-	        manageUser.setDateOfIncorporation(request.getDateOfIncorporation());
+			if (request.getNaicsCode() != null)
+				manageUser.setSigningAuthorityName(request.getSigningAuthorityName());
 
-	    manageUserRepository.save(manageUser);
+			if (request.getDesignation() != null)
+				manageUser.setDesignation(request.getDesignation());
 
+			if (request.getDateOfIncorporation() != null)
+				manageUser.setDateOfIncorporation(request.getDateOfIncorporation());
 
-	    // ================= UPDATE BANK DETAILS =================
+			if (request.getBankDetails() != null) {
 
-	    if (request.getBankDetails() != null) {
+				List<BankDetails> bankEntities = new ArrayList<>();
 
-	        List<BankDetails> existingBanks = user.getBankDetails();
+				for (BankDetails dto : request.getBankDetails()) {
 
-	        // Remove deleted banks
-	        existingBanks.removeIf(existing ->
-	                request.getBankDetails().stream()
-	                        .noneMatch(dto -> dto.getId() != null && dto.getId().equals(existing.getId()))
-	        );
+					BankDetails bank = new BankDetails();
+					bank.setId(dto.getId());
+					bank.setBankName(dto.getBankName());
+					bank.setBankAccountNumber(dto.getBankAccountNumber());
+					bank.setRoutingNumber(dto.getRoutingNumber());
 
-	        for (BankDetailsRequest dto : request.getBankDetails()) {
+					bank.setUser(user); // VERY IMPORTANT
 
-	            BankDetails bank = existingBanks.stream()
-	                    .filter(b -> b.getId() != null && b.getId().equals(dto.getId()))
-	                    .findFirst()
-	                    .orElse(null);
+					bankEntities.add(bank);
+				}
 
-	            if (bank != null) {
-	                // UPDATE
-	                bank.setBankName(dto.getBankName());
-	                bank.setBankAccountNumber(dto.getBankAccountNumber());
-	                bank.setRoutingNumber(dto.getRoutingNumber());
-	            } else {
-	                // ADD NEW
-	                BankDetails newBank = new BankDetails();
-	                newBank.setBankName(dto.getBankName());
-	                newBank.setBankAccountNumber(dto.getBankAccountNumber());
-	                newBank.setRoutingNumber(dto.getRoutingNumber());
-	                newBank.setUser(user);
-	                existingBanks.add(newBank);
-	            }
-	        }
-	    }
+				user.getBankDetails().clear();
+				user.getBankDetails().addAll(bankEntities);
+			}
+//vasim
 
-	    return userRepository.save(user);
+		}
+		return user;
 	}
-
-
 	// Bhargav
 
 	/* Addedby Bhargav */

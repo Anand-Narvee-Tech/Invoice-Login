@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -139,6 +140,21 @@ public class ManageUsers {
 
 	// Bhargav
 
+	// vasim
+	private String fid;
+	private String everifyId;
+	private String dunsNumber;
+	private String stateOfIncorporation;
+	private String naicsCode;
+	private String signingAuthorityName;
+	private String designation;
+	private String dateOfIncorporation;
+	
+	@ElementCollection
+	private List<BankDetails> bankDetails;
+
+
+
 	@CreationTimestamp
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private LocalDateTime createdAt;
@@ -218,4 +234,6 @@ public class ManageUsers {
 	private boolean hasText(String value) {
 		return value != null && !value.isBlank();
 	}
+
+
 }

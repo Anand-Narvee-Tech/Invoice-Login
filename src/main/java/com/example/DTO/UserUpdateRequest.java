@@ -51,6 +51,6 @@ public class UserUpdateRequest {
 	private String designation;
 	private String dateOfIncorporation;
 
-	private List<BankDetailsRequest> bankDetails;
+	private List<BankDetails> bankDetails;
 
 }
