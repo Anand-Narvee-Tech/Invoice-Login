@@ -704,12 +704,14 @@ public class UserServiceImpl implements UserService {
 			String htmlContent = "<!DOCTYPE html>" + "<html>" + "<head><meta charset='UTF-8'></head>"
 					+ "<body style='margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f9f9f9;'>"
 					+ "<table align='center' width='600' cellpadding='0' cellspacing='0' style='background:#ffffff; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.1);'>"
+					
 					+ "<tr>"
 					+ "<td align='center' bgcolor='#2563eb' style='padding:20px; border-top-left-radius:8px; border-top-right-radius:8px;'>"
 					+ "<h2 style='color:#ffffff; margin:0;'>Verify Your Registration</h2>" + "</td>" + "</tr>" + "<tr>"
 					+ "<td style='padding:30px;'>" + "<h3 style='color:#004b6e; margin-top:0;'>Invoicing Team</h3>"
 					+ "<p style='font-size:16px; color:#4b5563;'>" + "Hello <strong>" + safeFullname
 					+ "</strong>,<br><br>"
+					
 					+ "Thank you for choosing <b>Invoicing Application</b>. Use the following OTP to complete your Registration:"
 					+ "</p>" + "<div style='text-align:center; margin:32px 0;'>"
 					+ "<div style='display:inline-block; padding:18px 32px; border-radius:12px; border:2px dashed #2563eb; background:#eff6ff; font-size:36px; font-weight:700; letter-spacing:8px; color:#1e3a8a;'>"
