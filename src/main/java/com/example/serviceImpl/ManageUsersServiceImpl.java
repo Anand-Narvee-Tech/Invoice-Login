@@ -2,6 +2,7 @@ package com.example.serviceImpl;
 
 import java.io.IOException;
 
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -123,152 +124,33 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 	/** ================= CREATE USER ================= **/
 //Bhargav-14/02/26
-//	@Override
-//	@Transactional
-//	public ManageUserDTO createUser(ManageUsers manageUsers, String loggedInEmail) {
-//
-//		User currentUser = getCurrentLoggedInUser(loggedInEmail);
-//
-//		if (currentUser.getRole() == null || currentUser.getRole().getRoleName() == null) {
-//			throw new BusinessException("Logged-in user role not found");
-//		}
-//
-//		String currentUserRole = currentUser.getRole().getRoleName();
-//
-//		if (!List.of("SUPERADMIN", "ADMIN").contains(currentUserRole.toUpperCase())) {
-//			throw new BusinessException("You do not have permission to create users");
-//		}
-//
-//		if ("ADMIN".equalsIgnoreCase(currentUserRole) && "SUPERADMIN".equalsIgnoreCase(manageUsers.getRoleName())) {
-//			throw new BusinessException("ADMIN cannot create SUPERADMIN");
-//		}
-//
-//		String newUserEmail = manageUsers.getEmail().trim().toLowerCase();
-//		manageUsers.setEmail(newUserEmail);
-//
-//		if (manageUserRepository.existsByEmailIgnoreCase(newUserEmail)) {
-//			throw new BusinessException("Email already exists");
-//		}
-//
-//		String currentDomain = extractDomain(currentUser.getEmail());
-//		String newUserDomain = extractDomain(newUserEmail);
-//
-//		if (!currentDomain.equalsIgnoreCase(newUserDomain)) {
-//			throw new BusinessException("You can create users only for your own company");
-//		}
-//
-//		manageUsers.setCompanyDomain(currentDomain);
-//
-//		Role role = roleRepository.findByRoleNameIgnoreCase(manageUsers.getRoleName())
-//				.orElseThrow(() -> new BusinessException("Role not found: " + manageUsers.getRoleName()));
-//
-//		manageUsers.setRole(role);
-//		manageUsers.setRoleName(role.getRoleName());
-//
-//		if (manageUsers.getFullName() != null && !manageUsers.getFullName().isBlank()) {
-//			manageUsers.setFullName(manageUsers.getFullName().trim());
-//		}
-//
-//		manageUsers.setAddedBy(currentUser);
-//		manageUsers.setCreatedBy(currentUser);
-//		manageUsers.setAddedByName(buildFullName(currentUser));
-//
-//		ManageUsers savedManageUser = manageUserRepository.save(manageUsers);
-//
-//		emailService.sendRegistrationEmail(savedManageUser.getEmail(), savedManageUser.getFullName(),
-//				savedManageUser.getRoleName());
-//
-//		userRepository.findByEmailIgnoreCase(newUserEmail).ifPresentOrElse(existingUser -> {
-//
-//			// Update existing user
-//			if (existingUser.getCreatedBy() == null) {
-//				existingUser.setCreatedBy(currentUser);
-//			}
-//
-//			existingUser.setRole(role);
-//			existingUser.setFullName(savedManageUser.getFullName());
-//			existingUser.setPrimaryEmail(savedManageUser.getPrimaryEmail());
-//			existingUser.setActive(true);
-//			existingUser.setApproved(true);
-//
-//			userRepository.save(existingUser);
-//
-//		}, () -> {
-//
-//			// Create new user
-//			User user = new User();
-//			user.setEmail(savedManageUser.getEmail());
-//			user.setFirstName(savedManageUser.getFirstName());
-//			user.setMiddleName(savedManageUser.getMiddleName());
-//			user.setLastName(savedManageUser.getLastName());
-//			user.setFullName(savedManageUser.getFullName());
-//			user.setPrimaryEmail(savedManageUser.getPrimaryEmail());
-//			// Bhargav
-//			user.setCompanyName(savedManageUser.getCompanyName());
-//			user.setMobileNumber(savedManageUser.getMobileNumber());
-//			user.setState(savedManageUser.getState());
-//			user.setCountry(savedManageUser.getCountry());
-//			user.setCity(savedManageUser.getCity());
-//			user.setPincode(savedManageUser.getPincode());
-//			user.setTelephone(savedManageUser.getTelephone());
-//			user.setWebsite(savedManageUser.getWebsite());
-//			user.setEin(savedManageUser.getEin());
-//			user.setAddress(savedManageUser.getAddress());
-//			user.setLoginUrl(savedManageUser.getLoginUrl());
-//			// Bhargav
-//
-//			// ✅ Newly Added Fields
-//			user.setFid(savedManageUser.getFid());
-//			user.setEverifyId(savedManageUser.getEverifyId());
-//			user.setDunsNumber(savedManageUser.getDunsNumber());
-//			user.setStateOfIncorporation(savedManageUser.getStateOfIncorporation());
-//			user.setNaicsCode(savedManageUser.getNaicsCode());
-//			user.setSigningAuthorityName(savedManageUser.getSigningAuthorityName());
-//			user.setDesignation(savedManageUser.getDesignation());
-//			user.setDateOfIncorporation(savedManageUser.getDateOfIncorporation());
-//
-//			// ✅ Bank Details
-//			user.setBankDetails(savedManageUser.getBankDetails());
-//
-//			user.setApproved(true);
-//			user.setActive(true);
-//			user.setCreatedBy(currentUser);
-//			user.setRole(role);
-//			System.err.println(userRepository.save(user));
-//			userRepository.save(user);
-//		});
-//
-//		return convertToDTO(savedManageUser);
-//	}
-//Bhargav-14/02/26
-
-//Added by Bhargav
 	@Override
 	@Transactional
 	public ManageUserDTO createUser(ManageUsers manageUsers, String loggedInEmail) {
 
-		// 1️⃣ Get logged-in user
 		User currentUser = getCurrentLoggedInUser(loggedInEmail);
 
 		if (currentUser.getRole() == null || currentUser.getRole().getRoleName() == null) {
 			throw new BusinessException("Logged-in user role not found");
 		}
 
-		String currentUserRole = currentUser.getRole().getRoleName().toUpperCase();
+		String currentUserRole = currentUser.getRole().getRoleName();
 
-		if (!List.of("SUPERADMIN", "ADMIN").contains(currentUserRole)) {
+		if (!List.of("SUPERADMIN", "ADMIN").contains(currentUserRole.toUpperCase())) {
 			throw new BusinessException("You do not have permission to create users");
 		}
 
-		if ("ADMIN".equals(currentUserRole) && "SUPERADMIN".equalsIgnoreCase(manageUsers.getRoleName())) {
+		if ("ADMIN".equalsIgnoreCase(currentUserRole) && "SUPERADMIN".equalsIgnoreCase(manageUsers.getRoleName())) {
 			throw new BusinessException("ADMIN cannot create SUPERADMIN");
 		}
 
-		// 2️⃣ Normalize Email
 		String newUserEmail = manageUsers.getEmail().trim().toLowerCase();
 		manageUsers.setEmail(newUserEmail);
 
-		// 3️⃣ Check Company Domain
+		if (manageUserRepository.existsByEmailIgnoreCase(newUserEmail)) {
+			throw new BusinessException("Email already exists");
+		}
+
 		String currentDomain = extractDomain(currentUser.getEmail());
 		String newUserDomain = extractDomain(newUserEmail);
 
@@ -278,33 +160,28 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 		manageUsers.setCompanyDomain(currentDomain);
 
-		// 4️⃣ Fetch Role (Single Query)
 		Role role = roleRepository.findByRoleNameIgnoreCase(manageUsers.getRoleName())
 				.orElseThrow(() -> new BusinessException("Role not found: " + manageUsers.getRoleName()));
 
 		manageUsers.setRole(role);
 		manageUsers.setRoleName(role.getRoleName());
 
-		// 5️⃣ Trim Full Name
-		if (manageUsers.getFullName() != null) {
-			manageUsers.setFullName(manageUsers.getFullName().trim().replaceAll("\\s+", " "));
+		if (manageUsers.getFullName() != null && !manageUsers.getFullName().isBlank()) {
+			manageUsers.setFullName(manageUsers.getFullName().trim());
 		}
 
 		manageUsers.setAddedBy(currentUser);
 		manageUsers.setCreatedBy(currentUser);
 		manageUsers.setAddedByName(buildFullName(currentUser));
 
-		// 6️⃣ Save ManageUsers
 		ManageUsers savedManageUser = manageUserRepository.save(manageUsers);
 
-		// 7️⃣ Check if User already exists (Single Query)
-		Optional<User> existingUserOpt = userRepository.findByEmailIgnoreCase(newUserEmail);
+		emailService.sendRegistrationEmail(savedManageUser.getEmail(), savedManageUser.getFullName(),
+				savedManageUser.getRoleName());
 
-		if (existingUserOpt.isPresent()) {
+		userRepository.findByEmailIgnoreCase(newUserEmail).ifPresentOrElse(existingUser -> {
 
-			// 🔹 Update Existing User
-			User existingUser = existingUserOpt.get();
-
+			// Update existing user
 			if (existingUser.getCreatedBy() == null) {
 				existingUser.setCreatedBy(currentUser);
 			}
@@ -317,18 +194,17 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 			userRepository.save(existingUser);
 
-		} else {
+		}, () -> {
 
-			// 🔹 Create New User
+			// Create new user
 			User user = new User();
-
 			user.setEmail(savedManageUser.getEmail());
 			user.setFirstName(savedManageUser.getFirstName());
 			user.setMiddleName(savedManageUser.getMiddleName());
 			user.setLastName(savedManageUser.getLastName());
 			user.setFullName(savedManageUser.getFullName());
 			user.setPrimaryEmail(savedManageUser.getPrimaryEmail());
-
+			// Bhargav
 			user.setCompanyName(savedManageUser.getCompanyName());
 			user.setMobileNumber(savedManageUser.getMobileNumber());
 			user.setState(savedManageUser.getState());
@@ -340,8 +216,9 @@ public class ManageUsersServiceImpl implements ManageUserService {
 			user.setEin(savedManageUser.getEin());
 			user.setAddress(savedManageUser.getAddress());
 			user.setLoginUrl(savedManageUser.getLoginUrl());
+			// Bhargav
 
-			// Additional Fields
+			// ✅ Newly Added Fields
 			user.setFid(savedManageUser.getFid());
 			user.setEverifyId(savedManageUser.getEverifyId());
 			user.setDunsNumber(savedManageUser.getDunsNumber());
@@ -351,25 +228,158 @@ public class ManageUsersServiceImpl implements ManageUserService {
 			user.setDesignation(savedManageUser.getDesignation());
 			user.setDateOfIncorporation(savedManageUser.getDateOfIncorporation());
 
+			// ✅ Bank Details
 			user.setBankDetails(savedManageUser.getBankDetails());
 
 			user.setApproved(true);
 			user.setActive(true);
 			user.setCreatedBy(currentUser);
 			user.setRole(role);
-
+			System.err.println(userRepository.save(user));
 			userRepository.save(user);
-		}
-
-		// 8️⃣ Send Email AFTER Save (Async - non blocking)
-		emailService.sendRegistrationEmail(savedManageUser.getEmail(), savedManageUser.getFullName(),
-				savedManageUser.getRoleName());
+		});
 
 		return convertToDTO(savedManageUser);
 	}
+//Bhargav-14/02/26
 
-	
-	
+//Added by Bhargav
+//	@Override
+//	@Transactional
+//	public ManageUserDTO createUser(ManageUsers manageUsers, String loggedInEmail) {
+//
+//		// 1️⃣ Get logged-in user
+//		User currentUser = getCurrentLoggedInUser(loggedInEmail);
+//
+//		if (currentUser.getRole() == null || currentUser.getRole().getRoleName() == null) {
+//			throw new BusinessException("Logged-in user role not found");
+//		}
+//
+//		String currentUserRole = currentUser.getRole().getRoleName().toUpperCase();
+//
+//		if (!List.of("SUPERADMIN", "ADMIN").contains(currentUserRole)) {
+//			throw new BusinessException("You do not have permission to create users");
+//		}
+//
+//		if ("ADMIN".equals(currentUserRole) && "SUPERADMIN".equalsIgnoreCase(manageUsers.getRoleName())) {
+//			throw new BusinessException("ADMIN cannot create SUPERADMIN");
+//		}
+//
+//		// 2️⃣ Normalize Email
+//		String newUserEmail = manageUsers.getEmail().trim().toLowerCase();
+//		manageUsers.setEmail(newUserEmail);
+//
+//		// 3️⃣ Check Company Domain
+//		String currentDomain = extractDomain(currentUser.getEmail());
+//		String newUserDomain = extractDomain(newUserEmail);
+//
+//		if (!currentDomain.equalsIgnoreCase(newUserDomain)) {
+//			throw new BusinessException("You can create users only for your own company");
+//		}
+//
+//		manageUsers.setCompanyDomain(currentDomain);
+//
+//		// 4️⃣ Fetch Role (Single Query)
+//		Role role = roleRepository.findByRoleNameIgnoreCase(manageUsers.getRoleName())
+//				.orElseThrow(() -> new BusinessException("Role not found: " + manageUsers.getRoleName()));
+//
+//		manageUsers.setRole(role);
+//		manageUsers.setRoleName(role.getRoleName());
+//
+//		// 5️⃣ Trim Full Name
+//		if (manageUsers.getFullName() != null) {
+//			manageUsers.setFullName(manageUsers.getFullName().trim().replaceAll("\\s+", " "));
+//		}
+//
+//		manageUsers.setAddedBy(currentUser);
+//		manageUsers.setCreatedBy(currentUser);
+//		manageUsers.setAddedByName(buildFullName(currentUser));
+//
+//		// 6️⃣ Save ManageUsers
+//		ManageUsers savedManageUser = manageUserRepository.save(manageUsers);
+//
+//		// 7️⃣ Check if User already exists (Single Query)
+//		Optional<User> existingUserOpt = userRepository.findByEmailIgnoreCase(newUserEmail);
+//
+//		if (existingUserOpt.isPresent()) {
+//
+//			// 🔹 Update Existing User
+//			User existingUser = existingUserOpt.get();
+//
+//			if (existingUser.getCreatedBy() == null) {
+//				existingUser.setCreatedBy(currentUser);
+//			}
+//
+//			existingUser.setRole(role);
+//			existingUser.setFullName(savedManageUser.getFullName());
+//			existingUser.setPrimaryEmail(savedManageUser.getPrimaryEmail());
+//			existingUser.setActive(true);
+//			existingUser.setApproved(true);
+//
+//			userRepository.save(existingUser);
+//
+//		} else {
+//
+//			// 🔹 Create New User
+//			User user = new User();
+//
+//			user.setEmail(savedManageUser.getEmail());
+//			user.setFirstName(savedManageUser.getFirstName());
+//			user.setMiddleName(savedManageUser.getMiddleName());
+//			user.setLastName(savedManageUser.getLastName());
+//			user.setFullName(savedManageUser.getFullName());
+//			user.setPrimaryEmail(savedManageUser.getPrimaryEmail());
+//
+//			user.setCompanyName(savedManageUser.getCompanyName());
+//			user.setMobileNumber(savedManageUser.getMobileNumber());
+//			user.setState(savedManageUser.getState());
+//			user.setCountry(savedManageUser.getCountry());
+//			user.setCity(savedManageUser.getCity());
+//			user.setPincode(savedManageUser.getPincode());
+//			user.setTelephone(savedManageUser.getTelephone());
+//			user.setWebsite(savedManageUser.getWebsite());
+//			user.setEin(savedManageUser.getEin());
+//			user.setAddress(savedManageUser.getAddress());
+//			user.setLoginUrl(savedManageUser.getLoginUrl());
+//
+//			// Additional Fields
+//			user.setFid(savedManageUser.getFid());
+//			user.setEverifyId(savedManageUser.getEverifyId());
+//			user.setDunsNumber(savedManageUser.getDunsNumber());
+//			user.setStateOfIncorporation(savedManageUser.getStateOfIncorporation());
+//			user.setNaicsCode(savedManageUser.getNaicsCode());
+//			user.setSigningAuthorityName(savedManageUser.getSigningAuthorityName());
+//			user.setDesignation(savedManageUser.getDesignation());
+//			user.setDateOfIncorporation(savedManageUser.getDateOfIncorporation());
+//
+//			user.setBankDetails(savedManageUser.getBankDetails());
+//
+//			user.setApproved(true);
+//			user.setActive(true);
+//			user.setCreatedBy(currentUser);
+//			user.setRole(role);
+//
+//	        userRepository.save(user);
+//            
+//	        }
+//
+//	        // 🔹 Send Registration Email
+//	        try {
+//	            emailService.sendRegistrationEmail(
+//	                    savedManageUser.getEmail(),
+//	                    savedManageUser.getFullName(),
+//	                    savedManageUser.getRoleName()
+//	            );
+//	        } catch (Exception e) {
+//	        	log.error("Error sending registration email: {}", e.getMessage());
+//	        }
+//
+//	        return convertToDTO(savedManageUser);
+//	    }
+//
+//
+//	
+//	
 //Added by Bhargav
 
 	/** ================= UPDATE USER PROFILE ================= **/
