@@ -148,6 +148,7 @@ public class ManageUsers {
 	private String signingAuthorityName;
 	private String designation;
 	private String dateOfIncorporation;
+	private String taxId;
 	
 	@ElementCollection
 	private List<BankDetails> bankDetails;

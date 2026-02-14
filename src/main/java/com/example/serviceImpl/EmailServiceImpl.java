@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 
 import com.example.service.EmailService;
@@ -22,6 +24,8 @@ public class EmailServiceImpl implements EmailService {
 	@Value("${app.frontend.url}")
 	private String loginUrl;
 
+	
+	@Async
 	@Override
 	public void sendRegistrationEmail(String toEmail, String fullName, String roleName) {
 		try {
@@ -62,7 +66,7 @@ public class EmailServiceImpl implements EmailService {
 			mailContent.append("Hello <strong>" + fullName + "</strong>,</p>");
 
 			mailContent.append("<p style='font-size:15px; color:#374151;'>");
-			mailContent.append("Your account role has been successfully updated by the administrator.");
+			mailContent.append("Your account role has been successfully created and assigned by the administrator.");
 			mailContent.append("</p>");
 
 			mailContent.append("<p style='font-size:15px; color:#374151;'>");
