@@ -40,7 +40,6 @@ import com.example.serviceImpl.UserServiceImpl;
 import com.example.utils.JwtUtil;
 
 import jakarta.persistence.Column;
-import jakarta.validation.Valid;
 
 //@CrossOrigin("*")
 @RestController
@@ -73,7 +72,7 @@ public class UserController {
 	@PostMapping("/register")
 	public ResponseEntity<RestAPIResponse> register(
 			@RequestHeader(value = "Authorization", required = false) String authorizationHeader,
-			@RequestBody @Valid RegisterRequest request) {
+			@RequestBody  RegisterRequest request) {
 
 		try {
 
