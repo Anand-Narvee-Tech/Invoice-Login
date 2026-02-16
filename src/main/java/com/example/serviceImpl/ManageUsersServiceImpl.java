@@ -1,6 +1,8 @@
 package com.example.serviceImpl;
 
 import java.io.IOException;
+
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -30,7 +33,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.example.DTO.BankDetailsRequest;
 import com.example.DTO.ManageUserDTO;
 import com.example.DTO.SortingRequestDTO;
 import com.example.DTO.UserUpdateRequest;
@@ -59,7 +61,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 	@Autowired
 	private EmailService emailService;
-
+	
 	@Autowired
 	private UserNameSyncServiceImpl userNameSyncServiceImpl;
 
@@ -81,40 +83,26 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 	/** ================= CONVERT ENTITY TO DTO ================= **/
 	private ManageUserDTO convertToDTO(ManageUsers entity) {
-		String fullName = entity.getFullName() != null && !entity.getFullName().isBlank()
-				? entity.getFullName().trim().replaceAll("\\s+", " ")
+
+		String fullName = entity.getFullName() != null ? entity.getFullName().trim().replaceAll("\\s+", " ")
 				: buildFullName(entity);
 
-		String addedByName = entity.getAddedByName() != null ? entity.getAddedByName() : "SYSTEM";
-
-		String updatedByName = entity.getUpdatedByName(); // already stored
-		if (updatedByName == null && entity.getUpdatedBy() != null) {
-			Optional<User> updatedByUser = userRepository.findById(entity.getUpdatedBy());
-			updatedByName = updatedByUser.map(this::buildFullName).orElse(null);
-		}
-		// Bhargav
 		return ManageUserDTO.builder().id(entity.getId()).fullName(fullName).firstName(entity.getFirstName())
 				.middleName(entity.getMiddleName()).lastName(entity.getLastName()).email(entity.getEmail())
 				.primaryEmail(entity.getPrimaryEmail()).companyName(entity.getCompanyName())
 				.roleName(entity.getRole() != null ? entity.getRole().getRoleName() : null)
 				.addedBy(entity.getAddedBy() != null ? entity.getAddedBy().getId().toString() : null)
-				.addedByName(addedByName).updatedBy(entity.getUpdatedBy()).updatedByName(updatedByName)
-
-				// 🔽 Newly added fields
-				.state(entity.getState()).country(entity.getCountry()).pincode(entity.getPincode())
-				.loginUrl(entity.getLoginUrl()).telephone(entity.getTelephone()).ein(entity.getEin())
-				.gstin(entity.getGstin()).website(entity.getWebsite()).address(entity.getAddress())
-				.city(entity.getCity()).build();
+				.addedByName(entity.getAddedByName()).updatedBy(entity.getUpdatedBy())
+				.updatedByName(entity.getUpdatedByName()).state(entity.getState()).country(entity.getCountry())
+				.pincode(entity.getPincode()).loginUrl(entity.getLoginUrl()).telephone(entity.getTelephone())
+				.ein(entity.getEin()).gstin(entity.getGstin()).website(entity.getWebsite()).address(entity.getAddress())
+				.city(entity.getCity()).fid(entity.getFid()).everifyId(entity.getEverifyId())
+				.dunsNumber(entity.getDunsNumber()).stateOfIncorporation(entity.getStateOfIncorporation())
+				.naicsCode(entity.getNaicsCode()).signingAuthorityName(entity.getSigningAuthorityName())
+				.designation(entity.getDesignation()).dateOfIncorporation(entity.getDateOfIncorporation())
+				.BankDetails(entity.getBankDetails()).build();
 	}
 	// Bhargav
-
-//		return ManageUserDTO.builder().id(entity.getId()).fullName(fullName).firstName(entity.getFirstName())
-//				.middleName(entity.getMiddleName()).lastName(entity.getLastName()).email(entity.getEmail())
-//				.primaryEmail(entity.getPrimaryEmail())
-//				.roleName(entity.getRole() != null ? entity.getRole().getRoleName() : null)
-//				.addedBy(entity.getAddedBy() != null ? entity.getAddedBy().getId().toString() : null)
-//				.addedByName(addedByName).updatedBy(entity.getUpdatedBy()).updatedByName(updatedByName).build();
-//	}
 
 	/** ================= BUILD FULL NAME ================= **/
 	private String buildFullName(ManageUsers user) {
@@ -135,6 +123,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	}
 
 	/** ================= CREATE USER ================= **/
+//Bhargav-14/02/26
 	@Override
 	@Transactional
 	public ManageUserDTO createUser(ManageUsers manageUsers, String loggedInEmail) {
@@ -228,6 +217,20 @@ public class ManageUsersServiceImpl implements ManageUserService {
 			user.setAddress(savedManageUser.getAddress());
 			user.setLoginUrl(savedManageUser.getLoginUrl());
 			// Bhargav
+
+			// ✅ Newly Added Fields
+			user.setFid(savedManageUser.getFid());
+			user.setEverifyId(savedManageUser.getEverifyId());
+			user.setDunsNumber(savedManageUser.getDunsNumber());
+			user.setStateOfIncorporation(savedManageUser.getStateOfIncorporation());
+			user.setNaicsCode(savedManageUser.getNaicsCode());
+			user.setSigningAuthorityName(savedManageUser.getSigningAuthorityName());
+			user.setDesignation(savedManageUser.getDesignation());
+			user.setDateOfIncorporation(savedManageUser.getDateOfIncorporation());
+
+			// ✅ Bank Details
+			user.setBankDetails(savedManageUser.getBankDetails());
+
 			user.setApproved(true);
 			user.setActive(true);
 			user.setCreatedBy(currentUser);
@@ -238,6 +241,146 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 		return convertToDTO(savedManageUser);
 	}
+//Bhargav-14/02/26
+
+//Added by Bhargav
+//	@Override
+//	@Transactional
+//	public ManageUserDTO createUser(ManageUsers manageUsers, String loggedInEmail) {
+//
+//		// 1️⃣ Get logged-in user
+//		User currentUser = getCurrentLoggedInUser(loggedInEmail);
+//
+//		if (currentUser.getRole() == null || currentUser.getRole().getRoleName() == null) {
+//			throw new BusinessException("Logged-in user role not found");
+//		}
+//
+//		String currentUserRole = currentUser.getRole().getRoleName().toUpperCase();
+//
+//		if (!List.of("SUPERADMIN", "ADMIN").contains(currentUserRole)) {
+//			throw new BusinessException("You do not have permission to create users");
+//		}
+//
+//		if ("ADMIN".equals(currentUserRole) && "SUPERADMIN".equalsIgnoreCase(manageUsers.getRoleName())) {
+//			throw new BusinessException("ADMIN cannot create SUPERADMIN");
+//		}
+//
+//		// 2️⃣ Normalize Email
+//		String newUserEmail = manageUsers.getEmail().trim().toLowerCase();
+//		manageUsers.setEmail(newUserEmail);
+//
+//		// 3️⃣ Check Company Domain
+//		String currentDomain = extractDomain(currentUser.getEmail());
+//		String newUserDomain = extractDomain(newUserEmail);
+//
+//		if (!currentDomain.equalsIgnoreCase(newUserDomain)) {
+//			throw new BusinessException("You can create users only for your own company");
+//		}
+//
+//		manageUsers.setCompanyDomain(currentDomain);
+//
+//		// 4️⃣ Fetch Role (Single Query)
+//		Role role = roleRepository.findByRoleNameIgnoreCase(manageUsers.getRoleName())
+//				.orElseThrow(() -> new BusinessException("Role not found: " + manageUsers.getRoleName()));
+//
+//		manageUsers.setRole(role);
+//		manageUsers.setRoleName(role.getRoleName());
+//
+//		// 5️⃣ Trim Full Name
+//		if (manageUsers.getFullName() != null) {
+//			manageUsers.setFullName(manageUsers.getFullName().trim().replaceAll("\\s+", " "));
+//		}
+//
+//		manageUsers.setAddedBy(currentUser);
+//		manageUsers.setCreatedBy(currentUser);
+//		manageUsers.setAddedByName(buildFullName(currentUser));
+//
+//		// 6️⃣ Save ManageUsers
+//		ManageUsers savedManageUser = manageUserRepository.save(manageUsers);
+//
+//		// 7️⃣ Check if User already exists (Single Query)
+//		Optional<User> existingUserOpt = userRepository.findByEmailIgnoreCase(newUserEmail);
+//
+//		if (existingUserOpt.isPresent()) {
+//
+//			// 🔹 Update Existing User
+//			User existingUser = existingUserOpt.get();
+//
+//			if (existingUser.getCreatedBy() == null) {
+//				existingUser.setCreatedBy(currentUser);
+//			}
+//
+//			existingUser.setRole(role);
+//			existingUser.setFullName(savedManageUser.getFullName());
+//			existingUser.setPrimaryEmail(savedManageUser.getPrimaryEmail());
+//			existingUser.setActive(true);
+//			existingUser.setApproved(true);
+//
+//			userRepository.save(existingUser);
+//
+//		} else {
+//
+//			// 🔹 Create New User
+//			User user = new User();
+//
+//			user.setEmail(savedManageUser.getEmail());
+//			user.setFirstName(savedManageUser.getFirstName());
+//			user.setMiddleName(savedManageUser.getMiddleName());
+//			user.setLastName(savedManageUser.getLastName());
+//			user.setFullName(savedManageUser.getFullName());
+//			user.setPrimaryEmail(savedManageUser.getPrimaryEmail());
+//
+//			user.setCompanyName(savedManageUser.getCompanyName());
+//			user.setMobileNumber(savedManageUser.getMobileNumber());
+//			user.setState(savedManageUser.getState());
+//			user.setCountry(savedManageUser.getCountry());
+//			user.setCity(savedManageUser.getCity());
+//			user.setPincode(savedManageUser.getPincode());
+//			user.setTelephone(savedManageUser.getTelephone());
+//			user.setWebsite(savedManageUser.getWebsite());
+//			user.setEin(savedManageUser.getEin());
+//			user.setAddress(savedManageUser.getAddress());
+//			user.setLoginUrl(savedManageUser.getLoginUrl());
+//
+//			// Additional Fields
+//			user.setFid(savedManageUser.getFid());
+//			user.setEverifyId(savedManageUser.getEverifyId());
+//			user.setDunsNumber(savedManageUser.getDunsNumber());
+//			user.setStateOfIncorporation(savedManageUser.getStateOfIncorporation());
+//			user.setNaicsCode(savedManageUser.getNaicsCode());
+//			user.setSigningAuthorityName(savedManageUser.getSigningAuthorityName());
+//			user.setDesignation(savedManageUser.getDesignation());
+//			user.setDateOfIncorporation(savedManageUser.getDateOfIncorporation());
+//
+//			user.setBankDetails(savedManageUser.getBankDetails());
+//
+//			user.setApproved(true);
+//			user.setActive(true);
+//			user.setCreatedBy(currentUser);
+//			user.setRole(role);
+//
+//	        userRepository.save(user);
+//            
+//	        }
+//
+//	        // 🔹 Send Registration Email
+//	        try {
+//	            emailService.sendRegistrationEmail(
+//	                    savedManageUser.getEmail(),
+//	                    savedManageUser.getFullName(),
+//	                    savedManageUser.getRoleName()
+//	            );
+//	        } catch (Exception e) {
+//	        	log.error("Error sending registration email: {}", e.getMessage());
+//	        }
+//
+//	        return convertToDTO(savedManageUser);
+//	    }
+//
+//
+//	
+//	
+//Added by Bhargav
 
 	/** ================= UPDATE USER PROFILE ================= **/
 	@Override
@@ -450,6 +593,36 @@ public class ManageUsersServiceImpl implements ManageUserService {
 			existing.setWebsite(manageUsers.getWebsite());
 		if (manageUsers.getAddress() != null)
 			existing.setAddress(manageUsers.getAddress());
+
+		// ---------------- 6️⃣ Newly Added Additional Fields ----------------
+
+		if (manageUsers.getFid() != null)
+			existing.setFid(manageUsers.getFid());
+
+		if (manageUsers.getEverifyId() != null)
+			existing.setEverifyId(manageUsers.getEverifyId());
+
+		if (manageUsers.getDunsNumber() != null)
+			existing.setDunsNumber(manageUsers.getDunsNumber());
+
+		if (manageUsers.getStateOfIncorporation() != null)
+			existing.setStateOfIncorporation(manageUsers.getStateOfIncorporation());
+
+		if (manageUsers.getNaicsCode() != null)
+			existing.setNaicsCode(manageUsers.getNaicsCode());
+
+		if (manageUsers.getSigningAuthorityName() != null)
+			existing.setSigningAuthorityName(manageUsers.getSigningAuthorityName());
+
+		if (manageUsers.getDesignation() != null)
+			existing.setDesignation(manageUsers.getDesignation());
+
+		if (manageUsers.getDateOfIncorporation() != null)
+			existing.setDateOfIncorporation(manageUsers.getDateOfIncorporation());
+
+		// ✅ Bank Details (Only if not null & not empty)
+		if (manageUsers.getBankDetails() != null && !manageUsers.getBankDetails().isEmpty())
+			existing.setBankDetails(manageUsers.getBankDetails());
 
 		// ---------------- 6️⃣ Handle role updates safely ----------------
 		Role role = null;
@@ -737,7 +910,12 @@ public class ManageUsersServiceImpl implements ManageUserService {
 				.invoicePrefix(user.getInvoicePrefix()).companyName(user.getCompanyName()).state(user.getState())
 				.country(user.getCountry()).city(user.getCity()).pincode(user.getPincode())
 				.telephone(user.getTelephone()).ein(user.getEin()).gstin(user.getGstin()).website(user.getWebsite())
-				.address(user.getAddress()).build();
+				.address(user.getAddress()).fid(user.getFid()).everifyId(user.getEverifyId())
+				.dunsNumber(user.getDunsNumber()).stateOfIncorporation(user.getStateOfIncorporation())
+				.naicsCode(user.getNaicsCode()).signingAuthorityName(user.getSigningAuthorityName())
+				.designation(user.getDesignation()).dateOfIncorporation(user.getDateOfIncorporation())
+				.bankDetails(user.getBankDetails()) // Make sure
+				.build();
 	}
 
 	@Override
@@ -838,8 +1016,11 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	    if (request.getTaxId() != null)
 	        user.setTaxId(request.getTaxId());
 
-	    if (request.getBusinessId() != null)
-	        user.setBusinessId(request.getBusinessId());
+		if (request.getSigningAuthorityName() != null)
+			user.setSigningAuthorityName(request.getSigningAuthorityName());
+		
+		if (request.getBusinessId() != null)
+			user.setBusinessId(request.getBusinessId());
 
 	    if (request.getTelephone() != null)
 	        user.setTelephone(request.getTelephone());
@@ -854,144 +1035,135 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	    if (request.getFid() != null)
 	        user.setFid(request.getFid());
 
-	    if (request.getEverifyId() != null)
-	        user.setEverifyId(request.getEverifyId());
+		if (request.getFid() != null)
+			user.setFid(request.getFid());
 
-	    if (request.getDunsNumber() != null)
-	        user.setDunsNumber(request.getDunsNumber());
+		if (request.getEverifyId() != null)
+			user.setEverifyId(request.getEverifyId());
 
-	    if (request.getStateOfIncorporation() != null)
-	        user.setStateOfIncorporation(request.getStateOfIncorporation());
+		if (request.getDunsNumber() != null)
+			user.setDunsNumber(request.getDunsNumber());
 
-	    if (request.getNaicsCode() != null)
-	        user.setNaicsCode(request.getNaicsCode());
+		if (request.getStateOfIncorporation() != null)
+			user.setStateOfIncorporation(request.getStateOfIncorporation());
 
-	    if (request.getSigningAuthorityName() != null)
-	        user.setSigningAuthorityName(request.getSigningAuthorityName());
+		if (request.getNaicsCode() != null)
+			user.setNaicsCode(request.getNaicsCode());
 
-	    if (request.getDesignation() != null)
-	        user.setDesignation(request.getDesignation());
+		if (request.getDesignation() != null)
+			user.setDesignation(request.getDesignation());
 
-	    if (request.getDateOfIncorporation() != null)
-	        user.setDateOfIncorporation(request.getDateOfIncorporation());
+		if (request.getDateOfIncorporation() != null)
+			user.setDateOfIncorporation(request.getDateOfIncorporation());
 
+		if (request.getBankDetails() != null) {
 
-	    // ================= UPDATE MANAGE_USERS =================
+			userRepository.save(user);
 
-	    ManageUsers manageUser = manageUserRepository.findByEmail(userEmail);
+			// ---------- UPDATE MANAGE_USERS TABLE ----------
 
-	    if (manageUser == null)
-	        throw new RuntimeException("Manage user not found with email: " + userEmail);
+			// Use email from User entity instead of request
+			ManageUsers manageUser = manageUserRepository.findByEmail(userEmail);
 
-	    if (request.getFullName() != null)
-	        manageUser.setFullName(request.getFullName());
+			if (manageUser == null) {
+				throw new RuntimeException("Manage user not found with email: " + userEmail);
+			}
 
-	    if (request.getPrimaryEmail() != null)
-	        manageUser.setPrimaryEmail(request.getPrimaryEmail());
+			if (request.getFullName() != null)
+				manageUser.setFullName(request.getFullName());
 
-	    if (request.getMobileNumber() != null)
-	        manageUser.setMobileNumber(request.getMobileNumber());
+			if (request.getPrimaryEmail() != null)
+				manageUser.setPrimaryEmail(request.getPrimaryEmail());
 
-	    if (request.getCompanyName() != null)
-	        manageUser.setCompanyName(request.getCompanyName());
+			if (request.getMobileNumber() != null)
+				manageUser.setMobileNumber(request.getMobileNumber());
 
-	    if (request.getAddress() != null)
-	        manageUser.setAddress(request.getAddress());
+			if (request.getCompanyName() != null)
+				manageUser.setCompanyName(request.getCompanyName());
 
-	    if (request.getState() != null)
-	        manageUser.setState(request.getState());
+			if (request.getAddress() != null)
+				manageUser.setAddress(request.getAddress());
 
-	    if (request.getCity() != null)
-	        manageUser.setCity(request.getCity());
+			if (request.getState() != null)
+				manageUser.setState(request.getState());
 
-	    if (request.getCountry() != null)
-	        manageUser.setCountry(request.getCountry());
+			if (request.getCity() != null)
+				manageUser.setCity(request.getCity());
 
-	    if (request.getInvoicePrefix() != null)
-	        manageUser.setInvoicePrefix(request.getInvoicePrefix());
+			if (request.getCountry() != null)
+				manageUser.setCountry(request.getCountry());
 
-	    if (request.getPincode() != null)
-	        manageUser.setPincode(request.getPincode());
+			if (request.getInvoicePrefix() != null)
+				manageUser.setInvoicePrefix(request.getInvoicePrefix());
 
-	    if (request.getTelephone() != null)
-	        manageUser.setTelephone(request.getTelephone());
+			
+			
+			if (request.getTaxId() != null)
+				manageUser.setTaxId(request.getTaxId());
 
-	    if (request.getEin() != null)
-	        manageUser.setEin(request.getEin());
+			if (request.getPincode() != null)
+				manageUser.setPincode(request.getPincode());
 
-	    if (request.getGstin() != null)
-	        manageUser.setGstin(request.getGstin());
+			if (request.getTelephone() != null)
+				manageUser.setTelephone(request.getTelephone());
 
-	    if (request.getWebsite() != null)
-	        manageUser.setWebsite(request.getWebsite());
+			if (request.getEin() != null)
+				manageUser.setEin(request.getEin());
 
-	    if (request.getFid() != null)
-	        manageUser.setFid(request.getFid());
+			if (request.getGstin() != null)
+				manageUser.setGstin(request.getGstin());
 
-	    if (request.getEverifyId() != null)
-	        manageUser.setEverifyId(request.getEverifyId());
+			if (request.getWebsite() != null)
+				manageUser.setWebsite(request.getWebsite());
 
-	    if (request.getDunsNumber() != null)
-	        manageUser.setDunsNumber(request.getDunsNumber());
+			// vasim
 
-	    if (request.getStateOfIncorporation() != null)
-	        manageUser.setStateOfIncorporation(request.getStateOfIncorporation());
+			if (request.getFid() != null)
+				manageUser.setFid(request.getFid());
 
-	    if (request.getNaicsCode() != null)
-	        manageUser.setNaicsCode(request.getNaicsCode());
+			if (request.getEverifyId() != null)
+				manageUser.setEverifyId(request.getEverifyId());
 
-	    if (request.getSigningAuthorityName() != null)
-	        manageUser.setSigningAuthorityName(request.getSigningAuthorityName());
+			if (request.getDunsNumber() != null)
+				manageUser.setDunsNumber(request.getDunsNumber());
 
-	    if (request.getDesignation() != null)
-	        manageUser.setDesignation(request.getDesignation());
+			if (request.getStateOfIncorporation() != null)
+				manageUser.setStateOfIncorporation(request.getStateOfIncorporation());
 
-	    if (request.getDateOfIncorporation() != null)
-	        manageUser.setDateOfIncorporation(request.getDateOfIncorporation());
+			if (request.getSigningAuthorityName() != null)
+				manageUser.setSigningAuthorityName(request.getSigningAuthorityName());
 
-	    manageUserRepository.save(manageUser);
+			if (request.getDesignation() != null)
+				manageUser.setDesignation(request.getDesignation());
 
+			if (request.getDateOfIncorporation() != null)
+				manageUser.setDateOfIncorporation(request.getDateOfIncorporation());
 
-	    // ================= UPDATE BANK DETAILS =================
+			if (request.getBankDetails() != null) {
 
-	    if (request.getBankDetails() != null) {
+				List<BankDetails> bankEntities = new ArrayList<>();
 
-	        List<BankDetails> existingBanks = user.getBankDetails();
+				for (BankDetails dto : request.getBankDetails()) {
 
-	        // Remove deleted banks
-	        existingBanks.removeIf(existing ->
-	                request.getBankDetails().stream()
-	                        .noneMatch(dto -> dto.getId() != null && dto.getId().equals(existing.getId()))
-	        );
+					BankDetails bank = new BankDetails();
+					bank.setId(dto.getId());
+					bank.setBankName(dto.getBankName());
+					bank.setBankAccountNumber(dto.getBankAccountNumber());
+					bank.setRoutingNumber(dto.getRoutingNumber());
 
-	        for (BankDetailsRequest dto : request.getBankDetails()) {
+					bank.setUser(user); // VERY IMPORTANT
 
-	            BankDetails bank = existingBanks.stream()
-	                    .filter(b -> b.getId() != null && b.getId().equals(dto.getId()))
-	                    .findFirst()
-	                    .orElse(null);
+					bankEntities.add(bank);
+				}
 
-	            if (bank != null) {
-	                // UPDATE
-	                bank.setBankName(dto.getBankName());
-	                bank.setBankAccountNumber(dto.getBankAccountNumber());
-	                bank.setRoutingNumber(dto.getRoutingNumber());
-	            } else {
-	                // ADD NEW
-	                BankDetails newBank = new BankDetails();
-	                newBank.setBankName(dto.getBankName());
-	                newBank.setBankAccountNumber(dto.getBankAccountNumber());
-	                newBank.setRoutingNumber(dto.getRoutingNumber());
-	                newBank.setUser(user);
-	                existingBanks.add(newBank);
-	            }
-	        }
-	    }
+				user.getBankDetails().clear();
+				user.getBankDetails().addAll(bankEntities);
+			}
+//vasim
 
-	    return userRepository.save(user);
+		}
+		return user;
 	}
-
-
 	// Bhargav
 
 	/* Addedby Bhargav */
@@ -1148,6 +1320,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
 		// ✅ Convert to DTO
 		return manageUsersPage.map(this::convertToDTO);
 	}
+
 
 	/* Addedby Bhargav */
 
