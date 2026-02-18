@@ -52,15 +52,13 @@ public class ManageUsersController {
 	private ManageUserService manageUsersService;
 
 	// 🔹 Create user (accessible by SUPERADMIN or ADMIN)
-	@PreAuthorize("hasAnyAuthority('SUPERADMIN','ADMIN')")
+	@PreAuthorize("hasAuthority('USER_CREATE')")
 	@PostMapping("/manageusers/save")
 	public ResponseEntity<RestAPIResponse> createUser(@RequestBody ManageUsers manageUsers,
-			Authentication authentication) {
-
-		String loggedInEmail = authentication.getName(); // auto from JWT
-		ManageUserDTO savedUser = manageUsersService.createUser(manageUsers, loggedInEmail);
-
-		return ResponseEntity.ok(new RestAPIResponse("Success", "User created successfully", savedUser));
+	        Authentication authentication) {
+	    String loggedInEmail = authentication.getName();
+	    ManageUserDTO savedUser = manageUsersService.createUser(manageUsers, loggedInEmail);
+	    return ResponseEntity.ok(new RestAPIResponse("Success", "User created successfully", savedUser));
 	}
 
 	// @PreAuthorize("isAuthenticated()") // any logged-in user can update their

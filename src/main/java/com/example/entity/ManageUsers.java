@@ -150,10 +150,8 @@ public class ManageUsers {
 	private String dateOfIncorporation;
 	private String taxId;
 	
-	@ElementCollection
+	@ElementCollection(fetch = FetchType.EAGER)
 	private List<BankDetails> bankDetails;
-
-
 
 	@CreationTimestamp
 	@Column(name = "created_at", nullable = false, updatable = false)
