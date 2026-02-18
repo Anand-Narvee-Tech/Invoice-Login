@@ -1,6 +1,5 @@
 package com.example.config;
 
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +33,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-
         String path = request.getRequestURI();
 
         // Skip public endpoints
@@ -55,14 +53,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         String token = authHeader.substring(7).trim();
-
         if (!jwtService.validateToken(token)) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("{\"error\":\"Invalid or expired token\"}");
             return;
         }
 
-        // Extract email and roles from JWT
+        // Extract claims from JWT
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(Keys.hmacShaKeyFor(jwtService.getSecret().getBytes()))
                 .build()
@@ -76,18 +73,25 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Roles stored as List<String> in claim "roles"
-        List<String> roles = claims.get("roles", List.class);
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+
+        // ✅ Read roles from JWT and add as authorities (WITHOUT "ROLE_" prefix
+        // so hasAuthority('ADMIN') works instead of hasRole('ADMIN'))
+        List<String> roles = claims.get("roles", List.class);
         if (roles != null) {
-            roles.forEach(r -> authorities.add(new SimpleGrantedAuthority("ROLE_" + r.toUpperCase())));
+            roles.forEach(r -> authorities.add(new SimpleGrantedAuthority(r.toUpperCase())));
+        }
+
+        // ✅ Read privileges from JWT and add as authorities
+        List<String> privileges = claims.get("privileges", List.class);
+        if (privileges != null) {
+            privileges.forEach(p -> authorities.add(new SimpleGrantedAuthority(p)));
         }
 
         // Set Authentication in SecurityContext
         UsernamePasswordAuthenticationToken authToken =
                 new UsernamePasswordAuthenticationToken(email, null, authorities);
         authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
         SecurityContextHolder.getContext().setAuthentication(authToken);
 
         filterChain.doFilter(request, response);
