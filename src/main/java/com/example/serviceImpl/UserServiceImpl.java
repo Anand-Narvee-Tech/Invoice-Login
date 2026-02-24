@@ -353,7 +353,7 @@ public class UserServiceImpl implements UserService {
 //
 //		log.info("✅ Default super admins initialized successfully");
 //	}
-
+	
 	/** ===================== Register new user ===================== **/
 	@Override
 	public String register(User user) {

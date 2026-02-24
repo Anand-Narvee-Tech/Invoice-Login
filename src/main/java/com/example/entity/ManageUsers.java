@@ -165,7 +165,7 @@ public class ManageUsers {
 	@PreUpdate
 	public void normalizeAndValidate() {
 
-		// Normalize names
+		// Normalize names 
 		this.firstName = capitalize(this.firstName);
 		this.middleName = capitalize(this.middleName);
 		this.lastName = capitalize(this.lastName);
