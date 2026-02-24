@@ -21,7 +21,9 @@ public interface RoleService {
     RoleDTO assignPrivilegeToRole(Long roleId, Long privilegeId, Long adminId);
 
     List<RoleDTO> getAllRoles();
-
+   
+    
+    
     RoleDTO getRoleById(Long id);
 
     // ✅ Updated signature

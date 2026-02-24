@@ -43,19 +43,48 @@ public class RoleController {
 
 	private static final Logger log = LoggerFactory.getLogger(RoleController.class);
 
+// comment By Bhargav 24/02/26
 	// ✅ Create Role (already correct)
-	@PostMapping(value = "/save", consumes = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<RestAPIResponse> createRole(@RequestBody RoleDTO roleDTO, Authentication authentication) {
-		try {
-			String loggedInEmail = authentication.getName();
-			RoleDTO saved = roleServiceImpl.createRole(roleDTO, loggedInEmail);
-			return ResponseEntity.ok(new RestAPIResponse("success", "Role saved successfully", saved));
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new RestAPIResponse("error", "Failed to save role: " + e.getMessage(), null));
-		}
-	}
+//	@PostMapping(value = "/save", consumes = MediaType.APPLICATION_JSON_VALUE)
+//	public ResponseEntity<RestAPIResponse> createRole(@RequestBody RoleDTO roleDTO, Authentication authentication) {
+//		try {
+//			String loggedInEmail = authentication.getName();
+//			RoleDTO saved = roleServiceImpl.createRole(roleDTO, loggedInEmail);
+//			return ResponseEntity.ok(new RestAPIResponse("success", "Role saved successfully", saved));
+//		} catch (Exception e) {
+//			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//					.body(new RestAPIResponse("error", "Failed to save role: " + e.getMessage(), null));
+//		}
+//	}
+// comment By Bhargav 24/02/26
 
+// Added By Bhargav 24/02/26
+	@PostMapping(value = "/save", consumes = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<RestAPIResponse> createRole(@RequestBody RoleDTO roleDTO,
+	                                                  Authentication authentication) {
+	    try {
+	        String loggedInEmail = authentication.getName();
+	        RoleDTO saved = roleServiceImpl.createRole(roleDTO, loggedInEmail);
+
+	        return ResponseEntity.ok(
+	                new RestAPIResponse("success", "Role saved successfully", saved));
+
+	    } catch (RuntimeException e) {
+
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+	                .body(new RestAPIResponse("error", e.getMessage(), null));
+
+	    } catch (Exception e) {
+
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new RestAPIResponse("error", "Something went wrong", null));
+	    }
+	}
+	
+// Added By Bhargav 24/02/26	
+	
+	
+	
 	// ✅ Assign privileges category-wise to a role
 	@PostMapping("/privilege/save")
 	public ResponseEntity<RestAPIResponse> assignPrivilegesToRole(@RequestBody Map<String, Object> payload) {
