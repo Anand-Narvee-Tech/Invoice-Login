@@ -99,7 +99,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
 				.city(entity.getCity()).fid(entity.getFid()).everifyId(entity.getEverifyId())
 				.dunsNumber(entity.getDunsNumber()).stateOfIncorporation(entity.getStateOfIncorporation())
 				.naicsCode(entity.getNaicsCode()).signingAuthorityName(entity.getSigningAuthorityName())
-				.designation(entity.getDesignation()).dateOfIncorporation(entity.getDateOfIncorporation()).businessCountry(entity.getBusinessCountry())
+				.designation(entity.getDesignation()).dateOfIncorporation(entity.getDateOfIncorporation())
 				.BankDetails(entity.getBankDetails()).build();
 	}
 	// Bhargav
@@ -488,7 +488,6 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	        user.setSigningAuthorityName(savedManageUser.getSigningAuthorityName());
 	        user.setDesignation(savedManageUser.getDesignation());
 	        user.setDateOfIncorporation(savedManageUser.getDateOfIncorporation());
-	        user.setBusinessCountry(savedManageUser.getBusinessCountry());
 
 	        user.setBankDetails(savedManageUser.getBankDetails());
 

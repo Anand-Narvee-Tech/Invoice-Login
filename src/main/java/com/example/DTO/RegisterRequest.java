@@ -62,8 +62,5 @@ public class RegisterRequest {
 	@JsonProperty("token")
 	private String token;
 	
-	@JsonProperty("businessCountry")
-	private String businessCountry;
-	
 	//Bhargav
 }

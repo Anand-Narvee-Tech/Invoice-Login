@@ -131,7 +131,6 @@ public class UserController {
 			finalResponse.put("website", savedUser.getWebsite());
 			finalResponse.put("address", savedUser.getAddress());
 			finalResponse.put("loginurl", savedUser.getLoginUrl());
-			finalResponse.put("businessCountry", savedUser.getBusinessCountry());
 
 			// ---------- ADDED PART (AS YOU REQUESTED) ----------
 			finalResponse.put("roleName", roleName);

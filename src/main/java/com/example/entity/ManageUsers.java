@@ -101,9 +101,6 @@ public class ManageUsers {
 	private Boolean active = true;
 
 	private String invoicePrefix;
-	
-	@Column(name = "businessCountry")
-	private String businessCountry;
 
 	// Bhargav
 
