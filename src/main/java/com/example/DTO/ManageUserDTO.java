@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.example.entity.BankDetails;
 
+import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -29,6 +30,7 @@ public class ManageUserDTO {
 	private Long updatedBy; // updater user ID
 	private String addedByName; // addedBy display name
 	private String updatedByName; // updater display name
+	private String businessCountry;
 
 	// 🔽 Newly added fields
 	// Bhargav
@@ -53,7 +55,6 @@ public class ManageUserDTO {
 	private String signingAuthorityName;
 	private String designation;
 	private String dateOfIncorporation;
-	
 	private List<BankDetails> BankDetails;
 
 

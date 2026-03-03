@@ -28,6 +28,7 @@ public class UserProfileResponse {
 	private String invoicePrefix;
 	private String profilePicPath;
 	private String role;
+	private String businessCountry;
 
 	private String state;
     private String country;

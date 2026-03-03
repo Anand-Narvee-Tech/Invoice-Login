@@ -24,7 +24,7 @@ public class SecurityConfig {
             				"/auth/updated/save",
             			    "/auth/login/**",
             			    "/auth/register/**",
-            			    "/auth/otp/**","/auth/check-email/{email}",
+            			    "/auth/otp/**","/auth/check-email/**",
             			    "/manageusers/searchAndsorting/getall/**",
             			    "/auth/updated/save/**"
 //            			    "/auth/getall/privileges"
