@@ -38,7 +38,7 @@ public class UserProfileResponse {
 	private String gstin;
 	private String website;
 	private String address;
-	
+	private String businessCountry;
 	
 	private String fid;
 	private String everifyId;

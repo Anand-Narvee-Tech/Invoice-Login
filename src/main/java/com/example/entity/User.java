@@ -99,7 +99,8 @@ public class User {
 	@Column(name = "loginurl")
 	private String loginUrl;
 
-
+	@Column(name = "businessCountry")
+	private String businessCountry;
 	// Bhargav
 
 	// vasim

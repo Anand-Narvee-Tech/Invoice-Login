@@ -39,6 +39,7 @@ public class UserUpdateRequest {
 	private String gstin;
 	private String website;
 	private String address;
+	private String businessCountry;
 	// Bhargav
 
 	// vasim
