@@ -20,24 +20,21 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "updated_profile")
 public class Admin {
-	
-	
-	 @Id
-	    @GeneratedValue(strategy = GenerationType.IDENTITY)
-	    private Long id;
 
-	    private String fullName;
-
-	   @Column(unique = true, nullable = false)
-	    private String primaryEmail;
-	    private String alternativeEmail;
-	    private String mobileNumber;
-	    private String alternativeMobileNumber;
-	    private String companyName;
-        private String taxId;	    
-	    private String businessId;
-	    private String prefferedCurrency;
-	    private String invoicePrefix;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+	private String fullName;
+	@Column(unique = true, nullable = false)
+	private String primaryEmail;
+	private String alternativeEmail;
+	private String mobileNumber;
+	private String alternativeMobileNumber;
+	private String companyName;
+	private String taxId;
+	private String businessId;
+	private String prefferedCurrency;
+	private String invoicePrefix;
 //	    private String country;
 //	    private String zipCode;
 //	    private String linkedinProfile;

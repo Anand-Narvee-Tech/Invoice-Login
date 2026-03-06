@@ -52,6 +52,10 @@ public class RegisterRequest {
 
 	@JsonProperty("gstin")
 	private String gstin;
+	
+	@JsonProperty("businessCountry")
+	private String businessCountry;
+
 
 	@JsonProperty("website")
 	private String website;

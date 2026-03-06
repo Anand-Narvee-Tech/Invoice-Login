@@ -99,7 +99,7 @@ public class UserServiceImpl implements UserService {
 				.primaryEmail(user.getPrimaryEmail()).mobileNumber(user.getMobileNumber())
 				.companyName(user.getCompanyName()).roleName(user.getRoleName())
 				.addedBy(user.getAddedBy() != null ? user.getAddedBy().getId().toString() : null)
-				.addedByName(user.getAddedByName()).updatedByName(user.getUpdatedByName())
+				.addedByName(user.getAddedByName()).updatedByName(user.getUpdatedByName()).businessCountry(user.getBusinessCountry())
 				// ✅ ADD THESE
 				.state(user.getState()).country(user.getCountry()).pincode(user.getPincode()).city(user.getCity())
 				.telephone(user.getTelephone()).ein(user.getEin()).gstin(user.getGstin()).website(user.getWebsite())
@@ -221,6 +221,7 @@ public class UserServiceImpl implements UserService {
 		String Gstin = manageUsers.getGstin();
 		String Website = manageUsers.getWebsite();
 		String Address = manageUsers.getAddress();
+		String BusinessCountry =manageUsers.getBusinessCountry();
 
 		// 1️⃣ Normalize email
 		String email = manageUsers.getEmail().trim().toLowerCase();
@@ -260,7 +261,7 @@ public class UserServiceImpl implements UserService {
 			u.setApproved(true);
 			u.setActive(true);
 			u.setRole(adminRole);
-
+			u.setBusinessCountry(BusinessCountry);
 			return userRepository.save(u);
 		});
 
@@ -276,6 +277,7 @@ public class UserServiceImpl implements UserService {
 		manageUsers.setGstin(Gstin);
 		manageUsers.setWebsite(Website);
 		manageUsers.setAddress(Address);
+		manageUsers.setBusinessCountry(BusinessCountry);
 		manageUsers.setApproved(true);
 		manageUsers.setActive(true);
 		manageUsers.setRole(adminRole);
@@ -1015,6 +1017,7 @@ public class UserServiceImpl implements UserService {
 				.gstin(user != null && hasText(user.getGstin()) ? user.getGstin() : "")
 				.website(user != null && hasText(user.getWebsite()) ? user.getWebsite() : "")
 				.address(user != null && hasText(user.getAddress()) ? user.getAddress() : "")
+				.businessCountry(user != null && hasText(user.getBusinessCountry()) ? user.getBusinessCountry() : "")
 
 				// ✅ Newly Added Fields
 				.fid(user != null && hasText(user.getFid()) ? user.getFid() : "")
@@ -1114,6 +1117,9 @@ public class UserServiceImpl implements UserService {
 
 		manageUsers.setCompanyName(request.getCompanyName());
 
+		manageUsers.setBusinessCountry(request.getBusinessCountry());
+
+		
 		manageUsers.setState(request.getState());
 		manageUsers.setCity(request.getCity());
 		manageUsers.setCountry(request.getCountry());

@@ -30,15 +30,15 @@ public class UserProfileResponse {
 	private String role;
 
 	private String state;
-    private String country;
-    private String city;
-    private String pincode;
-    private String telephone;
-    private String ein;
-    private String gstin;
-    private String website;
+	private String country;
+	private String city;
+	private String pincode;
+	private String telephone;
+	private String ein;
+	private String gstin;
+	private String website;
 	private String address;
-	
+	private String businessCountry;
 	
 	private String fid;
 	private String everifyId;
