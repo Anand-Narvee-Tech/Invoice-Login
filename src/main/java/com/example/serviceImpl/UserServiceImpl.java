@@ -99,13 +99,14 @@ public class UserServiceImpl implements UserService {
 				.primaryEmail(user.getPrimaryEmail()).mobileNumber(user.getMobileNumber())
 				.companyName(user.getCompanyName()).roleName(user.getRoleName())
 				.addedBy(user.getAddedBy() != null ? user.getAddedBy().getId().toString() : null)
-				.addedByName(user.getAddedByName()).updatedByName(user.getUpdatedByName()).businessCountry(user.getBusinessCountry())
-				// ✅ ADD THESE
-				.state(user.getState()).country(user.getCountry()).pincode(user.getPincode()).city(user.getCity())
+				.addedByName(user.getAddedByName()).updatedByName(user.getUpdatedByName())
+				.businessCountry(user.getBusinessCountry()).state(user.getState()).country(user.getCountry())
+				.pincode(user.getPincode()).city(user.getCity()).suite(user.getSuite())
+				.companylogo(user.getCompanylogo())
 				.telephone(user.getTelephone()).ein(user.getEin()).gstin(user.getGstin()).website(user.getWebsite())
-				.address(user.getAddress()).build();
+				.address(user.getAddress()).loginUrl(user.getLoginUrl()) 
+				.build();
 	}
-
 	//
 
 	private String extractDomain(String email) {
@@ -206,94 +207,102 @@ public class UserServiceImpl implements UserService {
 	@Transactional
 	public ManageUserDTO registerCompanyUser(ManageUsers manageUsers) {
 
-		final String ADMIN_ROLE = "ADMIN";
+	    final String ADMIN_ROLE = "ADMIN";
 
-		// 🔥 preserve incoming values
-		String mobileNumber = manageUsers.getMobileNumber();
-		String companyName = manageUsers.getCompanyName();
+	    // Preserve incoming values
+	    String mobileNumber  = manageUsers.getMobileNumber();
+	    String companyName   = manageUsers.getCompanyName();
+	    String state         = manageUsers.getState();
+	    String country       = manageUsers.getCountry();
+	    String city          = manageUsers.getCity();
+	    String pincode       = manageUsers.getPincode();
+	    String telephone     = manageUsers.getTelephone();
+	    String ein           = manageUsers.getEin();
+	    String gstin         = manageUsers.getGstin();
+	    String website       = manageUsers.getWebsite();
+	    String address       = manageUsers.getAddress();
+	    String BusinessCountry = manageUsers.getBusinessCountry();
+	    String companylogo   = manageUsers.getCompanylogo();
+	    String suite         = manageUsers.getSuite();
 
-		String State = manageUsers.getState();
-		String Country = manageUsers.getCountry();
-		String City = manageUsers.getCity();
-		String Pincode = manageUsers.getPincode();
-		String Telephone = manageUsers.getTelephone();
-		String Ein = manageUsers.getEin();
-		String Gstin = manageUsers.getGstin();
-		String Website = manageUsers.getWebsite();
-		String Address = manageUsers.getAddress();
-		String BusinessCountry =manageUsers.getBusinessCountry();
+	    // 1️⃣ Normalize email safely
+	    if (manageUsers.getEmail() == null || manageUsers.getEmail().isBlank()) {
+	        throw new BusinessException("Email is required");
+	    }
+	    String email = manageUsers.getEmail().trim().toLowerCase();
+	    manageUsers.setEmail(email);
+	    manageUsers.setPrimaryEmail(email);
 
-		// 1️⃣ Normalize email
-		String email = manageUsers.getEmail().trim().toLowerCase();
-		manageUsers.setEmail(email);
-		manageUsers.setPrimaryEmail(email);
+	    // 2️⃣ Extract domain
+	    String domain = extractDomain(email);
+	    manageUsers.setCompanyDomain(domain);
 
-		// 2️⃣ Extract domain
-		String domain = extractDomain(email);
-		manageUsers.setCompanyDomain(domain);
+	    // 3️⃣ Check if ADMIN already exists
+	    if (manageUserRepository.existsByCompanyDomainAndRole_RoleNameIgnoreCase(domain, ADMIN_ROLE)) {
+	        throw new BusinessException("Company already registered. Please contact your company administrator.");
+	    }
 
-		// 3️⃣ Check if ADMIN already exists
-		if (manageUserRepository.existsByCompanyDomainAndRole_RoleNameIgnoreCase(domain, ADMIN_ROLE)) {
-			throw new BusinessException("Company already registered. Please contact your company administrator.");
-		}
+	    // 4️⃣ Fetch ADMIN role
+	    Role adminRole = roleRepository.findByRoleNameIgnoreCase(ADMIN_ROLE)
+	            .orElseThrow(() -> new BusinessException(
+	                    "Required role ADMIN is not configured. Please contact system administrator."));
 
-		// 4️⃣ Fetch ADMIN role
-		Role adminRole = roleRepository.findByRoleNameIgnoreCase(ADMIN_ROLE).orElseThrow(() -> new BusinessException(
-				"Required role ADMIN is not configured. Please contact system administrator."));
+	    // 5️⃣ Create USER
+	    User user = userRepository.findByEmailIgnoreCase(email).orElseGet(() -> {
+	        User u = new User();
+	        u.setEmail(email);
+	        u.setFirstName(manageUsers.getFirstName());
+	        u.setCompanyName(companyName);
+	        u.setMobileNumber(mobileNumber);
+	        u.setState(state);
+	        u.setCountry(country);
+	        u.setCity(city);
+	        u.setPincode(pincode);
+	        u.setTelephone(telephone);
+	        u.setEin(ein);
+	        u.setGstin(gstin);
+	        u.setWebsite(website);
+	        u.setAddress(address);
+	        u.setCompanylogo(companylogo);
+	        u.setSuite(suite);
+	        u.setBusinessCountry(BusinessCountry);
+	        u.setApproved(true);
+	        u.setActive(true);
+	        u.setRole(adminRole);
+	        return userRepository.save(u);
+	    });
 
-		// 5️⃣ Create USER
-		User user = userRepository.findByEmailIgnoreCase(email).orElseGet(() -> {
-			User u = new User();
-			u.setEmail(email);
-			u.setFirstName(manageUsers.getFirstName());
-			u.setCompanyName(companyName);
-			u.setMobileNumber(mobileNumber);
-			// 🔽 newly added fields
-			u.setState(State);
-			u.setCountry(Country);
-			u.setCity(City);
-			u.setPincode(Pincode);
-			u.setTelephone(Telephone);
-			u.setEin(Ein);
-			u.setGstin(Gstin);
-			u.setWebsite(Website);
-			u.setAddress(Address);
-			u.setApproved(true);
-			u.setActive(true);
-			u.setRole(adminRole);
-			u.setBusinessCountry(BusinessCountry);
-			return userRepository.save(u);
-		});
+	    // Restore preserved fields
+	    manageUsers.setMobileNumber(mobileNumber);
+	    manageUsers.setCompanyName(companyName);
+	    manageUsers.setState(state);
+	    manageUsers.setCountry(country);
+	    manageUsers.setCity(city);
+	    manageUsers.setPincode(pincode);
+	    manageUsers.setTelephone(telephone);
+	    manageUsers.setEin(ein);
+	    manageUsers.setGstin(gstin);
+	    manageUsers.setWebsite(website);
+	    manageUsers.setAddress(address);
+	    manageUsers.setCompanylogo(companylogo);
+	    manageUsers.setSuite(suite);
+	    manageUsers.setBusinessCountry(BusinessCountry);
+	    manageUsers.setApproved(true);
+	    manageUsers.setActive(true);
+	    manageUsers.setRole(adminRole);
 
-		// 6️⃣ Restore preserved fields 🔥
-		manageUsers.setMobileNumber(mobileNumber);
-		manageUsers.setCompanyName(companyName);
-		manageUsers.setState(State);
-		manageUsers.setCountry(Country);
-		manageUsers.setCity(City);
-		manageUsers.setPincode(Pincode);
-		manageUsers.setTelephone(Telephone);
-		manageUsers.setEin(Ein);
-		manageUsers.setGstin(Gstin);
-		manageUsers.setWebsite(Website);
-		manageUsers.setAddress(Address);
-		manageUsers.setBusinessCountry(BusinessCountry);
-		manageUsers.setApproved(true);
-		manageUsers.setActive(true);
-		manageUsers.setRole(adminRole);
+	    // 6️⃣ Create ManageUsers
+	    manageUsers.setRole(adminRole);
+	    manageUsers.setRoleName(adminRole.getRoleName());
+	    manageUsers.setApproved(true);
+	    manageUsers.setActive(true);
+	    manageUsers.setAddedByName("SELF-REGISTERED");
+	    manageUsers.setCreatedBy(user);
+	    manageUsers.setAddedBy(user);
 
-		// 7️⃣ Create ManageUsers
-		manageUsers.setRole(adminRole);
-		manageUsers.setRoleName(adminRole.getRoleName());
-		manageUsers.setApproved(true);
-		manageUsers.setActive(true);
-		manageUsers.setAddedByName("SELF-REGISTERED");
-		manageUsers.setCreatedBy(user);
-		manageUsers.setAddedBy(user);
-		ManageUsers saved = manageUserRepository.save(manageUsers);
-		return convertToDTO(saved);
+	    ManageUsers saved = manageUserRepository.save(manageUsers);
+	    return convertToDTO(saved);
 	}
-
 //Bhargav working 
 
 	/**
@@ -1018,7 +1027,8 @@ public class UserServiceImpl implements UserService {
 				.website(user != null && hasText(user.getWebsite()) ? user.getWebsite() : "")
 				.address(user != null && hasText(user.getAddress()) ? user.getAddress() : "")
 				.businessCountry(user != null && hasText(user.getBusinessCountry()) ? user.getBusinessCountry() : "")
-
+				.companylogo(user != null && hasText(user.getCompanylogo()) ? user.getCompanylogo() : "")
+                 .suite(user != null && hasText(user.getSuite()) ? user.getSuite() : "")
 				// ✅ Newly Added Fields
 				.fid(user != null && hasText(user.getFid()) ? user.getFid() : "")
 				.everifyId(user != null && hasText(user.getEverifyId()) ? user.getEverifyId() : "")
@@ -1132,6 +1142,10 @@ public class UserServiceImpl implements UserService {
 
 		manageUsers.setWebsite(request.getWebsite());
 		manageUsers.setAddress(request.getAddress());
+		manageUsers.setBusinessCountry(request.getBusinessCountry());
+		manageUsers.setCompanylogo(request.getCompanylogo());
+		manageUsers.setSuite(request.getSuite());
+
 
 		// Optional fields (if available in RegisterRequest)
 //		    manageUsers.setAlternativeEmail(request.getAlternativeEmail());
