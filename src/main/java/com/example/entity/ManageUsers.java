@@ -139,6 +139,12 @@ public class ManageUsers {
 
 	@Column(name = "loginurl")
 	private String loginUrl;
+	
+	@Column(name = "suite")
+	private String suite;
+	
+	@Column(name = "companylogo")
+	private String companylogo;
 
 	// Bhargav
 

@@ -31,6 +31,10 @@ public class ManageUserDTO {
 	private String addedByName; // addedBy display name
 	private String updatedByName; // updater display name
 	private String businessCountry;
+	
+	private String suite;
+	private String companylogo;
+
 
 	// 🔽 Newly added fields
 	// Bhargav
@@ -45,6 +49,7 @@ public class ManageUserDTO {
 	private String address;
 	private String token;
 	private String loginUrl;
+	 
 	
 	
 	private String fid;
