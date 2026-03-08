@@ -33,6 +33,7 @@ import org.springframework.web.util.HtmlUtils;
 
 import com.example.DTO.LoginRequest;
 import com.example.DTO.ManageUserDTO;
+import com.example.DTO.ManageUserDTO.ManageUserDTOBuilder;
 import com.example.DTO.RegisterRequest;
 import com.example.DTO.SortingRequestDTO;
 import com.example.DTO.UserProfileResponse;
@@ -715,14 +716,14 @@ public class UserServiceImpl implements UserService {
 			String htmlContent = "<!DOCTYPE html>" + "<html>" + "<head><meta charset='UTF-8'></head>"
 					+ "<body style='margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f9f9f9;'>"
 					+ "<table align='center' width='600' cellpadding='0' cellspacing='0' style='background:#ffffff; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.1);'>"
-					
 					+ "<tr>"
+
 					+ "<td align='center' bgcolor='#2563eb' style='padding:20px; border-top-left-radius:8px; border-top-right-radius:8px;'>"
 					+ "<h2 style='color:#ffffff; margin:0;'>Verify Your Registration</h2>" + "</td>" + "</tr>" + "<tr>"
 					+ "<td style='padding:30px;'>" + "<h3 style='color:#004b6e; margin-top:0;'>Invoicing Team</h3>"
 					+ "<p style='font-size:16px; color:#4b5563;'>" + "Hello <strong>" + safeFullname
 					+ "</strong>,<br><br>"
-					
+
 					+ "Thank you for choosing <b>Invoicing Application</b>. Use the following OTP to complete your Registration:"
 					+ "</p>" + "<div style='text-align:center; margin:32px 0;'>"
 					+ "<div style='display:inline-block; padding:18px 32px; border-radius:12px; border:2px dashed #2563eb; background:#eff6ff; font-size:36px; font-weight:700; letter-spacing:8px; color:#1e3a8a;'>"
@@ -984,79 +985,93 @@ public class UserServiceImpl implements UserService {
 				Optional.ofNullable(user.getLastName()).orElse("")).trim();
 		return name.isEmpty() ? user.getEmail().split("@")[0] : name;
 	}
-
-	@Override
+    
 	public UserProfileResponse getUserProfileByEmail(String email) {
 
-		String normalizedEmail = email.trim().toLowerCase();
+	    String normalizedEmail = email.trim().toLowerCase();
 
-		Optional<User> userOpt = userRepository.findByEmailIgnoreCase(normalizedEmail);
-		Optional<ManageUsers> muOpt = manageUserRepository.findByEmailIgnoreCase(normalizedEmail);
+	    Optional<User> userOpt = userRepository.findByEmailIgnoreCase(normalizedEmail);
+	    Optional<ManageUsers> muOpt = manageUserRepository.findByEmailIgnoreCase(normalizedEmail);
 
-		if (userOpt.isEmpty() && muOpt.isEmpty()) {
-			return null;
-		}
+	    if (userOpt.isEmpty() && muOpt.isEmpty()) {
+	        return null;
+	    }
 
 		User user = userOpt.orElse(null);
 		ManageUsers mu = muOpt.orElse(null);
 
-		return UserProfileResponse.builder().id(user != null ? user.getId() : 0L).fullName(resolveFullName(user, mu))
-				.primaryEmail(user != null && hasText(user.getPrimaryEmail()) ? user.getPrimaryEmail()
-						: mu != null ? safe(mu.getEmail()) : normalizedEmail)
+	return null;
+//			UserProfileResponse.builder().id(user != null ? user.getId() : 0L).fullName(resolveFullName(user, mu))
+//				.primaryEmail(user != null && hasText(user.getPrimaryEmail()) ? user.getPrimaryEmail()
+//						: mu != null ? safe(mu.getEmail()) : normalizedEmail)
+//				.mobileNumber(user != null && hasText(user.getMobileNumber()) ? user.getMobileNumber()
+//						: mu != null ? safe(mu.getMobileNumber()) : "")
+//				.alternativeEmail(user != null && hasText(user.getAlternativeEmail()) ? user.getAlternativeEmail() : "")
+//				.alternativeMobileNumber(
+//						user != null && hasText(user.getAlternativeMobileNumber()) ? user.getAlternativeMobileNumber()
+//								: "")
+//				.companyName(user != null && hasText(user.getCompanyName()) ? user.getCompanyName()
+//						: mu != null ? safe(mu.getCompanyName()) : "")
+//				// ✅ NEW FIELDS START HERE
+//				.state(user != null && hasText(user.getState()) ? user.getState() : "")
+//				.country(user != null && hasText(user.getCountry()) ? user.getCountry() : "")
+//				.city(user != null && hasText(user.getCity()) ? user.getCity() : "")
+//				.pincode(user != null && hasText(user.getPincode()) ? user.getPincode() : "")
+//				.telephone(user != null && hasText(user.getTelephone()) ? user.getTelephone() : "")
+//				.ein(user != null && hasText(user.getEin()) ? user.getEin() : "")
+//				.gstin(user != null && hasText(user.getGstin()) ? user.getGstin() : "")
+//				.website(user != null && hasText(user.getWebsite()) ? user.getWebsite() : "")
+//				.address(user != null && hasText(user.getAddress()) ? user.getAddress() : "")
+//				// ✅ NEW FIELDS END HERE
+//
+//				.taxId(user != null && hasText(user.getTaxId()) ? user.getTaxId() : "")
+//				.businessId(user != null && hasText(user.getBusinessId()) ? user.getBusinessId() : "")
+//				.preferredCurrency(
+//						user != null && hasText(user.getPreferredCurrency()) ? user.getPreferredCurrency() : "")
+//				.invoicePrefix(user != null && hasText(user.getInvoicePrefix()) ? user.getInvoicePrefix() : "")
+//				.profilePicPath(user != null && hasText(user.getProfilePicPath()) ? user.getProfilePicPath() : "")
+//				.role(mu != null && mu.getRole() != null ? mu.getRole().getRoleName()
+//						: user != null && user.getRole() != null ? user.getRole().getRoleName() : "")
+//				.build();
+//
+//	            stateOfIncorporation(user != null && hasText(user.getStateOfIncorporation())
+//	                    ? user.getStateOfIncorporation()
+//	                    : mu != null ? safe(mu.getStateOfIncorporation()) : "")
+//
+//	            .naicsCode(user != null && hasText(user.getNaicsCode())
+//	                    ? user.getNaicsCode()
+//	                    : mu != null ? safe(mu.getNaicsCode()) : "")
+//
+//	            .signingAuthorityName(user != null && hasText(user.getSigningAuthorityName())
+//	                    ? user.getSigningAuthorityName()
+//	                    : mu != null ? safe(mu.getSigningAuthorityName()) : "")
+//
+//	            .designation(user != null && hasText(user.getDesignation())
+//	                    ? user.getDesignation()
+//	                    : mu != null ? safe(mu.getDesignation()) : "")
+//
+//	            .dateOfIncorporation(user != null && hasText(user.getDateOfIncorporation())
+//	                    ? user.getDateOfIncorporation()
+//	                    : mu != null ? safe(mu.getDateOfIncorporation()) : "")
+//
+//	            .profilePicPath(user != null && hasText(user.getProfilePicPath())
+//	                    ? user.getProfilePicPath() : "")
+//
+//	            .role(mu != null && mu.getRole() != null
+//	                    ? mu.getRole().getRoleName()
+//	                    : user != null && user.getRole() != null
+//	                            ? user.getRole().getRoleName()
+//	                            : "");
+//
+////	            // ✅ Bank Details Added Here
+////	            .bankDeatils(bankDetailsList)
+////
+////	            .build();
+	}
 
-				.mobileNumber(user != null && hasText(user.getMobileNumber()) ? user.getMobileNumber()
-						: mu != null ? safe(mu.getMobileNumber()) : "")
-
-				.alternativeEmail(user != null && hasText(user.getAlternativeEmail()) ? user.getAlternativeEmail() : "")
-
-				.alternativeMobileNumber(
-						user != null && hasText(user.getAlternativeMobileNumber()) ? user.getAlternativeMobileNumber()
-								: "")
-
-				.companyName(user != null && hasText(user.getCompanyName()) ? user.getCompanyName()
-						: mu != null ? safe(mu.getCompanyName()) : "")
-
-				// ✅ Address & Company Details
-				.state(user != null && hasText(user.getState()) ? user.getState() : "")
-				.country(user != null && hasText(user.getCountry()) ? user.getCountry() : "")
-				.city(user != null && hasText(user.getCity()) ? user.getCity() : "")
-				.pincode(user != null && hasText(user.getPincode()) ? user.getPincode() : "")
-				.telephone(user != null && hasText(user.getTelephone()) ? user.getTelephone() : "")
-				.ein(user != null && hasText(user.getEin()) ? user.getEin() : "")
-				.gstin(user != null && hasText(user.getGstin()) ? user.getGstin() : "")
-				.website(user != null && hasText(user.getWebsite()) ? user.getWebsite() : "")
-				.address(user != null && hasText(user.getAddress()) ? user.getAddress() : "")
-				.businessCountry(user != null && hasText(user.getBusinessCountry()) ? user.getBusinessCountry() : "")
-				.companylogo(user != null && hasText(user.getCompanylogo()) ? user.getCompanylogo() : "")
-                 .suite(user != null && hasText(user.getSuite()) ? user.getSuite() : "")
-				// ✅ Newly Added Fields
-				.fid(user != null && hasText(user.getFid()) ? user.getFid() : "")
-				.everifyId(user != null && hasText(user.getEverifyId()) ? user.getEverifyId() : "")
-				.dunsNumber(user != null && hasText(user.getDunsNumber()) ? user.getDunsNumber() : "")
-				.stateOfIncorporation(
-						user != null && hasText(user.getStateOfIncorporation()) ? user.getStateOfIncorporation() : "")
-				.naicsCode(user != null && hasText(user.getNaicsCode()) ? user.getNaicsCode() : "")
-				.signingAuthorityName(
-						user != null && hasText(user.getSigningAuthorityName()) ? user.getSigningAuthorityName() : "")
-				.designation(user != null && hasText(user.getDesignation()) ? user.getDesignation() : "")
-				.dateOfIncorporation(
-						user != null && hasText(user.getDateOfIncorporation()) ? user.getDateOfIncorporation() : "")
-
-				// ✅ Bank Details (Safe Handling)
-				.bankDetails(
-						user != null && user.getBankDetails() != null ? user.getBankDetails() : Collections.emptyList())
-
-				.taxId(user != null && hasText(user.getTaxId()) ? user.getTaxId() : "")
-				.businessId(user != null && hasText(user.getBusinessId()) ? user.getBusinessId() : "")
-				.preferredCurrency(
-						user != null && hasText(user.getPreferredCurrency()) ? user.getPreferredCurrency() : "")
-				.invoicePrefix(user != null && hasText(user.getInvoicePrefix()) ? user.getInvoicePrefix() : "")
-				.profilePicPath(user != null && hasText(user.getProfilePicPath()) ? user.getProfilePicPath() : "")
-
-				.role(mu != null && mu.getRole() != null ? mu.getRole().getRoleName()
-						: user != null && user.getRole() != null ? user.getRole().getRoleName() : "")
-				.build();
-
+	private ManageUserDTOBuilder stateOfIncorporation(Object object) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	private String resolveFullName(User user, ManageUsers mu) {
