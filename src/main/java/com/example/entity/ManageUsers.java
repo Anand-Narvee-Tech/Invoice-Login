@@ -141,16 +141,6 @@ public class ManageUsers {
 	// Bhargav
 
 	// vasim
-	private String fid;
-	private String everifyId;
-	private String dunsNumber;
-	private String stateOfIncorporation;
-	private String naicsCode;
-	private String signingAuthorityName;
-	private String designation;
-	private String dateOfIncorporation;
-	private String taxId;
-	
 	@ElementCollection
 	private List<BankDetails> bankDetails;
 
