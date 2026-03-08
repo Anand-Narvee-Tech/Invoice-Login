@@ -31,7 +31,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.util.HtmlUtils;
 
-import com.example.DTO.BankDetailsRequest;
 import com.example.DTO.LoginRequest;
 import com.example.DTO.ManageUserDTO;
 import com.example.DTO.ManageUserDTO.ManageUserDTOBuilder;
@@ -102,12 +101,13 @@ public class UserServiceImpl implements UserService {
 				.companyName(user.getCompanyName()).roleName(user.getRoleName())
 				.addedBy(user.getAddedBy() != null ? user.getAddedBy().getId().toString() : null)
 				.addedByName(user.getAddedByName()).updatedByName(user.getUpdatedByName())
-				// ✅ ADD THESE
-				.state(user.getState()).country(user.getCountry()).pincode(user.getPincode()).city(user.getCity())
+				.businessCountry(user.getBusinessCountry()).state(user.getState()).country(user.getCountry())
+				.pincode(user.getPincode()).city(user.getCity()).suite(user.getSuite())
+				.companylogo(user.getCompanylogo())
 				.telephone(user.getTelephone()).ein(user.getEin()).gstin(user.getGstin()).website(user.getWebsite())
-				.address(user.getAddress()).build();
+				.address(user.getAddress()).loginUrl(user.getLoginUrl()) 
+				.build();
 	}
-
 	//
 
 	private String extractDomain(String email) {
@@ -208,92 +208,102 @@ public class UserServiceImpl implements UserService {
 	@Transactional
 	public ManageUserDTO registerCompanyUser(ManageUsers manageUsers) {
 
-		final String ADMIN_ROLE = "ADMIN";
+	    final String ADMIN_ROLE = "ADMIN";
 
-		// 🔥 preserve incoming values
-		String mobileNumber = manageUsers.getMobileNumber();
-		String companyName = manageUsers.getCompanyName();
+	    // Preserve incoming values
+	    String mobileNumber  = manageUsers.getMobileNumber();
+	    String companyName   = manageUsers.getCompanyName();
+	    String state         = manageUsers.getState();
+	    String country       = manageUsers.getCountry();
+	    String city          = manageUsers.getCity();
+	    String pincode       = manageUsers.getPincode();
+	    String telephone     = manageUsers.getTelephone();
+	    String ein           = manageUsers.getEin();
+	    String gstin         = manageUsers.getGstin();
+	    String website       = manageUsers.getWebsite();
+	    String address       = manageUsers.getAddress();
+	    String BusinessCountry = manageUsers.getBusinessCountry();
+	    String companylogo   = manageUsers.getCompanylogo();
+	    String suite         = manageUsers.getSuite();
 
-		String State = manageUsers.getState();
-		String Country = manageUsers.getCountry();
-		String City = manageUsers.getCity();
-		String Pincode = manageUsers.getPincode();
-		String Telephone = manageUsers.getTelephone();
-		String Ein = manageUsers.getEin();
-		String Gstin = manageUsers.getGstin();
-		String Website = manageUsers.getWebsite();
-		String Address = manageUsers.getAddress();
+	    // 1️⃣ Normalize email safely
+	    if (manageUsers.getEmail() == null || manageUsers.getEmail().isBlank()) {
+	        throw new BusinessException("Email is required");
+	    }
+	    String email = manageUsers.getEmail().trim().toLowerCase();
+	    manageUsers.setEmail(email);
+	    manageUsers.setPrimaryEmail(email);
 
-		// 1️⃣ Normalize email
-		String email = manageUsers.getEmail().trim().toLowerCase();
-		manageUsers.setEmail(email);
-		manageUsers.setPrimaryEmail(email);
+	    // 2️⃣ Extract domain
+	    String domain = extractDomain(email);
+	    manageUsers.setCompanyDomain(domain);
 
-		// 2️⃣ Extract domain
-		String domain = extractDomain(email);
-		manageUsers.setCompanyDomain(domain);
+	    // 3️⃣ Check if ADMIN already exists
+	    if (manageUserRepository.existsByCompanyDomainAndRole_RoleNameIgnoreCase(domain, ADMIN_ROLE)) {
+	        throw new BusinessException("Company already registered. Please contact your company administrator.");
+	    }
 
-		// 3️⃣ Check if ADMIN already exists
-		if (manageUserRepository.existsByCompanyDomainAndRole_RoleNameIgnoreCase(domain, ADMIN_ROLE)) {
-			throw new BusinessException("Company already registered. Please contact your company administrator.");
-		}
+	    // 4️⃣ Fetch ADMIN role
+	    Role adminRole = roleRepository.findByRoleNameIgnoreCase(ADMIN_ROLE)
+	            .orElseThrow(() -> new BusinessException(
+	                    "Required role ADMIN is not configured. Please contact system administrator."));
 
-		// 4️⃣ Fetch ADMIN role
-		Role adminRole = roleRepository.findByRoleNameIgnoreCase(ADMIN_ROLE).orElseThrow(() -> new BusinessException(
-				"Required role ADMIN is not configured. Please contact system administrator."));
+	    // 5️⃣ Create USER
+	    User user = userRepository.findByEmailIgnoreCase(email).orElseGet(() -> {
+	        User u = new User();
+	        u.setEmail(email);
+	        u.setFirstName(manageUsers.getFirstName());
+	        u.setCompanyName(companyName);
+	        u.setMobileNumber(mobileNumber);
+	        u.setState(state);
+	        u.setCountry(country);
+	        u.setCity(city);
+	        u.setPincode(pincode);
+	        u.setTelephone(telephone);
+	        u.setEin(ein);
+	        u.setGstin(gstin);
+	        u.setWebsite(website);
+	        u.setAddress(address);
+	        u.setCompanylogo(companylogo);
+	        u.setSuite(suite);
+	        u.setBusinessCountry(BusinessCountry);
+	        u.setApproved(true);
+	        u.setActive(true);
+	        u.setRole(adminRole);
+	        return userRepository.save(u);
+	    });
 
-		// 5️⃣ Create USER
-		User user = userRepository.findByEmailIgnoreCase(email).orElseGet(() -> {
-			User u = new User();
-			u.setEmail(email);
-			u.setFirstName(manageUsers.getFirstName());
-			u.setCompanyName(companyName);
-			u.setMobileNumber(mobileNumber);
-			// 🔽 newly added fields
-			u.setState(State);
-			u.setCountry(Country);
-			u.setCity(City);
-			u.setPincode(Pincode);
-			u.setTelephone(Telephone);
-			u.setEin(Ein);
-			u.setGstin(Gstin);
-			u.setWebsite(Website);
-			u.setAddress(Address);
-			u.setApproved(true);
-			u.setActive(true);
-			u.setRole(adminRole);
+	    // Restore preserved fields
+	    manageUsers.setMobileNumber(mobileNumber);
+	    manageUsers.setCompanyName(companyName);
+	    manageUsers.setState(state);
+	    manageUsers.setCountry(country);
+	    manageUsers.setCity(city);
+	    manageUsers.setPincode(pincode);
+	    manageUsers.setTelephone(telephone);
+	    manageUsers.setEin(ein);
+	    manageUsers.setGstin(gstin);
+	    manageUsers.setWebsite(website);
+	    manageUsers.setAddress(address);
+	    manageUsers.setCompanylogo(companylogo);
+	    manageUsers.setSuite(suite);
+	    manageUsers.setBusinessCountry(BusinessCountry);
+	    manageUsers.setApproved(true);
+	    manageUsers.setActive(true);
+	    manageUsers.setRole(adminRole);
 
-			return userRepository.save(u);
-		});
+	    // 6️⃣ Create ManageUsers
+	    manageUsers.setRole(adminRole);
+	    manageUsers.setRoleName(adminRole.getRoleName());
+	    manageUsers.setApproved(true);
+	    manageUsers.setActive(true);
+	    manageUsers.setAddedByName("SELF-REGISTERED");
+	    manageUsers.setCreatedBy(user);
+	    manageUsers.setAddedBy(user);
 
-		// 6️⃣ Restore preserved fields 🔥
-		manageUsers.setMobileNumber(mobileNumber);
-		manageUsers.setCompanyName(companyName);
-		manageUsers.setState(State);
-		manageUsers.setCountry(Country);
-		manageUsers.setCity(City);
-		manageUsers.setPincode(Pincode);
-		manageUsers.setTelephone(Telephone);
-		manageUsers.setEin(Ein);
-		manageUsers.setGstin(Gstin);
-		manageUsers.setWebsite(Website);
-		manageUsers.setAddress(Address);
-		manageUsers.setApproved(true);
-		manageUsers.setActive(true);
-		manageUsers.setRole(adminRole);
-
-		// 7️⃣ Create ManageUsers
-		manageUsers.setRole(adminRole);
-		manageUsers.setRoleName(adminRole.getRoleName());
-		manageUsers.setApproved(true);
-		manageUsers.setActive(true);
-		manageUsers.setAddedByName("SELF-REGISTERED");
-		manageUsers.setCreatedBy(user);
-		manageUsers.setAddedBy(user);
-		ManageUsers saved = manageUserRepository.save(manageUsers);
-		return convertToDTO(saved);
+	    ManageUsers saved = manageUserRepository.save(manageUsers);
+	    return convertToDTO(saved);
 	}
-
 //Bhargav working 
 
 	/**
@@ -355,7 +365,7 @@ public class UserServiceImpl implements UserService {
 //
 //		log.info("✅ Default super admins initialized successfully");
 //	}
-
+	
 	/** ===================== Register new user ===================== **/
 	@Override
 	public String register(User user) {
@@ -640,8 +650,8 @@ public class UserServiceImpl implements UserService {
 					+ "<body style='margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f9f9f9;'>"
 					+ "<table align='center' width='600' cellpadding='0' cellspacing='0' style='background:#ffffff; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.1);'>"
 					+ "<tr>"
-					+ "<td align='center' bgcolor='#004b6e' style='padding:20px; border-top-left-radius:8px; border-top-right-radius:8px;'>"
-					+ "<h2 style='color:#ffffff; margin:0;'>Verify Your Login</h2>" + "</td>" + "</tr>" + "<tr>"
+					+ "<td align='center' bgcolor='#2563eb' style='padding:20px; border-top-left-radius:8px; border-top-right-radius:8px;'>"
+					+ "<h2 style='color:#ffffff; margin:0;'> Invoice </h2>" + "</td>" + "</tr>" + "<tr>"
 					+ "<td style='padding:30px;'>" + "<h3 style='color:#004b6e; margin-top:0;'>Invoicing Team</h3>"
 					+ "<p style='font-size:16px; color:#4b5563;'>" + "Hello <strong>" + safeFullname
 					+ "</strong>,<br><br>"
@@ -654,7 +664,7 @@ public class UserServiceImpl implements UserService {
 					+ "</p>" + "<p style='font-size:14px; color:#333; margin-top:30px;'>"
 					+ "Best Regards,<br><b>Invoicing Team</b>" + "</p>" + "</td>" + "</tr>" + "<tr>"
 					+ "<td align='center' bgcolor='#f1f1f1' style='padding:10px; border-bottom-left-radius:8px; border-bottom-right-radius:8px; font-size:12px; color:#888;'>"
-					+ "2025 Invoicing Team. All rights reserved." + "</td>" + "</tr>" + "</table>" + "</body>"
+					+ "2026 Invoicing Team. All rights reserved." + "</td>" + "</tr>" + "</table>" + "</body>"
 					+ "</html>";
 
 			helper.setText(htmlContent, true);
@@ -723,10 +733,8 @@ public class UserServiceImpl implements UserService {
 					+ "</p>" + "<p style='font-size:14px; color:#333; margin-top:30px;'>"
 					+ "Best Regards,<br><b>Invoicing Team</b>" + "</p>" + "</td>" + "</tr>" + "<tr>"
 					+ "<td align='center' bgcolor='#f1f1f1' style='padding:10px; border-bottom-left-radius:8px; border-bottom-right-radius:8px; font-size:12px; color:#888;'>"
-					+ "2025 Invoicing Team. All rights reserved." + "</td>" + "</tr>" + "</table>" + "</body>"
+					+ "2026 Invoicing Team. All rights reserved." + "</td>" + "</tr>" + "</table>" + "</body>"
 					+ "</html>";
-			helper.setText(htmlContent, true);
-			javaMailSender.send(mimeMessage);
 
 			helper.setText(htmlContent, true);
 			javaMailSender.send(mimeMessage);
@@ -1134,6 +1142,9 @@ public class UserServiceImpl implements UserService {
 
 		manageUsers.setCompanyName(request.getCompanyName());
 
+		manageUsers.setBusinessCountry(request.getBusinessCountry());
+
+		
 		manageUsers.setState(request.getState());
 		manageUsers.setCity(request.getCity());
 		manageUsers.setCountry(request.getCountry());
@@ -1146,6 +1157,10 @@ public class UserServiceImpl implements UserService {
 
 		manageUsers.setWebsite(request.getWebsite());
 		manageUsers.setAddress(request.getAddress());
+		manageUsers.setBusinessCountry(request.getBusinessCountry());
+		manageUsers.setCompanylogo(request.getCompanylogo());
+		manageUsers.setSuite(request.getSuite());
+
 
 		// Optional fields (if available in RegisterRequest)
 //		    manageUsers.setAlternativeEmail(request.getAlternativeEmail());

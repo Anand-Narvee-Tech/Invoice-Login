@@ -38,8 +38,9 @@ public class UserProfileResponse {
 	private String gstin;
 	private String website;
 	private String address;
-	
-	
+	private String businessCountry;
+	private String suite;
+	private String companylogo;
 	private String fid;
 	private String everifyId;
 	private String dunsNumber;

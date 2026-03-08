@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -56,25 +57,55 @@ public class RoleServiceImpl implements RoleService {
 
     private static final Logger log = LoggerFactory.getLogger(RoleServiceImpl.class);
 
+    
+ // comment By Bhargav 24/02/26
     // ✅ Create Role
+//    @Override
+//    public RoleDTO createRole(RoleDTO roleDTO, String loggedInEmail) {
+//
+//        User currentUser = userRepository.findByEmailIgnoreCase(loggedInEmail)
+//                .orElseThrow(() -> new RuntimeException("Logged-in user not found: " + loggedInEmail));
+//
+//        Role role = convertToEntity(roleDTO);
+//
+//        role.setAddedBy(currentUser.getId());
+//        role.setAddedByName(currentUser.getFullName());
+//
+//        role.setCreatedDate(LocalDateTime.now());
+//
+//        Role saved = roleRepository.save(role);
+//        return convertToDTO(saved);
+//    }
+ // Commented  By Bhargav 24/02/26
+    
+// Added  By Bhargav 24/02/26  
     @Override
     public RoleDTO createRole(RoleDTO roleDTO, String loggedInEmail) {
 
         User currentUser = userRepository.findByEmailIgnoreCase(loggedInEmail)
-                .orElseThrow(() -> new RuntimeException("Logged-in user not found: " + loggedInEmail));
+                .orElseThrow(() -> new RuntimeException("Logged-in user not found"));
+
+        // ✅ Check duplicate role name
+        Optional<Role> existingRole = roleRepository
+                .findByRoleNameIgnoreCase(roleDTO.getRoleName());
+
+        if (existingRole.isPresent()) {
+            throw new RuntimeException("Role name already exists: " + roleDTO.getRoleName());
+        }
 
         Role role = convertToEntity(roleDTO);
 
         role.setAddedBy(currentUser.getId());
         role.setAddedByName(currentUser.getFullName());
-
         role.setCreatedDate(LocalDateTime.now());
 
         Role saved = roleRepository.save(role);
+
         return convertToDTO(saved);
-    }
-
-
+    }  
+    
+// Added  By Bhargav 24/02/26    
+    
     @Override
     @Transactional
     public RoleDTO updateRole(Long roleId, RoleDTO roleDTO, String loggedInEmail) {
