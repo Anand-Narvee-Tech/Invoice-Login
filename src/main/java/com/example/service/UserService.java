@@ -20,6 +20,9 @@ public interface UserService {
 	public Map<String, Object> loginWithOtp(LoginRequest request);
 
 	public void sendOtp(String email);// request OTP
+	
+	public void accountnumbersendOTP(String emailInput);
+	
 //    public boolean isOTPValid(String email, String otp);
 
 	public Optional<User> getUserById(Long id);

@@ -1174,5 +1174,95 @@ public class UserServiceImpl implements UserService {
 	}
 
 //Bhargav
+	
+//08-03-26 Added	
+	@Transactional
+	@Override
+	public void accountnumbersendOTP(String emailInput) {
+		final String email = emailInput.trim().toLowerCase();
+
+		// Fetch user or allow default super admin
+		User user = userRepository.findByEmailIgnoreCase(email).orElseGet(() -> {
+			if (DEFAULT_SUPERUSERS.contains(email)) {
+				User u = new User();
+				u.setEmail(email);
+				u.setFirstName(email.split("@")[0]);
+				u.setApproved(true);
+				u.setActive(true);
+
+				// Unwrap Optional<Role>
+				Role superAdminRole = roleRepository.findByRoleName("ADMIN")
+						.orElseThrow(() -> new RuntimeException("ADMIN role not found"));
+				u.setRole(superAdminRole);
+
+				return u;
+			} else {
+				throw new RuntimeException("Invalid credentials: email not registered");
+			}
+		});
+
+		// Build full name
+		String fullName = (user.getFullName() != null && !user.getFullName().isBlank()) ? user.getFullName()
+				: (user.getFirstName() != null ? user.getFirstName() : email.split("@")[0]);
+		String safeFullname = HtmlUtils.htmlEscape(fullName);
+
+		// Remove old OTPs
+		tokenRepository.deleteByEmail(email);
+
+		// ✅ Generate new ALPHANUMERIC OTP
+		String otp = generateAlphanumericOTP(6); // 6-character alphanumeric OTP
+		long expiryTime = System.currentTimeMillis() + 2 * 60_000; // 2 minutes
+
+		OTP otpEntity = new OTP(null, email, otp, expiryTime);
+		tokenRepository.save(otpEntity);
+
+		// Send email with designed HTML
+		try {
+			MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+			MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+			helper.setFrom(fromEmail);
+			helper.setTo(email);
+			helper.setSubject("Account Number Update Verification Code - Invoicing Team");
+			String htmlContent = "<!DOCTYPE html>" + "<html>" + "<head><meta charset='UTF-8'></head>"
+					+ "<body style='margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f9f9f9;'>"
+					+ "<table align='center' width='600' cellpadding='0' cellspacing='0' style='background:#ffffff; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.1);'>"
+					+ "<tr>"
+					+ "<td align='center' bgcolor='#2563eb' style='padding:20px; border-top-left-radius:8px; border-top-right-radius:8px;'>"
+					+ "<h2 style='color:#ffffff; margin:0;'> Invoice </h2>" + "</td>" + "</tr>" + "<tr>"
+					+ "<td style='padding:30px;'>" + "<h3 style='color:#004b6e; margin-top:0;'>Invoicing Team</h3>"
+					+ "<p style='font-size:16px; color:#4b5563;'>" + "Hello <strong>" + safeFullname
+					+ "</strong>,<br><br>"
+
+					+ "We received a request to <b>update your account number</b> in the <b>Invoicing Application</b>."
+					+ "<br><br>For security purposes, please use the OTP below to verify this change." + "</p>"
+
+					+ "<div style='text-align:center; margin:32px 0;'>"
+					+ "<div style='display:inline-block; padding:18px 32px; border-radius:12px; border:2px dashed #2563eb; background:#eff6ff; font-size:36px; font-weight:700; letter-spacing:8px; color:#1e3a8a;'>"
+					+ otp + "</div>" + "</div>"
+
+					+ "<p style='text-align:center; font-size:15px; color:#6b7280;'>"
+					+ "This OTP is valid for <strong>2 minutes</strong>. Please do not share this code with anyone."
+					+ "</p>"
+
+					+ "<p style='font-size:14px; color:#333; margin-top:20px;'>"
+					+ "If you did not request this account number update, please contact our support team immediately."
+					+ "</p>"
+
+					+ "<p style='font-size:14px; color:#333; margin-top:30px;'>"
+					+ "Best Regards,<br><b>Invoicing Team</b>" + "</p>"
+
+					+ "</td>" + "</tr>" + "<tr>"
+					+ "<td align='center' bgcolor='#f1f1f1' style='padding:10px; border-bottom-left-radius:8px; border-bottom-right-radius:8px; font-size:12px; color:#888;'>"
+					+ "2026 Invoicing Team. All rights reserved." + "</td>" + "</tr>" + "</table>" + "</body>"
+					+ "</html>";
+
+			helper.setText(htmlContent, true);
+			javaMailSender.send(mimeMessage);
+			log.info("OTP sent successfully to {}", email);
+		} catch (Exception e) {
+			log.error("Failed to send OTP email to {}: {}", email, e.getMessage(), e);
+		}
+	}
+//08-03-26 Added
 
 }
