@@ -10,8 +10,10 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -19,7 +21,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.DTO.LoginRequest;
 import com.example.DTO.ManageUserDTO;
@@ -34,12 +39,15 @@ import com.example.entity.VerifyOtpRequest;
 import com.example.repository.ManageUserRepository;
 import com.example.repository.RoleRepository;
 import com.example.repository.UserRepository;
+import com.example.service.FileStorageService;
 import com.example.service.UserService;
 import com.example.serviceImpl.JwtServiceImpl;
 import com.example.serviceImpl.UserServiceImpl;
 import com.example.utils.JwtUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.persistence.Column;
+import jakarta.validation.Valid;
 
 //@CrossOrigin("*")
 @RestController
@@ -66,93 +74,206 @@ public class UserController {
 
 	@Autowired
 	private JwtUtil jwtUtil;
+	
+	@Autowired
+	private	FileStorageService fileStorageService; 
+	
 
 //Bhargav working
 
-	@PostMapping("/register")
+//	@PostMapping("/register")
+//	public ResponseEntity<RestAPIResponse> register(
+//			@RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+//			@RequestBody @Valid RegisterRequest request) {
+//
+//		try {
+//
+//			// Step 1: Build entity from request
+//			ManageUsers manageUsers = userServiceImpl.buildManageUsersFromRequest(request);
+//
+//			// Step 2: Register user
+//			ManageUserDTO response = userServiceImpl.registerCompanyUser(manageUsers);
+//
+//			// Step 3: Fetch saved user and manageUser
+//			User user = userRepository.findByEmailIgnoreCase(response.getEmail())
+//					.orElseThrow(() -> new RuntimeException("User not found"));
+//
+//			ManageUsers savedUser = manageUserRepository.findByEmailIgnoreCase(response.getEmail())
+//					.orElseThrow(() -> new RuntimeException("ManageUser not found"));
+//
+//			// Step 4: Get Role Name
+//			String roleName = savedUser.getRoleName();
+//
+//			// Step 5: Fetch Privileges from Role
+//			Set<String> privilegeNames = new HashSet<>();
+//
+//			if (roleName != null) {
+//				Role roleEntity = roleRepository.findByRoleNameIgnoreCase(roleName).orElse(null);
+//
+//				if (roleEntity != null && roleEntity.getPrivileges() != null) {
+//					privilegeNames = roleEntity.getPrivileges().stream().map(Privilege::getName)
+//							.collect(Collectors.toSet());
+//				}
+//			}
+//
+//			// Step 6: Generate Token with Role + Privileges
+//			String token = jwtService.generateToken(user, roleName, privilegeNames);
+//
+//			// Step 7: Build Final Response (DO NOT REMOVE ANY EXISTING FIELD)
+//
+//			Map<String, Object> finalResponse = new LinkedHashMap<>();
+//
+//			finalResponse.put("id", savedUser.getId());
+//			finalResponse.put("fullName", savedUser.getFullName());
+//			finalResponse.put("firstName", savedUser.getFirstName());
+//			finalResponse.put("middleName", savedUser.getMiddleName());
+//			finalResponse.put("lastName", savedUser.getLastName());
+//			finalResponse.put("email", savedUser.getEmail());
+//			finalResponse.put("primaryEmail", savedUser.getPrimaryEmail());
+//			finalResponse.put("mobileNumber", savedUser.getMobileNumber());
+//			finalResponse.put("companyName", savedUser.getCompanyName());
+//			finalResponse.put("state", savedUser.getState());
+//			finalResponse.put("city", savedUser.getCity());
+//			finalResponse.put("country", savedUser.getCountry());
+//			finalResponse.put("pincode", savedUser.getPincode());
+//			finalResponse.put("telephone", savedUser.getTelephone());
+//			finalResponse.put("ein", savedUser.getEin());
+//			finalResponse.put("gstin", savedUser.getGstin());
+//			finalResponse.put("website", savedUser.getWebsite());
+//			finalResponse.put("address", savedUser.getAddress());
+//			finalResponse.put("loginurl", savedUser.getLoginUrl());
+//			finalResponse.put("businessCountry", savedUser.getBusinessCountry());
+//
+//			// ---------- ADDED PART (AS YOU REQUESTED) ----------
+//			finalResponse.put("roleName", roleName);
+//			finalResponse.put("privileges", privilegeNames);
+//			finalResponse.put("token", token);
+//			// ---------------------------------------------------
+//
+//			return ResponseEntity.status(HttpStatus.CREATED).body(
+//					new RestAPIResponse("success", "Company registered successfully. ADMIN created.", finalResponse));
+//
+//		} catch (DataIntegrityViolationException e) {
+//
+//			return ResponseEntity.status(HttpStatus.CONFLICT)
+//					.body(new RestAPIResponse("failed", "Email or mobile number already exists.", null));
+//
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//
+//			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//					.body(new RestAPIResponse("failed", "Registration failed: " + e.getMessage(), null));
+//		}
+//
+//	}
+//07-03-26 commented
+	
+	@PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<RestAPIResponse> register(
-			@RequestHeader(value = "Authorization", required = false) String authorizationHeader,
-			@RequestBody  RegisterRequest request) {
+	        @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+	        @RequestPart("data") String data,
+	        @RequestPart(value = "companylogo", required = false) MultipartFile companylogo) {
 
-		try {
+	    try {
 
-			// Step 1: Build entity from request
-			ManageUsers manageUsers = userServiceImpl.buildManageUsersFromRequest(request);
+	        // Convert JSON string to RegisterRequest object
+	        ObjectMapper objectMapper = new ObjectMapper();
+	        RegisterRequest request = objectMapper.readValue(data, RegisterRequest.class);
 
-			// Step 2: Register user
-			ManageUserDTO response = userServiceImpl.registerCompanyUser(manageUsers);
+	        if (request.getEmail() == null || request.getEmail().isBlank()) {
+	            return ResponseEntity.badRequest()
+	                    .body(new RestAPIResponse("failed", "Email is required", null));
+	        }
 
-			// Step 3: Fetch saved user and manageUser
-			User user = userRepository.findByEmailIgnoreCase(response.getEmail())
-					.orElseThrow(() -> new RuntimeException("User not found"));
+	        // Build ManageUsers entity
+	        ManageUsers manageUsers = userServiceImpl.buildManageUsersFromRequest(request);
 
-			ManageUsers savedUser = manageUserRepository.findByEmailIgnoreCase(response.getEmail())
-					.orElseThrow(() -> new RuntimeException("ManageUser not found"));
+	        // Save company logo if present
+	        if (companylogo != null && !companylogo.isEmpty()) {
 
-			// Step 4: Get Role Name
-			String roleName = savedUser.getRoleName();
+	            String fileName = fileStorageService.saveFile(companylogo);
 
-			// Step 5: Fetch Privileges from Role
-			Set<String> privilegeNames = new HashSet<>();
+	            manageUsers.setCompanylogo(fileName);
+	        }
 
-			if (roleName != null) {
-				Role roleEntity = roleRepository.findByRoleNameIgnoreCase(roleName).orElse(null);
+	        // Register user
+	        ManageUserDTO response = userServiceImpl.registerCompanyUser(manageUsers);
 
-				if (roleEntity != null && roleEntity.getPrivileges() != null) {
-					privilegeNames = roleEntity.getPrivileges().stream().map(Privilege::getName)
-							.collect(Collectors.toSet());
-				}
-			}
+	        // Fetch created user
+	        User user = userRepository.findByEmailIgnoreCase(response.getEmail())
+	                .orElseThrow(() -> new RuntimeException("User not found"));
 
-			// Step 6: Generate Token with Role + Privileges
-			String token = jwtService.generateToken(user, roleName, privilegeNames);
+	        ManageUsers savedUser = manageUserRepository.findByEmailIgnoreCase(response.getEmail())
+	                .orElseThrow(() -> new RuntimeException("ManageUser not found"));
 
-			// Step 7: Build Final Response (DO NOT REMOVE ANY EXISTING FIELD)
+	        String roleName = savedUser.getRoleName();
 
-			Map<String, Object> finalResponse = new LinkedHashMap<>();
+	        Set<String> privilegeNames = new HashSet<>();
 
-			finalResponse.put("id", savedUser.getId());
-			finalResponse.put("fullName", savedUser.getFullName());
-			finalResponse.put("firstName", savedUser.getFirstName());
-			finalResponse.put("middleName", savedUser.getMiddleName());
-			finalResponse.put("lastName", savedUser.getLastName());
-			finalResponse.put("email", savedUser.getEmail());
-			finalResponse.put("primaryEmail", savedUser.getPrimaryEmail());
-			finalResponse.put("mobileNumber", savedUser.getMobileNumber());
-			finalResponse.put("companyName", savedUser.getCompanyName());
-			finalResponse.put("state", savedUser.getState());
-			finalResponse.put("city", savedUser.getCity());
-			finalResponse.put("country", savedUser.getCountry());
-			finalResponse.put("pincode", savedUser.getPincode());
-			finalResponse.put("telephone", savedUser.getTelephone());
-			finalResponse.put("ein", savedUser.getEin());
-			finalResponse.put("gstin", savedUser.getGstin());
-			finalResponse.put("website", savedUser.getWebsite());
-			finalResponse.put("address", savedUser.getAddress());
-			finalResponse.put("loginurl", savedUser.getLoginUrl());
+	        if (roleName != null) {
 
-			// ---------- ADDED PART (AS YOU REQUESTED) ----------
-			finalResponse.put("roleName", roleName);
-			finalResponse.put("privileges", privilegeNames);
-			finalResponse.put("token", token);
-			// ---------------------------------------------------
+	            Role roleEntity = roleRepository.findByRoleNameIgnoreCase(roleName).orElse(null);
 
-			return ResponseEntity.status(HttpStatus.CREATED).body(
-					new RestAPIResponse("success", "Company registered successfully. ADMIN created.", finalResponse));
+	            if (roleEntity != null && roleEntity.getPrivileges() != null) {
 
-		} catch (DataIntegrityViolationException e) {
+	                privilegeNames = roleEntity.getPrivileges().stream()
+	                        .map(Privilege::getName)
+	                        .collect(Collectors.toSet());
+	            }
+	        }
 
-			return ResponseEntity.status(HttpStatus.CONFLICT)
-					.body(new RestAPIResponse("failed", "Email or mobile number already exists.", null));
+	        // Generate JWT token
+	        String token = jwtService.generateToken(user, roleName, privilegeNames);
 
-		} catch (Exception e) {
-			e.printStackTrace();
+	        // Prepare response
+	        Map<String, Object> finalResponse = new LinkedHashMap<>();
 
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(new RestAPIResponse("failed", "Registration failed: " + e.getMessage(), null));
-		}
+	        finalResponse.put("id", savedUser.getId());
+	        finalResponse.put("fullName", savedUser.getFullName());
+	        finalResponse.put("firstName", savedUser.getFirstName());
+	        finalResponse.put("middleName", savedUser.getMiddleName());
+	        finalResponse.put("lastName", savedUser.getLastName());
+	        finalResponse.put("email", savedUser.getEmail());
+	        finalResponse.put("primaryEmail", savedUser.getPrimaryEmail());
+	        finalResponse.put("mobileNumber", savedUser.getMobileNumber());
+	        finalResponse.put("companyName", savedUser.getCompanyName());
+	        finalResponse.put("state", savedUser.getState());
+	        finalResponse.put("city", savedUser.getCity());
+	        finalResponse.put("country", savedUser.getCountry());
+	        finalResponse.put("pincode", savedUser.getPincode());
+	        finalResponse.put("telephone", savedUser.getTelephone());
+	        finalResponse.put("ein", savedUser.getEin());
+	        finalResponse.put("gstin", savedUser.getGstin());
+	        finalResponse.put("website", savedUser.getWebsite());
+	        finalResponse.put("address", savedUser.getAddress());
+	        finalResponse.put("loginurl", savedUser.getLoginUrl());
+	        finalResponse.put("companylogo", savedUser.getCompanylogo());
+	        finalResponse.put("businessCountry", savedUser.getBusinessCountry());
+	        finalResponse.put("suite", savedUser.getSuite());
+	        finalResponse.put("roleName", roleName);
+	        finalResponse.put("privileges", privilegeNames);
+	        finalResponse.put("token", token);
 
+	        return ResponseEntity.status(HttpStatus.CREATED)
+	                .body(new RestAPIResponse("success",
+	                        "Company registered successfully. ADMIN created.", finalResponse));
+
+	    } catch (DataIntegrityViolationException e) {
+
+	        return ResponseEntity.status(HttpStatus.CONFLICT)
+	                .body(new RestAPIResponse("failed",
+	                        "Email or mobile number already exists.", null));
+
+	    } catch (Exception e) {
+
+	        e.printStackTrace();
+
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new RestAPIResponse("failed",
+	                        "Registration failed: " + e.getMessage(), null));
+	    }
 	}
+	
 
 	/** Send OTP */
 	@PostMapping("/login/send-otp")
@@ -178,7 +299,6 @@ public class UserController {
 	}
 
 	// Bhargav
-
 //	//@PostMapping("/otp/send")
 //	@PostMapping("/login/send-otp")
 //	public ResponseEntity<RestAPIResponse> sendOTP(@RequestBody Map<String, String> body) {
@@ -251,6 +371,21 @@ public class UserController {
 	}
 
 	// Bhargav
+	
+	
+//08-03-26 Added
+	@PostMapping("/accountnumbersend-otp")
+	public ResponseEntity<RestAPIResponse> accountnumbersendOTP(@RequestBody Map<String, String> body) {
+		try {
+			String email = body.get("email");
+			userServiceImpl.accountnumbersendOTP(email);
+			return ResponseEntity.ok(new RestAPIResponse("success", "OTP sent successfully", email));
+		} catch (Exception e) {
+			return ResponseEntity.badRequest().body(new RestAPIResponse("error", e.getMessage(), null));
+		}
+	}	
+//08-03-26 Added	
+	
 
 	/** Check token validity */
 	@GetMapping("/check-token")

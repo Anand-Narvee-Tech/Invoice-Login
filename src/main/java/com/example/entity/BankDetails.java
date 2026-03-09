@@ -33,7 +33,7 @@ public class BankDetails {
 	private String bankAccountNumber;
 	private String routingNumber;
 
-	@ManyToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "user_id")
 	@JsonIgnore
 	private User user; // 👈 THIS FIELD MUST EXIST
