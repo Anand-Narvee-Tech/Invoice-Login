@@ -144,7 +144,7 @@ public class ManageUsers {
 	@ElementCollection
 	private List<BankDetails> bankDetails;
 
-
+	private String taxId;
 
 	@CreationTimestamp
 	@Column(name = "created_at", nullable = false, updatable = false)
@@ -225,6 +225,5 @@ public class ManageUsers {
 	private boolean hasText(String value) {
 		return value != null && !value.isBlank();
 	}
-
 
 }
