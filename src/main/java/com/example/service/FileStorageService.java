@@ -1,7 +1,9 @@
 package com.example.service;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -10,28 +12,30 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class FileStorageService {
 
-    @Value("${file.upload-dir}")
-    private String uploadDir;
+    private final String uploadDir = "uploads/";
 
-    public String saveFile(MultipartFile file) throws IOException {
+    public String saveFile(MultipartFile file) {
 
-        if (file == null || file.isEmpty()) {
-            return null;
+        try {
+
+            File directory = new File(uploadDir);
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
+
+            String originalFileName = file.getOriginalFilename();
+            String extension = originalFileName.substring(originalFileName.lastIndexOf("."));
+
+            String fileName = UUID.randomUUID().toString() + extension;
+
+            Path filePath = Paths.get(uploadDir + fileName);
+
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            return fileName;
+
+        } catch (Exception e) {
+            throw new RuntimeException("File upload failed: " + e.getMessage());
         }
-
-        String fileName = file.getOriginalFilename();
-
-        Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
-
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
-
-        Path filePath = uploadPath.resolve(fileName);
-
-        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-        // return only web path for DB
-        return "/uploads/profile/" + fileName;
     }
 }
