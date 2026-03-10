@@ -1172,6 +1172,15 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 		if (request.getDunsNumber() != null)
 			user.setDunsNumber(request.getDunsNumber());
+		
+		if (request.getSuite() != null)
+			user.setSuite(request.getSuite());
+		
+		if (request.getBusinessCountry() != null)
+			user.setBusinessCountry(request.getBusinessCountry());
+		
+		if (request.getCompanylogo() != null)
+			user.setCompanylogo(request.getCompanylogo());
 
 		if (request.getStateOfIncorporation() != null)
 			user.setStateOfIncorporation(request.getStateOfIncorporation());
@@ -1184,7 +1193,7 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 		if (request.getDateOfIncorporation() != null)
 			user.setDateOfIncorporation(request.getDateOfIncorporation());
-
+		
 		if (request.getBankDetails() != null) {
 
 			userRepository.save(user);
@@ -1225,8 +1234,6 @@ public class ManageUsersServiceImpl implements ManageUserService {
 			if (request.getInvoicePrefix() != null)
 				manageUser.setInvoicePrefix(request.getInvoicePrefix());
 
-			
-			
 			if (request.getTaxId() != null)
 				manageUser.setTaxId(request.getTaxId());
 
@@ -1244,6 +1251,15 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 			if (request.getWebsite() != null)
 				manageUser.setWebsite(request.getWebsite());
+			
+			if (request.getSuite() != null)
+				manageUser.setSuite(request.getSuite());
+			
+			if (request.getBusinessCountry() != null)
+				manageUser.setBusinessCountry(request.getBusinessCountry());
+			
+			if (request.getCompanylogo() != null)
+				manageUser.setCompanylogo(request.getCompanylogo());
 
 			// vasim
 
