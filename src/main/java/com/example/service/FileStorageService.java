@@ -10,28 +10,28 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class FileStorageService {
 
-	 @Value("${file.upload-dir}")
-	    private String uploadDir;
-	 
-public String saveFile(MultipartFile file) throws IOException {
+    @Value("${file.upload-dir}")
+    private String uploadDir;
 
-	        if (file == null || file.isEmpty()) {
-	            return null;
-	        }
+    public String saveFile(MultipartFile file) throws IOException {
 
-	        // Only original file name
-	        String fileName = file.getOriginalFilename();
+        if (file == null || file.isEmpty()) {
+            return null;
+        }
 
-	        Path uploadPath = Paths.get(uploadDir);
+        String fileName = file.getOriginalFilename();
 
-	        if (!Files.exists(uploadPath)) {
-	            Files.createDirectories(uploadPath);
-	        }
+        Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
 
-	        Path filePath = uploadPath.resolve(fileName);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
 
-	        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+        Path filePath = uploadPath.resolve(fileName);
 
-	        return fileName;   // DB will store Narvee-logo.png
-	    }
+        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+        // return only web path for DB
+        return "/uploads/profile/" + fileName;
+    }
 }

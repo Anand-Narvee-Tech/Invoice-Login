@@ -22,6 +22,7 @@ public class SecurityConfig {
             				"/auth/**",
             				"/auth/login/send-otp/**",
             				"/auth/updated/save",
+                            "/auth/uploads/**",
             			    "/auth/login/**",
             			    "/auth/register/**",
             			    "/auth/updated/email/{email}",
