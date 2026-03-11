@@ -26,6 +26,7 @@ public class SecurityConfig {
                     .requestMatchers(
                             "/auth/**",
                             "/uploads/**", 
+                            "/auth//{filename:.+}/**",
                             "/auth/login/send-otp/**",
                             "/auth/uploads/profile",
                             "/auth/updated/save",

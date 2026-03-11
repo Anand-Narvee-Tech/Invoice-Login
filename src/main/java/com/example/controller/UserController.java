@@ -1,5 +1,7 @@
 package com.example.controller;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -8,7 +10,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -437,6 +441,7 @@ public class UserController {
 //		return ResponseEntity.ok(new RestAPIResponse("Success", "Profile retrieved successfully", responseData));
 //	}
 
+
 	@GetMapping("/updated/email/{email}")
 	public ResponseEntity<RestAPIResponse> getUserProfileByEmail(@PathVariable("email") String email) {
 
@@ -458,6 +463,7 @@ public class UserController {
 //    		return new ResponseEntity<>(new RestAPIResponse("Success" ,"Profile is  Not Updated please check Id and User" +id +" " +user) , HttpStatus.OK);
 //		}	
 //    }
+	
 	@GetMapping("/me")
 	public ResponseEntity<RestAPIResponse> getMyProfile(@RequestHeader("Authorization") String token) {
 		try {
@@ -514,9 +520,32 @@ public class UserController {
 
 		Map<String, String> tokenData = new HashMap<>();
 		tokenData.put("token", token);
-		tokenData.put("type", "Bearer");
+		tokenData.put("type", " ");
 		tokenData.put("expiresIn", "24 hours");
-
 		return ResponseEntity.ok(new RestAPIResponse("success", "Registration token generated", tokenData));
 	}
+	
+	//Bhargav10-03-26
+   // Preview image in Postman
+    @GetMapping("/{filename:.+}")
+    public ResponseEntity<Resource> getFile(@PathVariable String filename) {
+        try {
+            Resource resource = fileStorageService.loadFile(filename);
+
+            // Detect content type dynamically
+            String contentType = Files.probeContentType(resource.getFile().toPath());
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+                    .body(resource);
+
+        } catch (IOException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+	//Bhargav10-03-26
 }
