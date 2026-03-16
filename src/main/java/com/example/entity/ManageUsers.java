@@ -149,6 +149,7 @@ public class ManageUsers {
 	// Bhargav
 
 	// vasim
+	@ElementCollection
 	private String fid;
 	private String everifyId;
 	private String dunsNumber;
@@ -231,6 +232,5 @@ public class ManageUsers {
 	private boolean hasText(String value) {
 		return value != null && !value.isBlank();
 	}
-
 
 }
