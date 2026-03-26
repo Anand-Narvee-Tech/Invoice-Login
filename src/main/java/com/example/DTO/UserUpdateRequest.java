@@ -42,6 +42,7 @@ public class UserUpdateRequest {
 	private String businessCountry;
 	private String suite;
 	private String companylogo;
+	private String companyDomain;
 	// Bhargav
 
 	// vasim

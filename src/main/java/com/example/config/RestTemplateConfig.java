@@ -18,7 +18,7 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 public class RestTemplateConfig {
 
-    @Bean
+	@Bean
     public RestTemplate restTemplate() throws Exception {
         // Trust all certificates (development only!)
         SSLContext sslContext = SSLContexts.custom()

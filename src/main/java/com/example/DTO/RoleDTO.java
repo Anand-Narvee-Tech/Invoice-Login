@@ -15,6 +15,7 @@ public class RoleDTO {
     private String roleName;
     private String description;
     private String status;
+    private Long adminId;
     private Long addedBy;
     private String addedByName;
     private Long updatedBy;

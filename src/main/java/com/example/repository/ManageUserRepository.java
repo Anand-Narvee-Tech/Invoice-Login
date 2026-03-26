@@ -176,6 +176,8 @@ public interface ManageUserRepository extends JpaRepository<ManageUsers, Long>, 
     Page<ManageUsers> getManageUserByEmail(@Param("email") String email, Pageable pageable);
 
     
+    List<ManageUsers> findByCreatedBy_Id(Long createdById);
+
     //Bhargav
 
 	

@@ -253,6 +253,7 @@ public class UserController {
 			finalResponse.put("roleName", roleName);
 			finalResponse.put("privileges", privilegeNames);
 			finalResponse.put("companylogo", logoUrl);
+			finalResponse.put("companydomain",savedUser.getCompanyDomain());
 			finalResponse.put("token", token);
 
 			return ResponseEntity.status(HttpStatus.CREATED).body(
@@ -548,4 +549,34 @@ public class UserController {
         }
     }
 	//Bhargav10-03-26
+    @PutMapping(value = "/logo/{adminId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updateLogo(
+            @PathVariable Long adminId,
+            @RequestParam("companylogo") MultipartFile file) {
+        try {
+
+            if (file == null || file.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "status", "FAILED",
+                        "message", "File is empty or not provided"
+                ));
+            }
+
+            String filename = fileStorageService.updateLogo(adminId, file);
+
+            return ResponseEntity.ok(Map.of(
+                    "status", "SUCCESS",
+                    "message", "Logo updated successfully",
+                    "fileName", filename
+            ));
+
+        } catch (Exception e) {
+
+            return ResponseEntity.badRequest().body(Map.of(
+                    "status", "FAILED",
+                    "message", e.getMessage()
+            ));
+        }
+    }
+    
 }

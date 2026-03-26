@@ -1,5 +1,6 @@
 package com.example.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -50,6 +51,11 @@ public interface RoleRepository extends JpaRepository<Role, Long>{
     	        )
     	""")
     	Page<Role> searchAll(@Param("keyword") String keyword, Pageable pageable);
+    
+        
+	Optional<Role> findByRoleNameIgnoreCaseAndAdminId(String roleName, Long adminId);
+	
+	public List<Role> findByAdminId(Long adminId);
 
 }
 

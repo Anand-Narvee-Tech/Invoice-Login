@@ -35,6 +35,7 @@ public class UserProfileResponse {
 	private String pincode;
 	private String telephone;
 	private String ein;
+	private String companyDomain;
 	private String gstin;
 	private String website;
 	private String address;

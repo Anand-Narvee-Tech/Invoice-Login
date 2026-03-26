@@ -1,9 +1,11 @@
 package com.example.service;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.DTO.LoginRequest;
 import com.example.DTO.ManageUserDTO;
@@ -42,5 +44,6 @@ public interface UserService {
 	public void sendOtpForRegister(String emailInput);
 
 	public  ManageUserDTO registerCompanyUser(ManageUsers manageUsers);
+	
 
 }

@@ -23,9 +23,11 @@ public interface RoleService {
     List<RoleDTO> getAllRoles();
    
     
-    
     RoleDTO getRoleById(Long id);
 
     // ✅ Updated signature
     RoleDTO updateRolePrivileges(Long roleId, Set<Long> selectedPrivilegeIds, String category);
+    
+    public List<RoleDTO> getRolesByAdminId(Long adminId);
+    
 }
