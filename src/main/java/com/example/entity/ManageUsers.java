@@ -107,6 +107,7 @@ public class ManageUsers {
 
 	// Bhargav
 
+	
 	@Column(name = "state")
 	private String state;
 
@@ -149,7 +150,7 @@ public class ManageUsers {
 	// Bhargav
 
 	// vasim
-	@ElementCollection
+//	@ElementCollection
 	private String fid;
 	private String everifyId;
 	private String dunsNumber;

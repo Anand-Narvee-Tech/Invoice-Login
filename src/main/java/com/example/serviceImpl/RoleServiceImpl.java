@@ -85,12 +85,13 @@ public class RoleServiceImpl implements RoleService {
         User currentUser = userRepository.findByEmailIgnoreCase(loggedInEmail)
                 .orElseThrow(() -> new RuntimeException("Logged-in user not found"));
 
-        // ✅ Check duplicate role name
+        // ✅ Check duplicate role for same admin
         Optional<Role> existingRole = roleRepository
-                .findByRoleNameIgnoreCase(roleDTO.getRoleName());
+                .findByRoleNameIgnoreCaseAndAdminId(roleDTO.getRoleName(), roleDTO.getAdminId());
 
         if (existingRole.isPresent()) {
-            throw new RuntimeException("Role name already exists: " + roleDTO.getRoleName());
+            throw new RuntimeException(
+                    "Role '" + roleDTO.getRoleName() + "' already exists for this admin");
         }
 
         Role role = convertToEntity(roleDTO);
@@ -102,7 +103,7 @@ public class RoleServiceImpl implements RoleService {
         Role saved = roleRepository.save(role);
 
         return convertToDTO(saved);
-    }  
+    }
     
 // Added  By Bhargav 24/02/26    
     
@@ -119,7 +120,7 @@ public class RoleServiceImpl implements RoleService {
                 .orElseThrow(() -> new RuntimeException("Role not found"));
 
         // 3️⃣ Update role fields
-        existing.setRoleName(roleDTO.getRoleName().trim().toUpperCase());
+        existing.setRoleName(roleDTO.getRoleName());
         existing.setDescription(roleDTO.getDescription());
         existing.setStatus(roleDTO.getStatus());
 
@@ -255,6 +256,7 @@ public class RoleServiceImpl implements RoleService {
         return RoleDTO.builder()
                 .roleId(role.getRoleId())
                 .roleName(role.getRoleName())
+                .adminId(role.getAdminId())
                 .description(role.getDescription())
                 .status(role.getStatus())
                 .addedBy(role.getAddedBy())
@@ -275,6 +277,7 @@ public class RoleServiceImpl implements RoleService {
         role.setRoleName(dto.getRoleName());
         role.setDescription(dto.getDescription());
         role.setStatus(dto.getStatus());
+        role.setAdminId(dto.getAdminId());
 
         // Audit fields must be mapped
         role.setAddedBy(dto.getAddedBy());
@@ -307,6 +310,7 @@ public class RoleServiceImpl implements RoleService {
                 .description(role.getDescription())
                 .status(role.getStatus())
                 .addedBy(role.getAddedBy())
+                .adminId(role.getAdminId())
                 .addedByName(role.getAddedByName())
                 .updatedBy(role.getUpdatedBy())
                 .updatedByName(role.getUpdatedByName())
@@ -388,5 +392,18 @@ public class RoleServiceImpl implements RoleService {
         return dtoPage;
     }
 
+    @Override
+    public List<RoleDTO> getRolesByAdminId(Long adminId) {
+
+        List<Role> roles = roleRepository.findByAdminId(adminId);
+
+        if (roles.isEmpty()) {
+            throw new RuntimeException("No roles found for this admin");
+        }
+
+        return roles.stream()
+                .map(this::convertToDTO)
+                .toList();
+    }
 
 }

@@ -110,6 +110,10 @@ public class User {
 	
 	@Column(name = "companylogo")
 	private String companylogo;
+	
+	@Column(name = "companyDomain")
+	private String companyDomain;
+
 
 	// Bhargav
 

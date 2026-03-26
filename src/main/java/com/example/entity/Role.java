@@ -20,6 +20,7 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -37,7 +38,12 @@ import lombok.ToString;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "roleId")
 @Entity
-@Table(name = "roles")
+@Table(
+	    name = "roles",
+	    uniqueConstraints = @UniqueConstraint(
+	        columnNames = {"role_name", "admin_id"}
+	    )
+	)
 public class Role {
 
     @Id

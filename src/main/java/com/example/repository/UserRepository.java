@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.example.entity.ManageUsers;
 import com.example.entity.User;
 
 @Repository
@@ -41,4 +42,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 	//Bhargav
 	public boolean existsByEmail(String email);
 	//Bhargav
+
+
 }

@@ -2,6 +2,7 @@ package com.example.service;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
@@ -65,4 +66,5 @@ public interface ManageUserService {
 
 	// Bhargav
 
+	Optional<ManageUsers> findByAdminId(Long adminId);
 }

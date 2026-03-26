@@ -69,6 +69,12 @@ public class RoleController {
 	        return ResponseEntity.ok(
 	                new RestAPIResponse("success", "Role saved successfully", saved));
 
+	    } catch (org.springframework.dao.DataIntegrityViolationException e) {
+
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+	                .body(new RestAPIResponse("error", 
+	                        "Role already exists for this admin", null));
+
 	    } catch (RuntimeException e) {
 
 	        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -221,4 +227,22 @@ public class RoleController {
 					.body(new RestAPIResponse("error", "Failed to delete role: " + e.getMessage(), null));
 		}
 	}
+	
+	@GetMapping("/roles/{adminId}")
+	public ResponseEntity<RestAPIResponse> getRolesByAdminId(@PathVariable Long adminId) {
+
+	    try {
+
+	        List<RoleDTO> roles = roleServiceImpl.getRolesByAdminId(adminId);
+
+	        return ResponseEntity.ok(
+	                new RestAPIResponse("success", "Roles retrieved successfully", roles));
+
+	    } catch (Exception e) {
+
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new RestAPIResponse("error", e.getMessage(), null));
+	    }
+	}
+	
 }

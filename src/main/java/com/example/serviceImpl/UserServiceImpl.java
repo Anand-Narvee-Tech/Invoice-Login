@@ -1,9 +1,13 @@
 package com.example.serviceImpl;
 
-import java.awt.print.Pageable;
-import java.security.SecureRandom;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,35 +22,25 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.HtmlUtils;
 
 import com.example.DTO.LoginRequest;
 import com.example.DTO.ManageUserDTO;
 import com.example.DTO.ManageUserDTO.ManageUserDTOBuilder;
 import com.example.DTO.RegisterRequest;
-import com.example.DTO.SortingRequestDTO;
 import com.example.DTO.UserProfileResponse;
-import com.example.commons.RestAPIResponse;
 import com.example.config.MailConfig;
 import com.example.entity.ManageUsers;
 import com.example.entity.OTP;
 import com.example.entity.Privilege;
 import com.example.entity.Role;
 import com.example.entity.User;
-import com.example.entity.VerifyOtpRequest;
-import com.example.entity.VerifyOtpRequest;
 import com.example.exception.BusinessException;
+import com.example.repository.AdminRepository;
 import com.example.repository.ManageUserRepository;
 import com.example.repository.PrivilegeRepository;
 import com.example.repository.RoleRepository;
@@ -61,6 +55,8 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 public class UserServiceImpl implements UserService {
+
+    private final AdminRepository adminRepository;
 
 	private static final Set<String> DEFAULT_SUPERUSERS = Set.of("japhanya@narveetech.com", "wasim@narveetech.com");
 
@@ -89,9 +85,11 @@ public class UserServiceImpl implements UserService {
 
 	@Value("${spring.mail.username}")
 	private String fromEmail;
+	
 
-	UserServiceImpl(MailConfig mailConfig) {
+	UserServiceImpl(MailConfig mailConfig, AdminRepository adminRepository) {
 		this.mailConfig = mailConfig;
+		this.adminRepository = adminRepository;
 	}
 
 	private ManageUserDTO convertToDTO(ManageUsers user) {
@@ -103,7 +101,7 @@ public class UserServiceImpl implements UserService {
 				.addedByName(user.getAddedByName()).updatedByName(user.getUpdatedByName())
 				.businessCountry(user.getBusinessCountry()).state(user.getState()).country(user.getCountry())
 				.pincode(user.getPincode()).city(user.getCity()).suite(user.getSuite())
-				.companylogo(user.getCompanylogo())
+				.companylogo(user.getCompanylogo()).companyDomain(user.getCompanyDomain())
 				.telephone(user.getTelephone()).ein(user.getEin()).gstin(user.getGstin()).website(user.getWebsite())
 				.address(user.getAddress()).loginUrl(user.getLoginUrl()) 
 				.build();
@@ -111,8 +109,12 @@ public class UserServiceImpl implements UserService {
 	//
 
 	private String extractDomain(String email) {
-		return email.substring(email.indexOf("@") + 1).toLowerCase();
-	}
+		   if (email == null || !email.contains("@")) {
+		        return null;
+		    }
+
+		    return email.substring(email.indexOf("@") + 1).toLowerCase();
+		}
 
 	// Bhargav
 	public boolean isEmailDuplicate(String email) {
@@ -234,9 +236,13 @@ public class UserServiceImpl implements UserService {
 	    manageUsers.setEmail(email);
 	    manageUsers.setPrimaryEmail(email);
 
-	    // 2️⃣ Extract domain
+	    // 2️⃣ Extract Domain
 	    String domain = extractDomain(email);
+
+	    // ✅ IMPORTANT FIX
 	    manageUsers.setCompanyDomain(domain);
+	    
+	    
 
 	    // 3️⃣ Check if ADMIN already exists
 	    if (manageUserRepository.existsByCompanyDomainAndRole_RoleNameIgnoreCase(domain, ADMIN_ROLE)) {
@@ -265,6 +271,7 @@ public class UserServiceImpl implements UserService {
 	        u.setWebsite(website);
 	        u.setAddress(address);
 	        u.setCompanylogo(companylogo);
+	        u.setCompanyDomain(domain);
 	        u.setSuite(suite);
 	        u.setBusinessCountry(BusinessCountry);
 	        u.setApproved(true);
@@ -286,6 +293,7 @@ public class UserServiceImpl implements UserService {
 	    manageUsers.setWebsite(website);
 	    manageUsers.setAddress(address);
 	    manageUsers.setCompanylogo(companylogo);
+	    manageUsers.setCompanyDomain(domain);
 	    manageUsers.setSuite(suite);
 	    manageUsers.setBusinessCountry(BusinessCountry);
 	    manageUsers.setApproved(true);
@@ -1159,6 +1167,7 @@ public class UserServiceImpl implements UserService {
 		manageUsers.setAddress(request.getAddress());
 		manageUsers.setBusinessCountry(request.getBusinessCountry());
 		manageUsers.setCompanylogo(request.getCompanylogo());
+		manageUsers.setCompanyDomain(request.getCompanyDomain());
 		manageUsers.setSuite(request.getSuite());
 
 
@@ -1264,5 +1273,5 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 //08-03-26 Added
-
-}
+	
+	}

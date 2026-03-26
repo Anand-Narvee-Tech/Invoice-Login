@@ -1471,6 +1471,12 @@ public class ManageUsersServiceImpl implements ManageUserService {
 		return manageUsersPage.map(this::convertToDTO);
 	}
 
+	@Override
+	public Optional<ManageUsers> findByAdminId(Long adminId) {
+		// TODO Auto-generated method stub
+		return Optional.empty();
+	}
+
 
 	/* Addedby Bhargav */
 

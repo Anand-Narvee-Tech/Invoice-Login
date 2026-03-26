@@ -9,4 +9,5 @@ public interface FileStorageService {
 
 	public  Resource loadFile(String filename) throws IOException;
 
+	public String updateLogo(Long createdBy, MultipartFile file) throws IOException;
 }
