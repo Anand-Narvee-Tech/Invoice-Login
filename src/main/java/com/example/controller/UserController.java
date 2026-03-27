@@ -456,6 +456,7 @@ public class UserController {
 		return ResponseEntity.ok(new RestAPIResponse("Success", "Profile retrieved successfully", response));
 	}
 
+
 //    @PutMapping("/updated/{id}")
 //    public ResponseEntity<RestAPIResponse> updateProfile(@PathVariable Long id, @RequestBody User user){
 //    	try {

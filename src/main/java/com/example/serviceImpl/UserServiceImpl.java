@@ -665,9 +665,8 @@ public class UserServiceImpl implements UserService {
 					+ "</strong>,<br><br>"
 
 					+ "Thank you for choosing <b>Invoicing Application</b>. Your verification code is:" + "</p>"
-					+ "<div style='text-align:center; margin:32px 0;'>"
-					+ "<div style='display:inline-block; padding:18px 32px; border-radius:12px; border:2px dashed #2563eb; background:#eff6ff; font-size:36px; font-weight:700; letter-spacing:8px; color:#1e3a8a;'>"
-					+ otp + "</div>" + "</div>" + "<p style='text-align:center; font-size:15px; color:#6b7280;'>"
+					+ "<div style='display:inline-block; text-align:center; padding:18px 20px; border-radius:12px; background:#eff6ff; font-size:30px; font-weight:700; letter-spacing:0px; color:#1e3a8a;'>"
+					+ otp.trim()+ "</div>" + "<p style='text-align:center; font-size:15px; color:#6b7280;'>"
 					+ "This OTP is valid for <strong>2 minutes</strong>. Please do not share this code with anyone."
 					+ "</p>" + "<p style='font-size:14px; color:#333; margin-top:30px;'>"
 					+ "Best Regards,<br><b>Invoicing Team</b>" + "</p>" + "</td>" + "</tr>" + "<tr>"
@@ -994,21 +993,100 @@ public class UserServiceImpl implements UserService {
 		return name.isEmpty() ? user.getEmail().split("@")[0] : name;
 	}
     
+	@Override
 	public UserProfileResponse getUserProfileByEmail(String email) {
 
-	    String normalizedEmail = email.trim().toLowerCase();
+		String normalizedEmail = email.trim().toLowerCase();
 
-	    Optional<User> userOpt = userRepository.findByEmailIgnoreCase(normalizedEmail);
-	    Optional<ManageUsers> muOpt = manageUserRepository.findByEmailIgnoreCase(normalizedEmail);
+		Optional<User> userOpt = userRepository.findByEmailIgnoreCase(normalizedEmail);
+		Optional<ManageUsers> muOpt = manageUserRepository.findByEmailIgnoreCase(normalizedEmail);
 
-	    if (userOpt.isEmpty() && muOpt.isEmpty()) {
-	        return null;
-	    }
+		if (userOpt.isEmpty() && muOpt.isEmpty()) {
+			return null;
+		}
 
 		User user = userOpt.orElse(null);
 		ManageUsers mu = muOpt.orElse(null);
 
-	return null;
+		return UserProfileResponse.builder().id(user != null ? user.getId() : 0L).fullName(resolveFullName(user, mu))
+				.primaryEmail(user != null && hasText(user.getPrimaryEmail()) ? user.getPrimaryEmail()
+						: mu != null ? safe(mu.getEmail()) : normalizedEmail)
+
+				.mobileNumber(user != null && hasText(user.getMobileNumber()) ? user.getMobileNumber()
+						: mu != null ? safe(mu.getMobileNumber()) : "")
+
+				.alternativeEmail(user != null && hasText(user.getAlternativeEmail()) ? user.getAlternativeEmail() : "")
+
+				.alternativeMobileNumber(
+						user != null && hasText(user.getAlternativeMobileNumber()) ? user.getAlternativeMobileNumber()
+								: "")
+
+				.companyName(user != null && hasText(user.getCompanyName()) ? user.getCompanyName()
+						: mu != null ? safe(mu.getCompanyName()) : "")
+
+				// ✅ Address & Company Details
+				.state(user != null && hasText(user.getState()) ? user.getState() : "")
+				.country(user != null && hasText(user.getCountry()) ? user.getCountry() : "")
+				.city(user != null && hasText(user.getCity()) ? user.getCity() : "")
+				.pincode(user != null && hasText(user.getPincode()) ? user.getPincode() : "")
+				.telephone(user != null && hasText(user.getTelephone()) ? user.getTelephone() : "")
+				.ein(user != null && hasText(user.getEin()) ? user.getEin() : "")
+				.gstin(user != null && hasText(user.getGstin()) ? user.getGstin() : "")
+				.website(user != null && hasText(user.getWebsite()) ? user.getWebsite() : "")
+				.address(user != null && hasText(user.getAddress()) ? user.getAddress() : "")
+				.businessCountry(user != null && hasText(user.getBusinessCountry()) ? user.getBusinessCountry() : "")
+				.companylogo(user != null && hasText(user.getCompanylogo()) ? user.getCompanylogo() : "")
+				.suite(user != null && hasText(user.getSuite()) ? user.getSuite() : "")
+				// ✅ Newly Added Fields
+				.fid(user != null && hasText(user.getFid()) ? user.getFid() : "")
+				.everifyId(user != null && hasText(user.getEverifyId()) ? user.getEverifyId() : "")
+				.dunsNumber(user != null && hasText(user.getDunsNumber()) ? user.getDunsNumber() : "")
+				.stateOfIncorporation(
+						user != null && hasText(user.getStateOfIncorporation()) ? user.getStateOfIncorporation() : "")
+				.naicsCode(user != null && hasText(user.getNaicsCode()) ? user.getNaicsCode() : "")
+				.signingAuthorityName(
+						user != null && hasText(user.getSigningAuthorityName()) ? user.getSigningAuthorityName() : "")
+				.designation(user != null && hasText(user.getDesignation()) ? user.getDesignation() : "")
+				.dateOfIncorporation(
+						user != null && hasText(user.getDateOfIncorporation()) ? user.getDateOfIncorporation() : "")
+
+				// ✅ Bank Details (Safe Handling)
+				.bankDetails(
+						user != null && user.getBankDetails() != null ? user.getBankDetails() : Collections.emptyList())
+
+				.taxId(user != null && hasText(user.getTaxId()) ? user.getTaxId() : "")
+				.businessId(user != null && hasText(user.getBusinessId()) ? user.getBusinessId() : "")
+				.preferredCurrency(
+						user != null && hasText(user.getPreferredCurrency()) ? user.getPreferredCurrency() : "")
+				.invoicePrefix(user != null && hasText(user.getInvoicePrefix()) ? user.getInvoicePrefix() : "")
+				.profilePicPath(user != null && hasText(user.getProfilePicPath()) ? user.getProfilePicPath() : "")
+
+				.role(mu != null && mu.getRole() != null ? mu.getRole().getRoleName()
+						: user != null && user.getRole() != null ? user.getRole().getRoleName() : "")
+				.build();
+
+	}
+
+	private String resolveFullName(User user, ManageUsers mu) {
+		if (mu != null && hasText(mu.getFullName())) {
+			return mu.getFullName();
+		}
+		if (user != null && hasText(user.getFullName())) {
+			return user.getFullName();
+		}
+		return "";
+	}
+
+	private String safe(String value) {
+		return value != null ? value : "";
+	}
+
+	private boolean hasText(String value) {
+		return value != null && !value.isBlank();
+	}
+	
+//Bhargav
+	
 //			UserProfileResponse.builder().id(user != null ? user.getId() : 0L).fullName(resolveFullName(user, mu))
 //				.primaryEmail(user != null && hasText(user.getPrimaryEmail()) ? user.getPrimaryEmail()
 //						: mu != null ? safe(mu.getEmail()) : normalizedEmail)
@@ -1075,34 +1153,10 @@ public class UserServiceImpl implements UserService {
 ////	            .bankDeatils(bankDetailsList)
 ////
 ////	            .build();
-	}
-
-	private ManageUserDTOBuilder stateOfIncorporation(Object object) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	private String resolveFullName(User user, ManageUsers mu) {
-		if (mu != null && hasText(mu.getFullName())) {
-			return mu.getFullName();
-		}
-		if (user != null && hasText(user.getFullName())) {
-			return user.getFullName();
-		}
-		return "";
-	}
-
-	private String safe(String value) {
-		return value != null ? value : "";
-	}
-
-	private boolean hasText(String value) {
-		return value != null && !value.isBlank();
-	}
-
+	
 //Bhargav
 
-	@Override
+ 	@Override
 	@Transactional
 	public boolean verifyOtp(String emailInput, String otpInput) {
 
