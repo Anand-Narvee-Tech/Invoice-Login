@@ -280,6 +280,10 @@ public class UserServiceImpl implements UserService {
 	        return userRepository.save(u);
 	    });
 
+	    // ✅ IMPORTANT FIX: save user id into adminId
+	    manageUsers.setAdminId(user.getId());
+
+	    
 	    // Restore preserved fields
 	    manageUsers.setMobileNumber(mobileNumber);
 	    manageUsers.setCompanyName(companyName);

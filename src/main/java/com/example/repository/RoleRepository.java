@@ -56,6 +56,23 @@ public interface RoleRepository extends JpaRepository<Role, Long>{
 	Optional<Role> findByRoleNameIgnoreCaseAndAdminId(String roleName, Long adminId);
 	
 	public List<Role> findByAdminId(Long adminId);
+	
+	
+	Page<Role> findByAdminId(Long adminId, Pageable pageable);
+	
+	@Query("""
+		       SELECT r
+		       FROM Role r
+		       WHERE r.adminId = :adminId
+		       AND (
+		            LOWER(r.roleName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+		            OR LOWER(r.addedByName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+		            OR LOWER(r.updatedByName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+		       )
+		       """)
+		Page<Role> searchByAdminId(@Param("adminId") Long adminId,
+		                           @Param("keyword") String keyword,
+		                           Pageable pageable);
 
 }
 
