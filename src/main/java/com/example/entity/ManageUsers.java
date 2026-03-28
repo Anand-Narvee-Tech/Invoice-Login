@@ -146,6 +146,10 @@ public class ManageUsers {
 	
 	@Column(name = "companylogo")
 	private String companylogo;
+	
+	@Column(name = "admin_id")
+	private Long adminId;
+
 
 	// Bhargav
 
@@ -233,5 +237,7 @@ public class ManageUsers {
 	private boolean hasText(String value) {
 		return value != null && !value.isBlank();
 	}
+
+	
 
 }

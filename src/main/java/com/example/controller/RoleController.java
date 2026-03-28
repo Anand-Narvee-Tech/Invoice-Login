@@ -245,4 +245,29 @@ public class RoleController {
 	    }
 	}
 	
+	
+	@GetMapping("/adminId/search")
+	public ResponseEntity<RestAPIResponse> searchRoles(
+	        @RequestParam(defaultValue = "0") int page,
+	        @RequestParam(defaultValue = "10") int size,
+	        @RequestParam(defaultValue = "roleId") String sortBy,
+	        @RequestParam(defaultValue = "asc") String sortDir,
+	        @RequestParam(required = false) String keyword,
+	        Authentication authentication) {
+
+	    String loggedInEmail = authentication.getName();
+
+	    Page<RoleDTO> result = roleServiceImpl.searchRoles(
+	            page,
+	            size,
+	            sortBy,
+	            sortDir,
+	            SanitizerUtils.sanitize(keyword),
+	            loggedInEmail
+	    );
+
+	    return ResponseEntity.ok(
+	            new RestAPIResponse("success", "Roles fetched successfully", result)
+	    );
+	}
 }

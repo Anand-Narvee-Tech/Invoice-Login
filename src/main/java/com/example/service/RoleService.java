@@ -30,4 +30,7 @@ public interface RoleService {
     
     public List<RoleDTO> getRolesByAdminId(Long adminId);
     
+    
+	public Page<RoleDTO> searchRoles(int page, int size, String sortBy, String sortDir, String keyword,
+			String loggedInEmail);
 }

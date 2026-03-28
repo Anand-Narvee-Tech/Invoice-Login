@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.DTO.PrivilegeDTO;
 import com.example.DTO.RoleDTO;
+import com.example.entity.ManageUsers;
 import com.example.entity.Privilege;
 import com.example.entity.Role;
 import com.example.entity.User;
@@ -406,4 +407,78 @@ public class RoleServiceImpl implements RoleService {
                 .toList();
     }
 
+    
+    
+    
+    @Override
+    public Page<RoleDTO> searchRoles(
+            int page,
+            int size,
+            String sortBy,
+            String sortDir,
+            String keyword,
+            String loggedInEmail
+    ) {
+
+        // ✅ Get logged-in user from manage_users
+        ManageUsers admin = repository.findByEmailIgnoreCase(loggedInEmail)
+                .orElseThrow(() -> new RuntimeException("Admin user not found"));
+
+        // ✅ IMPORTANT FIX: use adminId column, not manage_users.id
+        Long adminId = admin.getAdminId();
+
+        if (adminId == null) {
+            throw new RuntimeException("AdminId is missing for logged-in user");
+        }
+
+        boolean sortByUserName =
+                "addedByName".equalsIgnoreCase(sortBy)
+                        || "updatedByName".equalsIgnoreCase(sortBy);
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                sortByUserName
+                        ? Sort.by("roleId")
+                        : ("desc".equalsIgnoreCase(sortDir)
+                        ? Sort.by(sortBy).descending()
+                        : Sort.by(sortBy).ascending())
+        );
+
+        // ✅ Fetch roles by adminId
+        Page<RoleDTO> dtoPage =
+                (keyword == null || keyword.isBlank())
+                        ? roleRepository.findByAdminId(adminId, pageable)
+                        .map(this::mapToDTO)
+                        : roleRepository.searchByAdminId(adminId, keyword, pageable)
+                        .map(this::mapToDTO);
+
+        // ✅ Keep old custom in-memory sorting
+        if (sortByUserName) {
+
+            Comparator<RoleDTO> comparator =
+                    "addedByName".equalsIgnoreCase(sortBy)
+                            ? Comparator.comparing(
+                            RoleDTO::getAddedByName,
+                            Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)
+                    )
+                            : Comparator.comparing(
+                            RoleDTO::getUpdatedByName,
+                            Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)
+                    );
+
+            if ("desc".equalsIgnoreCase(sortDir)) {
+                comparator = comparator.reversed();
+            }
+
+            List<RoleDTO> sortedContent = dtoPage.getContent()
+                    .stream()
+                    .sorted(comparator)
+                    .toList();
+
+            return new PageImpl<>(sortedContent, pageable, dtoPage.getTotalElements());
+        }
+
+        return dtoPage;
+    }
 }
