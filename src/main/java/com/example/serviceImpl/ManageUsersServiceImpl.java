@@ -418,9 +418,12 @@ public class ManageUsersServiceImpl implements ManageUserService {
 	    manageUsers.setCompanyDomain(currentDomain);
 
 	    // 4️⃣ Fetch Role (Single Query)
-	    Role role = roleRepository.findByRoleNameIgnoreCase(manageUsers.getRoleName())
-	            .orElseThrow(() -> new BusinessException("Role not found: " + manageUsers.getRoleName()));
+//	    Role role = roleRepository.findByRoleNameIgnoreCase(manageUsers.getRoleName())
+//	            .orElseThrow(() -> new BusinessException("Role not found: " + manageUsers.getRoleName()));
 
+	    Role role = roleRepository.findById(manageUsers.getRole().getRoleId())
+	            .orElseThrow(() -> new BusinessException("Role not found for id: " + manageUsers.getRole().getRoleId()));
+	    
 	    manageUsers.setRole(role);
 	    manageUsers.setRoleName(role.getRoleName());
 
@@ -764,8 +767,11 @@ public class ManageUsersServiceImpl implements ManageUserService {
 			String roleName = manageUsers.getRoleName().trim().toUpperCase();
 			existing.setRoleName(roleName);
 
-			role = roleRepository.findByRoleNameIgnoreCase(roleName)
-					.orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+//			role = roleRepository.findByRoleNameIgnoreCase(roleName)
+//					.orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+			
+			role = roleRepository.findById(manageUsers.getRole().getRoleId())
+		            .orElseThrow(() -> new BusinessException("Role not found for id: " + manageUsers.getRole().getRoleId()));
 
 			existing.setRole(role);
 		}
