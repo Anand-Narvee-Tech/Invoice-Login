@@ -202,20 +202,26 @@ public class UserController {
 
 			ManageUsers savedUser = manageUserRepository.findByEmailIgnoreCase(response.getEmail())
 					.orElseThrow(() -> new RuntimeException("ManageUser not found"));
-
-			String roleName = savedUser.getRoleName();
+			Long roleId = savedUser.getRole().getRoleId();
+			String roleName = null;
 
 			Set<String> privilegeNames = new HashSet<>();
 
-			if (roleName != null) {
+			if (roleId != null) {
 
-				Role roleEntity = roleRepository.findByRoleNameIgnoreCase(roleName).orElse(null);
+			    Role roleEntity = roleRepository.findById(roleId).orElse(null);
 
-				if (roleEntity != null && roleEntity.getPrivileges() != null) {
+			    if (roleEntity != null) {
 
-					privilegeNames = roleEntity.getPrivileges().stream().map(Privilege::getName)
-							.collect(Collectors.toSet());
-				}
+			        roleName = roleEntity.getRoleName(); // keep for further use
+
+			        if (roleEntity.getPrivileges() != null) {
+			            privilegeNames = roleEntity.getPrivileges()
+			                    .stream()
+			                    .map(Privilege::getName)
+			                    .collect(Collectors.toSet());
+			        }
+			    }
 			}
 
 			String token = jwtService.generateToken(user, roleName, privilegeNames);
