@@ -224,35 +224,68 @@ public class UserServiceImpl implements UserService {
 	    String gstin         = manageUsers.getGstin();
 	    String website       = manageUsers.getWebsite();
 	    String address       = manageUsers.getAddress();
-	    String BusinessCountry = manageUsers.getBusinessCountry();
+	    String businessCountry = manageUsers.getBusinessCountry();
 	    String companylogo   = manageUsers.getCompanylogo();
 	    String suite         = manageUsers.getSuite();
 
-	    // 1️⃣ Normalize email safely
+	    // 1️⃣ Normalize email
 	    if (manageUsers.getEmail() == null || manageUsers.getEmail().isBlank()) {
 	        throw new BusinessException("Email is required");
 	    }
+
 	    String email = manageUsers.getEmail().trim().toLowerCase();
 	    manageUsers.setEmail(email);
 	    manageUsers.setPrimaryEmail(email);
 
-	    // 2️⃣ Extract Domain
+	    // 2️⃣ Extract domain
 	    String domain = extractDomain(email);
-
-	    // ✅ IMPORTANT FIX
 	    manageUsers.setCompanyDomain(domain);
-	    
-	    
 
-	    // 3️⃣ Check if ADMIN already exists
+	    // 3️⃣ Check if ADMIN already exists for this company
 	    if (manageUserRepository.existsByCompanyDomainAndRole_RoleNameIgnoreCase(domain, ADMIN_ROLE)) {
 	        throw new BusinessException("Company already registered. Please contact your company administrator.");
 	    }
 
-	    // 4️⃣ Fetch ADMIN role
-	    Role adminRole = roleRepository.findByRoleNameIgnoreCase(ADMIN_ROLE)
-	            .orElseThrow(() -> new BusinessException(
-	                    "Required role ADMIN is not configured. Please contact system administrator."));
+	    // 4️⃣ ✅ CREATE NEW ADMIN ROLE (UPDATED LOGIC)
+		/*
+		 * Long adminId = manageUsers.getAdminId(); Role adminRole = new Role();
+		 * adminRole.setRoleName(ADMIN_ROLE);
+		 * adminRole.setDescription("Administrator role with full access for company: "
+		 * + domain); adminRole.setAdminId(adminId);
+		 * 
+		 * // 🔥 Assign ALL privileges Set<Privilege> allPrivileges = new
+		 * HashSet<>(privilegeRepository.findAll());
+		 * adminRole.setPrivileges(allPrivileges);
+		 * 
+		 * // Save role Role savedAdminRole = roleRepository.save(adminRole);
+		 * 
+		 * // 5️⃣ Create USER User user =
+		 * userRepository.findByEmailIgnoreCase(email).orElseGet(() -> { User u = new
+		 * User(); u.setEmail(email); u.setFirstName(manageUsers.getFirstName());
+		 * u.setCompanyName(companyName); u.setMobileNumber(mobileNumber);
+		 * u.setState(state); u.setCountry(country); u.setCity(city);
+		 * u.setPincode(pincode); u.setTelephone(telephone); u.setEin(ein);
+		 * u.setGstin(gstin); u.setWebsite(website); u.setAddress(address);
+		 * u.setCompanylogo(companylogo); u.setCompanyDomain(domain); u.setSuite(suite);
+		 * u.setBusinessCountry(businessCountry); u.setApproved(true);
+		 * u.setActive(true); u.setRole(savedAdminRole); // ✅ assign new role return
+		 * userRepository.save(u); });
+		 * 
+		 * // ✅ Set adminId manageUsers.setAdminId(user.getId());
+		 */
+	    
+	 // 4️⃣ CREATE NEW ADMIN ROLE
+	    Role adminRole = new Role();
+	    adminRole.setRoleName(ADMIN_ROLE);
+	    adminRole.setDescription("Administrator role with full access for company: " + domain);
+
+	    // Assign ALL privileges
+	    Set<Privilege> allPrivileges = new HashSet<>(privilegeRepository.findAll());
+	    adminRole.setPrivileges(allPrivileges);
+
+	    // Save role FIRST
+	    Role savedAdminRole = roleRepository.save(adminRole);
+
 
 	    // 5️⃣ Create USER
 	    User user = userRepository.findByEmailIgnoreCase(email).orElseGet(() -> {
@@ -273,18 +306,28 @@ public class UserServiceImpl implements UserService {
 	        u.setCompanylogo(companylogo);
 	        u.setCompanyDomain(domain);
 	        u.setSuite(suite);
-	        u.setBusinessCountry(BusinessCountry);
+	        u.setBusinessCountry(businessCountry);
 	        u.setApproved(true);
 	        u.setActive(true);
-	        u.setRole(adminRole);
+	        u.setRole(savedAdminRole);
 	        return userRepository.save(u);
 	    });
 
-	    // ✅ IMPORTANT FIX: save user id into adminId
+
+	    // ✅ NOW user exists → update role with adminId
+	    savedAdminRole.setAdminId(user.getId());
+	    roleRepository.save(savedAdminRole);
+
+
+	    // ✅ Set adminId in manageUsers
 	    manageUsers.setAdminId(user.getId());
 
-	    
-	    // Restore preserved fields
+
+	    // Assign role
+	    manageUsers.setRole(savedAdminRole);
+	    manageUsers.setRoleName(savedAdminRole.getRoleName());
+
+	    // Restore values
 	    manageUsers.setMobileNumber(mobileNumber);
 	    manageUsers.setCompanyName(companyName);
 	    manageUsers.setState(state);
@@ -299,21 +342,20 @@ public class UserServiceImpl implements UserService {
 	    manageUsers.setCompanylogo(companylogo);
 	    manageUsers.setCompanyDomain(domain);
 	    manageUsers.setSuite(suite);
-	    manageUsers.setBusinessCountry(BusinessCountry);
-	    manageUsers.setApproved(true);
-	    manageUsers.setActive(true);
-	    manageUsers.setRole(adminRole);
+	    manageUsers.setBusinessCountry(businessCountry);
 
-	    // 6️⃣ Create ManageUsers
-	    manageUsers.setRole(adminRole);
-	    manageUsers.setRoleName(adminRole.getRoleName());
 	    manageUsers.setApproved(true);
 	    manageUsers.setActive(true);
+
+	    // 6️⃣ Assign role to ManageUsers
+	    manageUsers.setRole(savedAdminRole);
+	    manageUsers.setRoleName(savedAdminRole.getRoleName());
 	    manageUsers.setAddedByName("SELF-REGISTERED");
 	    manageUsers.setCreatedBy(user);
 	    manageUsers.setAddedBy(user);
 
 	    ManageUsers saved = manageUserRepository.save(manageUsers);
+
 	    return convertToDTO(saved);
 	}
 //Bhargav working 
@@ -886,18 +928,39 @@ public class UserServiceImpl implements UserService {
 		}
 
 		// Determine role and selected privileges
-		String roleName = manageUser.getRoleName();
+		/*
+		 * String roleName = manageUser.getRoleName(); Set<String> privilegeNames = new
+		 * HashSet<>(); if (roleName != null) { Role roleEntity =
+		 * roleRepository.findByRoleNameIgnoreCase(roleName).orElse(null); if
+		 * (roleEntity != null && roleEntity.getPrivileges() != null) { // Include only
+		 * selected privileges privilegeNames =
+		 * roleEntity.getPrivileges().stream().map(Privilege::getName)
+		 * .collect(Collectors.toSet()); } }
+		 * 
+		 * // Generate JWT with selected privileges String jwtToken =
+		 * jwtServiceImpl.generateToken(user, roleName, privilegeNames);
+		 */
+		
+		Long roleId = manageUser.getRole().getRoleId();   // changed from roleName
+		String roleName = null;
 		Set<String> privilegeNames = new HashSet<>();
-		if (roleName != null) {
-			Role roleEntity = roleRepository.findByRoleNameIgnoreCase(roleName).orElse(null);
-			if (roleEntity != null && roleEntity.getPrivileges() != null) {
-				// Include only selected privileges
-				privilegeNames = roleEntity.getPrivileges().stream().map(Privilege::getName)
-						.collect(Collectors.toSet());
-			}
+
+		if (roleId != null) {
+		    Role roleEntity = roleRepository.findById(roleId).orElse(null);
+
+		    if (roleEntity != null) {
+		        roleName = roleEntity.getRoleName();  // still needed for JWT
+
+		        if (roleEntity.getPrivileges() != null) {
+		            privilegeNames = roleEntity.getPrivileges()
+		                    .stream()
+		                    .map(Privilege::getName)
+		                    .collect(Collectors.toSet());
+		        }
+		    }
 		}
 
-		// Generate JWT with selected privileges
+		// Generate JWT with roleName + privileges
 		String jwtToken = jwtServiceImpl.generateToken(user, roleName, privilegeNames);
 
 		// Prepare response
