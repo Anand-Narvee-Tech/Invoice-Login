@@ -48,7 +48,8 @@ public class ManageUserDTO {
 	private String address;
 	private String token;
 	private String loginUrl;
-	 
+	
+	private long adminId;
 	
 	
 	private String fid;
