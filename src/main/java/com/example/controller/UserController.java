@@ -259,18 +259,25 @@ public class UserController {
 			finalResponse.put("roleName", roleName);
 			finalResponse.put("privileges", privilegeNames);
 			finalResponse.put("companylogo", logoUrl);
+			finalResponse.put("adminId", savedUser.getAdminId());
 			finalResponse.put("companydomain",savedUser.getCompanyDomain());
 			finalResponse.put("token", token);
 
 			return ResponseEntity.status(HttpStatus.CREATED).body(
 					new RestAPIResponse("success", "Company registered successfully. ADMIN created.", finalResponse));
 
-		} catch (DataIntegrityViolationException e) {
-
-			return ResponseEntity.status(HttpStatus.CONFLICT)
-					.body(new RestAPIResponse("failed", "Email or mobile number already exists.", null));
-
-		} catch (Exception e) {
+//		} catch (DataIntegrityViolationException e) {
+//
+//			return ResponseEntity.status(HttpStatus.CONFLICT)
+//					.body(new RestAPIResponse("failed", "Email or mobile number already exists.", null));
+//
+//		} 
+		}catch (DataIntegrityViolationException e) {
+			    return ResponseEntity.status(HttpStatus.CONFLICT)
+			        .body(new RestAPIResponse("failed", 
+			            e.getMostSpecificCause().getMessage(), null));
+			}
+			catch (Exception e) {
 
 			e.printStackTrace();
 
