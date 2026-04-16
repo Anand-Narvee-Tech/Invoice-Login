@@ -762,18 +762,16 @@ public class ManageUsersServiceImpl implements ManageUserService {
 
 		// ---------------- 6️⃣ Handle role updates safely ----------------
 		Role role = null;
-		if (manageUsers.getRoleName() != null && !manageUsers.getRoleName().isBlank()) {
+		if (manageUsers.getRole() != null && manageUsers.getRole().getRoleId() != null) {
 
-			String roleName = manageUsers.getRoleName().trim().toUpperCase();
-			existing.setRoleName(roleName);
+		    role = roleRepository.findById(manageUsers.getRole().getRoleId())
+		            .orElseThrow(() -> new BusinessException(
+		                    "Role not found for id: " + manageUsers.getRole().getRoleId()));
 
-//			role = roleRepository.findByRoleNameIgnoreCase(roleName)
-//					.orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
-			
-			role = roleRepository.findById(manageUsers.getRole().getRoleId())
-		            .orElseThrow(() -> new BusinessException("Role not found for id: " + manageUsers.getRole().getRoleId()));
+		    existing.setRole(role);
 
-			existing.setRole(role);
+		    // Optional: sync roleName field if you still store it
+		    existing.setRoleName(role.getRoleName());
 		}
 		// ❌ DO NOT reset role if not provided
 
