@@ -47,6 +47,7 @@ import com.example.service.FileStorageService;
 import com.example.service.UserService;
 import com.example.serviceImpl.JwtServiceImpl;
 import com.example.serviceImpl.UserServiceImpl;
+import com.example.tenant.SchemaProvisioningService;
 import com.example.utils.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -82,6 +83,9 @@ public class UserController {
 
 	@Autowired
 	private FileStorageService fileStorageService;
+
+	@Autowired
+	private SchemaProvisioningService schemaProvisioningService;
 
 //Bhargav working
 
@@ -196,6 +200,14 @@ public class UserController {
 			}
 
 			ManageUserDTO response = userServiceImpl.registerCompanyUser(manageUsers);
+
+			// Provision a dedicated schema for this company in all services
+			try {
+				schemaProvisioningService.provisionTenantSchema(response.getCompanyDomain());
+			} catch (Exception e) {
+				// Schema provisioning is non-blocking — registration still succeeds
+				e.printStackTrace();
+			}
 
 			User user = userRepository.findByEmailIgnoreCase(response.getEmail())
 					.orElseThrow(() -> new RuntimeException("User not found"));
