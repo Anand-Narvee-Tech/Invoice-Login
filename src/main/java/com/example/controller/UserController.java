@@ -47,6 +47,10 @@ import com.example.service.FileStorageService;
 import com.example.service.UserService;
 import com.example.serviceImpl.JwtServiceImpl;
 import com.example.serviceImpl.UserServiceImpl;
+import com.example.entity.CompanyRegistry;
+import com.example.repository.CompanyRegistryRepository;
+import com.example.tenant.SchemaProvisioningService;
+import com.example.tenant.TenantContext;
 import com.example.utils.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -82,6 +86,12 @@ public class UserController {
 
 	@Autowired
 	private FileStorageService fileStorageService;
+
+	@Autowired
+	private SchemaProvisioningService schemaProvisioningService;
+
+	@Autowired
+	private CompanyRegistryRepository companyRegistryRepository;
 
 //Bhargav working
 
@@ -196,6 +206,30 @@ public class UserController {
 			}
 
 			ManageUserDTO response = userServiceImpl.registerCompanyUser(manageUsers);
+
+			// Provision a dedicated schema for this company in all services
+			try {
+				schemaProvisioningService.provisionTenantSchema(response.getCompanyDomain());
+			} catch (Exception e) {
+				// Schema provisioning is non-blocking — registration still succeeds
+				e.printStackTrace();
+			}
+
+			// Save company in the global registry
+			try {
+				String schemaName = TenantContext.toSchemaName(response.getCompanyDomain());
+				String savedLogo = manageUsers.getCompanylogo();
+				if (!companyRegistryRepository.existsByCompanyDomain(response.getCompanyDomain())) {
+					companyRegistryRepository.save(new CompanyRegistry(
+							response.getCompanyName(),
+							response.getCompanyDomain(),
+							schemaName,
+							response.getEmail(),
+							savedLogo));
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 
 			User user = userRepository.findByEmailIgnoreCase(response.getEmail())
 					.orElseThrow(() -> new RuntimeException("User not found"));

@@ -188,6 +188,9 @@ public class JwtServiceImpl {
         Map<String, Object> claims = new HashMap<>();
         claims.put("roles", roleName != null ? List.of(roleName) : Collections.emptyList());
         claims.put("privileges", privileges != null ? privileges : Collections.emptySet());
+        if (user.getCompanyDomain() != null) {
+            claims.put("companyDomain", user.getCompanyDomain());
+        }
 
         return Jwts.builder()
                 .setClaims(claims)
