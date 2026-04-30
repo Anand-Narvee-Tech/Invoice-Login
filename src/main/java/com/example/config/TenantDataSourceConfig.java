@@ -23,30 +23,42 @@ public class TenantDataSourceConfig {
     @Value("${spring.datasource.password}")
     private String password;
 
-    /** Raw (non-routing) DataSource used for schema provisioning and as the default fallback. */
+    /**
+     * Raw DataSource locked to the 'invoice' schema.
+     * Used for schema provisioning and as the JPA default (no-tenant requests).
+     * Hibernate creates/updates entity tables in the 'invoice' schema at startup.
+     */
     @Bean("rawDataSource")
     public DataSource rawDataSource() {
         HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(jdbcUrl);
+        config.setJdbcUrl(withSchema(jdbcUrl, "invoice"));
         config.setUsername(username);
         config.setPassword(password);
         config.setMaximumPoolSize(10);
         config.setMinimumIdle(2);
-        config.setPoolName("HikariPool-default-login");
+        config.setPoolName("HikariPool-invoice");
         return new HikariDataSource(config);
     }
 
-    /** Primary routing DataSource — routes to per-tenant schema when a JWT is present. */
+    /**
+     * Primary routing DataSource.
+     * When a JWT is present, routes to the tenant's schema (e.g. testcorp_com).
+     * When no JWT, falls back to rawDataSource (invoice schema).
+     */
     @Bean
     @Primary
     public DataSource dataSource() {
         DataSource defaultDs = rawDataSource();
 
-        TenantRoutingDataSource router = new TenantRoutingDataSource(
-                jdbcUrl, username, password, "com.example.entity");
+        TenantRoutingDataSource router = new TenantRoutingDataSource(jdbcUrl, username, password);
         router.setDefaultTargetDataSource(defaultDs);
         router.setTargetDataSources(new HashMap<>());
         router.afterPropertiesSet();
         return router;
+    }
+
+    static String withSchema(String url, String schema) {
+        String base = url.replaceAll("[?&]currentSchema=[^&]*", "");
+        return base.contains("?") ? base + "&currentSchema=" + schema : base + "?currentSchema=" + schema;
     }
 }

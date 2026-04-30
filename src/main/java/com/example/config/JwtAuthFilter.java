@@ -34,7 +34,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         "/auth/register",
         "/auth/login/send-otp",
         "/auth/check-token",
-        "/auth/validate-token"
+        "/auth/validate-token",
+        "/companies"
     };
 
     @Override

@@ -4,27 +4,31 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource;
-import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
-import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 
 import javax.sql.DataSource;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Routes every JPA operation to the correct tenant schema.
+ *
+ * - No JWT (login, register, admin calls)  → falls back to rawDataSource (invoice schema)
+ * - JWT with companyDomain present          → routes to that company's schema
+ *
+ * Tables must already exist in the tenant schema (created by SchemaProvisioningService).
+ * This class only handles connection routing — never DDL.
+ */
 @Slf4j
 public class TenantRoutingDataSource extends AbstractRoutingDataSource {
 
     private final String baseJdbcUrl;
     private final String username;
     private final String password;
-    private final String entityPackage;
     private final ConcurrentHashMap<String, DataSource> tenantDataSources = new ConcurrentHashMap<>();
 
-    public TenantRoutingDataSource(String baseJdbcUrl, String username, String password, String entityPackage) {
+    public TenantRoutingDataSource(String baseJdbcUrl, String username, String password) {
         this.baseJdbcUrl = baseJdbcUrl;
         this.username = username;
         this.password = password;
-        this.entityPackage = entityPackage;
     }
 
     @Override
@@ -42,47 +46,19 @@ public class TenantRoutingDataSource extends AbstractRoutingDataSource {
     }
 
     private DataSource buildTenantDataSource(String schemaName) {
-        log.info("Initialising DataSource for tenant schema: {}", schemaName);
+        log.info("Creating connection pool for tenant schema: {}", schemaName);
         HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(buildUrl(schemaName));
+        config.setJdbcUrl(withSchema(schemaName));
         config.setUsername(username);
         config.setPassword(password);
         config.setMaximumPoolSize(5);
         config.setMinimumIdle(1);
         config.setPoolName("TenantPool-" + schemaName);
-        HikariDataSource ds = new HikariDataSource(config);
-        initSchemaEntities(ds, schemaName);
-        return ds;
+        return new HikariDataSource(config);
     }
 
-    /** Run Hibernate ddl-auto=update against the tenant schema to create tables automatically. */
-    private void initSchemaEntities(DataSource ds, String schemaName) {
-        try {
-            LocalContainerEntityManagerFactoryBean emfBean = new LocalContainerEntityManagerFactoryBean();
-            emfBean.setDataSource(ds);
-            emfBean.setPackagesToScan(entityPackage);
-
-            HibernateJpaVendorAdapter adapter = new HibernateJpaVendorAdapter();
-            adapter.setGenerateDdl(true);
-            emfBean.setJpaVendorAdapter(adapter);
-
-            Properties props = new Properties();
-            props.setProperty("hibernate.hbm2ddl.auto", "update");
-            props.setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
-            props.setProperty("hibernate.show_sql", "false");
-            emfBean.setJpaProperties(props);
-
-            emfBean.afterPropertiesSet();
-            if (emfBean.getObject() != null) emfBean.getObject().close();
-
-            log.info("Tables initialised in schema: {}", schemaName);
-        } catch (Exception e) {
-            log.error("Failed to initialise tables in schema {}: {}", schemaName, e.getMessage());
-        }
-    }
-
-    private String buildUrl(String schemaName) {
-        String url = baseJdbcUrl.replaceAll("[?&]currentSchema=[^&]*", "");
-        return url.contains("?") ? url + "&currentSchema=" + schemaName : url + "?currentSchema=" + schemaName;
+    private String withSchema(String schemaName) {
+        String base = baseJdbcUrl.replaceAll("[?&]currentSchema=[^&]*", "");
+        return base.contains("?") ? base + "&currentSchema=" + schemaName : base + "?currentSchema=" + schemaName;
     }
 }
