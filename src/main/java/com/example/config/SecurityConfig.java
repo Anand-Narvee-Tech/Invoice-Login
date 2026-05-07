@@ -37,7 +37,8 @@ public class SecurityConfig {
                             "/auth/otp/**",
                             "/auth/check-email/{email}",
                             "/manageusers/searchAndsorting/getall/**",
-                            "/auth/updated/save/**"
+                            "/auth/updated/save/**",
+                            "/companies/**"
                     ).permitAll()
                     .anyRequest().authenticated()
             )
