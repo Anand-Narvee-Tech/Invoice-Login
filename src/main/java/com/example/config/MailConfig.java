@@ -16,8 +16,8 @@ public class MailConfig {
 
         mailSender.setHost("host.narveetech.com");
         mailSender.setPort(465); // SSL Port
-        mailSender.setUsername("no-reply@singularanalysts.com");
-        mailSender.setPassword("qL!DO@{^Uci{tHyx");
+        mailSender.setUsername("no-reply@narvee.com");
+        mailSender.setPassword("4hi;lMs[,Yu66Zql");
 
         Properties props = mailSender.getJavaMailProperties();
         props.put("mail.smtp.auth", "true");

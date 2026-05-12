@@ -17,8 +17,8 @@ public class MailConfig {
 
         mailSender.setHost("host.narveetech.com");
         mailSender.setPort(465); // SSL Port
-        mailSender.setUsername("no-reply@singularanalysts.com");
-        mailSender.setPassword("qL!DO@{^Uci{tHyx");
+        mailSender.setUsername("no-reply@narvee.com");
+        mailSender.setPassword("4hi;lMs[,Yu66Zql");
         
         Properties props = mailSender.getJavaMailProperties();
         props.put("mail.smtp.auth", "true");
@@ -31,14 +31,12 @@ public class MailConfig {
         props.put("mail.debug", "true"); // for debugging logs
 
         mailSender.setDefaultEncoding("UTF-8");
-        props.put("mail.smtp.from", "no-reply@singularanalysts.com");
+        props.put("mail.smtp.from", "no-reply@narvee.com");
      // Force JavaMail to always use your company email
 
-
-     
         
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom("no-reply@singularanalysts.com"); // 
+        message.setFrom("no-reply@narvee.com"); // 
        message.setTo();
        message.setSubject("verify your otp");
        message.setText("Your OTP is: " );

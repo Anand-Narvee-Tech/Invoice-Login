@@ -79,7 +79,7 @@ public class UserServiceImpl implements UserService {
             MimeMessage mimeMessage = javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
 
-            helper.setFrom("no-reply@singularanalysts.com"); 
+            helper.setFrom("no-reply@narvee.com"); 
             helper.setTo(email);                            
             helper.setSubject("Login Verification Code");
             helper.setText("Your OTP is: " + otp + " (valid for 2 mins)", false);
