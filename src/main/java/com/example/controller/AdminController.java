@@ -10,8 +10,11 @@ import com.example.entity.Admin;
 import com.example.entity.User;
 import com.example.serviceImpl.AdminServiceImpl;
 
+import lombok.extern.slf4j.Slf4j;
+
 @RestController
 @RequestMapping("/auth")
+@Slf4j
 public class AdminController {
 
     @Autowired
@@ -23,6 +26,7 @@ public class AdminController {
             Admin savedAdmin = adminServiceImpl.saveProfile(admin);
             return new ResponseEntity<>(new RestAPIResponse("Success", "Profile saved successfully", savedAdmin), HttpStatus.OK);
         } catch (Exception e) {
+            log.error("Failed to save profile", e);
             return new ResponseEntity<>(new RestAPIResponse("Fail", "Profile not saved: " + e.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -32,13 +36,13 @@ public class AdminController {
         try {
             return new ResponseEntity<>(new RestAPIResponse("Success", "All profiles retrieved successfully", adminServiceImpl.getAll()), HttpStatus.OK);
         } catch (Exception e) {
+            log.error("Failed to retrieve profiles", e);
             return new ResponseEntity<>(new RestAPIResponse("Fail", "No profiles found: " + e.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @GetMapping("/updated/{id}")
     public ResponseEntity<RestAPIResponse> getProfile(@PathVariable Long id) {
-    	
         User admin = adminServiceImpl.getById(id);
         if (admin == null) {
             return new ResponseEntity<>(new RestAPIResponse("Fail", "Profile not found with ID: " + id, null), HttpStatus.NOT_FOUND);
@@ -50,13 +54,12 @@ public class AdminController {
     public ResponseEntity<RestAPIResponse> updatedProfile(@PathVariable Long id, @RequestBody Admin admin) {
         try {
             Admin updatedAdmin = adminServiceImpl.updateProfile(id, admin);
-            System.err.println(admin);
             if (updatedAdmin == null) {
-            	System.err.println(updatedAdmin);
                 return new ResponseEntity<>(new RestAPIResponse("Fail", "Profile not found with ID: " + id, null), HttpStatus.NOT_FOUND);
             }
             return new ResponseEntity<>(new RestAPIResponse("Success", "Profile updated successfully", updatedAdmin), HttpStatus.OK);
         } catch (Exception e) {
+            log.error("Failed to update profile id={}", id, e);
             return new ResponseEntity<>(new RestAPIResponse("Fail", "Profile not updated: " + e.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -70,6 +73,7 @@ public class AdminController {
             }
             return new ResponseEntity<>(new RestAPIResponse("Success", "Profile deleted successfully", null), HttpStatus.OK);
         } catch (Exception e) {
+            log.error("Failed to delete profile id={}", id, e);
             return new ResponseEntity<>(new RestAPIResponse("Fail", "Profile not deleted: " + e.getMessage(), null), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

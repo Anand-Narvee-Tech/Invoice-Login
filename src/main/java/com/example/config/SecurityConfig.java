@@ -38,7 +38,8 @@ public class SecurityConfig {
                             "/auth/check-email/{email}",
                             "/manageusers/searchAndsorting/getall/**",
                             "/auth/updated/save/**",
-                            "/companies/**"
+                            "/companies/**",
+                            "/api/public/**"
                     ).permitAll()
                     .anyRequest().authenticated()
             )
